@@ -1,5 +1,8 @@
-import { NextResponse } from "next/server"
-import { getSheets } from "../../../lib/sheets"
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+import getSheets from "../../../lib/sheets";
 
 export async function GET() {
   const details = {

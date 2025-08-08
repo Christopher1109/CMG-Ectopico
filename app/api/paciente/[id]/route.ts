@@ -1,6 +1,9 @@
-import { NextResponse } from "next/server"
-import { findRowById, updateRow } from "../../../../lib/sheets"
-import { rowToPaciente, pacienteToRow, Paciente } from "../../../../lib/mapPaciente"
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+import { NextResponse } from "next/server";
+import { findRowById, updateRow } from "../../../../lib/sheets";
+import { rowToPaciente, pacienteToRow, Paciente } from "../../../../lib/mapPaciente";
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const { rowIndex, row } = await findRowById(params.id)

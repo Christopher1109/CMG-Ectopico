@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
-import { findRowById, updateRow } from "../../../../../lib/sheets"
-import { rowToPaciente, pacienteToRow, Paciente } from "../../../../../lib/mapPaciente"
+// 👇 cuatro niveles hacia arriba
+import { findRowById, updateRow } from "../../../../lib/sheets"
+import { rowToPaciente, pacienteToRow, Paciente } from "../../../../lib/mapPaciente"
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const id = params.id
@@ -24,7 +25,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const merged: Paciente = {
     ...current,
     ...updates,
-    id: current.id, // no cambiar ID
+    id: current.id, // no cambiar el ID
     fechaCreacion: current.fechaCreacion || new Date().toISOString(),
     fechaUltimaActualizacion: new Date().toISOString(),
   }

@@ -5,18 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Heart,
-  Stethoscope,
-  FileText,
-  Calculator,
-  CheckCircle,
-  ArrowRight,
-  User,
-  Activity,
-  AlertTriangle,
-  Copy,
-} from "lucide-react"
+import { Heart, Stethoscope, FileText, Calculator, CheckCircle, ArrowRight, User, Activity, AlertTriangle, Copy } from 'lucide-react'
 
 // ==================== FUNCIONES DE API ====================
 // Configuración de la API
@@ -2360,4 +2349,132 @@ export default function CalculadoraEctopico() {
                           <div className="space-y-4">
                             <div className="space-y-2">
                               <Label className="text-base font-medium text-purple-800">
-                                Resulta\
+                                Resultado de la ecografía transvaginal:
+                              </Label>
+                              <select
+                                value={proximaConsulta === 1 ? tvus1 : proximaConsulta === 2 ? tvus2 : tvus3}
+                                onChange={(e) =>
+                                  proximaConsulta === 1
+                                    ? setTvus1(e.target.value)
+                                    : proximaConsulta === 2
+                                      ? setTvus2(e.target.value)
+                                      : setTvus3(e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-purple-200 rounded-md focus:border-purple-500 focus:ring-purple-500 bg-white"
+                              >
+                                <option value="">Seleccione una opción</option>
+                                <option value="normal">Normal (sin hallazgos)</option>
+                                <option value="libre">Líquido libre</option>
+                                <option value="masa">Masa anexial</option>
+                                <option value="masa_libre">Masa anexial + líquido libre</option>
+                              </select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-base font-medium text-purple-800">Valor de β-hCG (mUI/mL):</Label>
+                              <input
+                                type="number"
+                                placeholder="Ej: 1500"
+                                value={
+                                  proximaConsulta === 1 ? hcgValor1 : proximaConsulta === 2 ? hcgValor2 : hcgValor3
+                                }
+                                onChange={(e) =>
+                                  proximaConsulta === 1
+                                    ? setHcgValor1(e.target.value)
+                                    : proximaConsulta === 2
+                                      ? setHcgValor2(e.target.value)
+                                      : setHcgValor3(e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-purple-200 rounded-md focus:border-purple-500 focus:ring-purple-500 bg-white"
+                              />
+                              <p className="text-xs text-purple-600 font-medium">
+                                Zona discriminatoria: {dz} mUI/mL (
+                                {proximaConsulta === 1 && hcgValor1
+                                  ? Number.parseFloat(hcgValor1) >= dz
+                                    ? "Alto"
+                                    : "Bajo"
+                                  : proximaConsulta === 2 && hcgValor2
+                                    ? Number.parseFloat(hcgValor2) >= dz
+                                      ? "Alto"
+                                      : "Bajo"
+                                    : proximaConsulta === 3 && hcgValor3
+                                      ? Number.parseFloat(hcgValor3) >= dz
+                                        ? "Alto"
+                                        : "Bajo"
+                                      : ""}
+                                )
+                              </p>
+                            </div>
+                            {/* Mostrar variación de hCG en consultas 2 y 3 */}
+                            {proximaConsulta === 2 && hcgValor1 && hcgValor2 && (
+                              <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border border-amber-200">
+                                <div className="text-sm font-bold text-amber-900">
+                                  Variación β-hCG: {calcularVariacionHcg(hcgValor1, hcgValor2)}
+                                </div>
+                              </div>
+                            )}
+                            {proximaConsulta === 3 && hcgValor2 && hcgValor3 && (
+                              <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border border-amber-200">
+                                <div className="text-sm font-bold text-amber-900">
+                                  Variación β-hCG: {calcularVariacionHcg(hcgValor2, hcgValor3)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Botón para calcular */}
+                      <div className="flex justify-center mt-8">
+                        <Button
+                          onClick={
+                            proximaConsulta === 1
+                              ? calcularFase1
+                              : proximaConsulta === 2
+                                ? calcularFase2
+                                : calcularFase3
+                          }
+                          className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold text-lg px-8 py-4 rounded-xl shadow-lg"
+                        >
+                          <Calculator className="mr-3 h-5 w-5" />
+                          Calcular Consulta {proximaConsulta}
+                        </Button>
+                      </div>
+                      <CMGFooter />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Modal para generar informe PDF */}
+            {mostrarInforme && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+                  <h3 className="text-xl font-bold mb-4">Generando Informe PDF</h3>
+                  <p className="mb-4">
+                    Se abrirá una nueva ventana con el informe PDF. Por favor, permita las ventanas emergentes si es
+                    necesario.
+                  </p>
+                  <div className="flex justify-end space-x-3">
+                    <Button
+                      onClick={() => {
+                        generarInformePDF()
+                        setMostrarInforme(false)
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Generar PDF
+                    </Button>
+                    <Button onClick={() => setMostrarInforme(false)} variant="outline">
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

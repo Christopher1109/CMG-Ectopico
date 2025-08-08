@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { appendRow, findRowById } from "../../../lib/sheets"
-import { Paciente, pacienteToRow } from "../../../lib/mapPaciente"
+import { appendRow, findRowById } from "../../lib/sheets"
+import { Paciente, pacienteToRow } from "../../lib/mapPaciente"
 
 export async function POST(req: Request) {
   try {

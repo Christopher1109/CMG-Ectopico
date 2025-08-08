@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server"
 import { appendRow, findRowById } from "../../../lib/sheets"
 import { Paciente, pacienteToRow } from "../../../lib/mapPaciente"

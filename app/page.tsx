@@ -2,6 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { crearConsulta, actualizarConsulta, obtenerConsulta } from '../lib/api/consultas'
 import {
   Heart,
   Stethoscope,
@@ -21,6 +22,7 @@ import {
 import { useState } from "react"
 import type React from "react"
 import { createClient } from "@supabase/supabase-js"
+import { crearConsulta, actualizarConsulta, obtenerConsulta } from "@/lib/api/consultas"
 
 // Configuración de Supabase
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -40,106 +42,93 @@ const USUARIOS_AUTORIZADOS = [
 // ==================== FUNCIONES DE API ====================
 async function enviarDatosAlBackend(datos: any): Promise<boolean> {
   try {
-    const { error } = await supabase.from("consultas").insert([
-      {
-        id: datos.id,
-        fecha_creacion: datos.fechaCreacion,
-        fecha_ultima_actualizacion: datos.fechaUltimaActualizacion,
-        usuario_creador: datos.usuarioCreador,
-        nombre_paciente: datos.nombrePaciente,
-        edad_paciente: Number.parseInt(datos.edadPaciente),
-        frecuencia_cardiaca: Number.parseInt(datos.frecuenciaCardiaca),
-        presion_sistolica: Number.parseInt(datos.presionSistolica),
-        presion_diastolica: Number.parseInt(datos.presionDiastolica),
-        estado_conciencia: datos.estadoConciencia,
-        prueba_embarazo_realizada: datos.pruebaEmbarazoRealizada,
-        resultado_prueba_embarazo: datos.resultadoPruebaEmbarazo,
-        hallazgos_exploracion: datos.hallazgosExploracion,
-        tiene_eco_transabdominal: datos.tieneEcoTransabdominal,
-        resultado_eco_transabdominal: datos.resultadoEcoTransabdominal,
-        sintomas_seleccionados: datos.sintomasSeleccionados,
-        factores_seleccionados: datos.factoresSeleccionados,
-        tvus: datos.tvus,
-        hcg_valor: datos.hcgValor ? Number.parseFloat(datos.hcgValor) : null,
-        variacion_hcg: datos.variacionHcg,
-        hcg_anterior: datos.hcgAnterior ? Number.parseFloat(datos.hcgAnterior) : null,
-        resultado: datos.resultado,
-      },
-    ])
-
-    if (error) {
-      console.error("Error al insertar en Supabase:", error)
-      return false
+    const payload = {
+      id: datos.id,
+      usuario_creador: datos.usuarioCreador || null,
+      nombre_paciente: datos.nombrePaciente || "N/A",
+      edad_paciente: Number.isFinite(+datos.edadPaciente) ? +datos.edadPaciente : null,
+      frecuencia_cardiaca: datos.frecuenciaCardiaca ? +datos.frecuenciaCardiaca : null,
+      presion_sistolica: datos.presionSistolica ? +datos.presionSistolica : null,
+      presion_diastolica: datos.presionDiastolica ? +datos.presionDiastolica : null,
+      estado_conciencia: datos.estadoConciencia || null,
+      prueba_embarazo_realizada: datos.pruebaEmbarazoRealizada || null,
+      resultado_prueba_embarazo: datos.resultadoPruebaEmbarazo || null,
+      hallazgos_exploracion: datos.hallazgosExploracion || null,
+      tiene_eco_transabdominal: datos.tieneEcoTransabdominal || null,
+      resultado_eco_transabdominal: datos.resultadoEcoTransabdominal || null,
+      sintomas_seleccionados: Array.isArray(datos.sintomasSeleccionados) ? datos.sintomasSeleccionados : [],
+      factores_seleccionados: Array.isArray(datos.factoresSeleccionados) ? datos.factoresSeleccionados : [],
+      tvus: datos.tvus || null,
+      hcg_valor: Number.isFinite(+datos.hcgValor) ? +datos.hcgValor : null,
+      variacion_hcg: datos.variacionHcg || null,
+      hcg_anterior: Number.isFinite(+datos.hcgAnterior) ? +datos.hcgAnterior : null,
+      resultado: typeof datos.resultado === "number" ? datos.resultado : null,
+      // OJO: NO mandamos fecha_creacion ni fecha_ultima_actualizacion;
+      // deja que la DB ponga defaults/trigger
     }
 
-    console.log("Datos enviados exitosamente a Supabase")
+    const res = await crearConsulta(payload) // POST /api/consultas
+    if (res?.error) {
+      console.error("API /api/consultas error:", res.error)
+      return false
+    }
     return true
-  } catch (error) {
-    console.error("Error de conexión con Supabase:", error)
+  } catch (e) {
+    console.error("Error llamando /api/consultas:", e)
     return false
   }
 }
+
 
 async function actualizarDatosEnBackend(id: string, datos: any): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from("consultas")
-      .update({
-        fecha_ultima_actualizacion: datos.fechaUltimaActualizacion,
-        nombre_paciente: datos.nombrePaciente,
-        edad_paciente: Number.parseInt(datos.edadPaciente),
-        frecuencia_cardiaca: Number.parseInt(datos.frecuenciaCardiaca),
-        presion_sistolica: Number.parseInt(datos.presionSistolica),
-        presion_diastolica: Number.parseInt(datos.presionDiastolica),
-        estado_conciencia: datos.estadoConciencia,
-        prueba_embarazo_realizada: datos.pruebaEmbarazoRealizada,
-        resultado_prueba_embarazo: datos.resultadoPruebaEmbarazo,
-        hallazgos_exploracion: datos.hallazgosExploracion,
-        tiene_eco_transabdominal: datos.tieneEcoTransabdominal,
-        resultadoEcoTransabdominal: datos.resultadoEcoTransabdominal,
-        sintomasSeleccionados: datos.sintomasSeleccionados,
-        factoresSeleccionados: datos.factoresSeleccionados,
-        tvus: datos.tvus,
-        hcgValor: datos.hcgValor ? Number.parseFloat(datos.hcgValor) : null,
-        variacionHcg: datos.variacionHcg,
-        hcgAnterior: datos.hcgAnterior ? Number.parseFloat(datos.hcgAnterior) : null,
-        resultado: datos.resultado,
-      })
-      .eq("id", id)
-
-    if (error) {
-      console.error("Error al actualizar en Supabase:", error)
-      return false
+    const patch = {
+      // fecha_ultima_actualizacion: se puede dejar al trigger/DB, si quieres no lo envíes
+      nombre_paciente: datos.nombrePaciente || null,
+      edad_paciente: Number.isFinite(+datos.edadPaciente) ? +datos.edadPaciente : null,
+      frecuencia_cardiaca: datos.frecuenciaCardiaca ? +datos.frecuenciaCardiaca : null,
+      presion_sistolica: datos.presionSistolica ? +datos.presionSistolica : null,
+      presion_diastolica: datos.presionDiastolica ? +datos.presionDiastolica : null,
+      estado_conciencia: datos.estadoConciencia || null,
+      prueba_embarazo_realizada: datos.pruebaEmbarazoRealizada || null,
+      resultado_prueba_embarazo: datos.resultadoPruebaEmbarazo || null,
+      hallazgos_exploracion: datos.hallazgosExploracion || null,
+      tiene_eco_transabdominal: datos.tieneEcoTransabdominal || null,
+      resultado_eco_transabdominal: datos.resultadoEcoTransabdominal || null,
+      sintomas_seleccionados: Array.isArray(datos.sintomasSeleccionados) ? datos.sintomasSeleccionados : [],
+      factores_seleccionados: Array.isArray(datos.factoresSeleccionados) ? datos.factoresSeleccionados : [],
+      tvus: datos.tvus || null,
+      hcg_valor: Number.isFinite(+datos.hcgValor) ? +datos.hcgValor : null,
+      variacion_hcg: datos.variacionHcg || null,
+      hcg_anterior: Number.isFinite(+datos.hcgAnterior) ? +datos.hcgAnterior : null,
+      resultado: typeof datos.resultado === "number" ? datos.resultado : null,
     }
 
-    console.log("Datos actualizados exitosamente en Supabase")
+    const res = await actualizarConsulta(id, patch) // PATCH /api/consultas/:id
+    if (res?.error) {
+      console.error("API PATCH /api/consultas error:", res.error)
+      return false
+    }
     return true
-  } catch (error) {
-    console.error("Error de conexión con Supabase:", error)
+  } catch (e) {
+    console.error("Error llamando PATCH /api/consultas:", e)
     return false
   }
 }
 
+
+
 async function leerDatosDesdeBackend(id: string): Promise<any | null> {
   try {
-    const { data, error } = await supabase.from("consultas").select("*").eq("id", id).single()
-
-    if (error) {
-      if (error.code === "PGRST116") {
-        console.log("Consulta no encontrada en Supabase")
-        return null
-      }
-      console.error("Error al leer desde Supabase:", error)
-      return null
-    }
-
-    console.log("Datos leídos exitosamente desde Supabase")
-    return data
-  } catch (error) {
-    console.error("Error de conexión con Supabase:", error)
+    const res = await obtenerConsulta(id) // GET /api/consultas/:id
+    if (res?.error) return null
+    return res?.data ?? null
+  } catch (e) {
+    console.error("Error llamando GET /api/consultas/:id:", e)
     return null
   }
 }
+
 
 async function sincronizarDatos(id: string, datos: any, esNuevo = false): Promise<void> {
   localStorage.setItem(`ectopico_${id}`, JSON.stringify(datos))
@@ -958,47 +947,23 @@ export default function CalculadoraEctopico() {
       numeroConsulta: numeroConsultaActual,
     }
 
-    // Guardar en localStorage y Supabase
+    // Guarda localmente
     localStorage.setItem(`ectopico_${idSeguimiento}`, JSON.stringify(datosCompletos))
 
     try {
-      const { error } = await supabase.from("consultas").insert([
-        {
-          id: datosCompletos.id,
-          fecha_creacion: datosCompletos.fechaCreacion,
-          fecha_ultima_actualizacion: datosCompletos.fechaUltimaActualizacion,
-          usuario_creador: datosCompletos.usuarioCreador,
-          nombre_paciente: datosCompletos.nombrePaciente,
-          edad_paciente: datosCompletos.edadPaciente,
-          frecuencia_cardiaca: datosCompletos.frecuenciaCardiaca,
-          presion_sistolica: datosCompletos.presionSistolica,
-          presion_diastolica: datosCompletos.presionDiastolica,
-          estado_conciencia: datosCompletos.estadoConciencia,
-          prueba_embarazo_realizada: datosCompletos.pruebaEmbarazoRealizada,
-          resultado_prueba_embarazo: datosCompletos.resultadoPruebaEmbarazo,
-          hallazgos_exploracion: datosCompletos.hallazgosExploracion,
-          tiene_eco_transabdominal: datosCompletos.tieneEcoTransabdominal,
-          resultado_eco_transabdominal: datosCompletos.resultadoEcoTransabdominal,
-          sintomas_seleccionados: datosCompletos.sintomasSeleccionados,
-          factores_seleccionados: datosCompletos.factoresSeleccionados,
-          tvus: datosCompletos.tvus,
-          hcg_valor: datosCompletos.hcgValor,
-          variacion_hcg: datosCompletos.variacionHcg,
-          hcg_anterior: datosCompletos.hcgAnterior,
-          resultado: datosCompletos.resultado,
-        },
-      ])
-
-      if (error) {
-        console.error("Error al guardar en Supabase:", error)
+      // Ahora usamos tu API Next (/api/consultas), NO supabase.from(...).insert()
+      const ok = await enviarDatosAlBackend(datosCompletos)
+  
+      if (!ok) {
         alert("Advertencia: Los datos se guardaron localmente pero hubo un error al sincronizar con la base de datos.")
       } else {
-        console.log("Datos guardados exitosamente en Supabase")
+        console.log("Datos guardados exitosamente vía /api/consultas")
       }
-    } catch (error) {
-      console.error("Error de conexión con Supabase:", error)
+    } catch (e) {
+      console.error("Error llamando /api/consultas:", e)
       alert("Advertencia: Los datos se guardaron localmente pero no se pudo conectar con la base de datos.")
     }
+
 
     // 5. MOSTRAR RESULTADOS
     if (probPost >= 0.95) {

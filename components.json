@@ -1,21 +1,48 @@
 {
-  "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "default",
-  "rsc": true,
-  "tsx": true,
-  "tailwind": {
-    "config": "tailwind.config.ts",
-    "css": "app/globals.css",
-    "baseColor": "neutral",
-    "cssVariables": true,
-    "prefix": ""
+  "dependencies": {
+    "@radix-ui/react-accordion": "latest",
+    "@radix-ui/react-alert-dialog": "latest",
+    "@radix-ui/react-avatar": "latest",
+    "@radix-ui/react-checkbox": "latest",
+    "@radix-ui/react-dialog": "latest",
+    "@radix-ui/react-dropdown-menu": "latest",
+    "@radix-ui/react-label": "latest",
+    "@radix-ui/react-popover": "latest",
+    "@radix-ui/react-radio-group": "latest",
+    "@radix-ui/react-scroll-area": "latest",
+    "@radix-ui/react-select": "latest",
+    "@radix-ui/react-separator": "latest",
+    "@radix-ui/react-slider": "latest",
+    "@radix-ui/react-slot": "latest",
+    "@radix-ui/react-switch": "latest",
+    "@radix-ui/react-tabs": "latest",
+    "@radix-ui/react-toast": "latest",
+    "class-variance-authority": "latest",
+    "clsx": "latest",
+    "cmdk": "latest",
+    "date-fns": "latest",
+    "lucide-react": "latest",
+    "next-themes": "latest",
+    "react-day-picker": "^8.7.1",
+    "recharts": "^2.1.16",
+    "tailwind-merge": "latest",
+    "tailwindcss-animate": "latest"
   },
-  "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+  "devDependencies": {
+    "tailwindcss": "latest",
+    "tailwindcss-animate": "latest"
   },
-  "iconLibrary": "lucide"
+  "framework": "next.js",
+  "ignite": {
+    "clientId": "ac94a9a9-4199-4917-8901-538d99a9915a",
+    "maizzle": {
+      "config": "maizzle/config.js"
+    },
+    "workingDir": ""
+  },
+  "metadata": {
+    "isGenerated": true,
+    "isIgniteUI": false
+  },
+  "name": "cmg-ectopico"
 }

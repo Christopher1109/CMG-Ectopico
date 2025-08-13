@@ -96,13 +96,13 @@ async function actualizarDatosEnBackend(id: string, datos: any): Promise<boolean
         resultado_prueba_embarazo: datos.resultadoPruebaEmbarazo,
         hallazgos_exploracion: datos.hallazgosExploracion,
         tiene_eco_transabdominal: datos.tieneEcoTransabdominal,
-        resultado_eco_transabdominal: datos.resultadoEcoTransabdominal,
-        sintomas_seleccionados: datos.sintomasSeleccionados,
-        factores_seleccionados: datos.factoresSeleccionados,
+        resultadoEcoTransabdominal: datos.resultadoEcoTransabdominal,
+        sintomasSeleccionados: datos.sintomasSeleccionados,
+        factoresSeleccionados: datos.factoresSeleccionados,
         tvus: datos.tvus,
-        hcg_valor: datos.hcgValor ? Number.parseFloat(datos.hcgValor) : null,
-        variacion_hcg: datos.variacionHcg,
-        hcg_anterior: datos.hcgAnterior ? Number.parseFloat(datos.hcgAnterior) : null,
+        hcgValor: datos.hcgValor ? Number.parseFloat(datos.hcgValor) : null,
+        variacionHcg: datos.variacionHcg,
+        hcgAnterior: datos.hcgAnterior ? Number.parseFloat(datos.hcgAnterior) : null,
         resultado: datos.resultado,
       })
       .eq("id", id)
@@ -182,7 +182,7 @@ function calcularProbabilidad(pretestProb: number, LRs: number[]) {
 
 function generarIdSeguimiento(): string {
   const idsExistentes = []
-  for (let i = 0; i < localStorage.length; i++) {
+  for (let i = 0; i < localStorage.length, i < localStorage.length; i++) {
     const key = localStorage.key(i)
     if (key && key.startsWith("ectopico_ID-")) {
       const idNumero = key.replace("ectopico_ID-", "")
@@ -736,7 +736,7 @@ export default function CalculadoraEctopico() {
       resultado: probPost,
     }
 
-    await sincronizarDatos(idSeguimiento, datosCompletos, true)
+    await sincronizarDatos(idSeguimiento, datosCompletos, false)
 
     if (probPost >= 0.95) {
       setMensajeFinal("Embarazo ectópico confirmado (probabilidad ≥95%). Proceder con tratamiento inmediato.")
@@ -1385,14 +1385,8 @@ Sistema CMG Health Solutions
                     </div>
                     <div className="flex justify-end">
                       <Button
-                        onClick={() => {
-                          if (nombrePaciente.trim() && edadPaciente.trim()) {
-                            completarSeccion(1)
-                          } else {
-                            alert("Por favor complete todos los campos")
-                          }
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+                        onClick={() => completarSeccion(1)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
                       >
                         Continuar
                       </Button>
@@ -1403,10 +1397,53 @@ Sistema CMG Health Solutions
                 {seccionActual === 2 && (
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
-                      <Activity className="h-6 w-6 text-red-600" />
+                      <Activity className="h-6 w-6 text-blue-600" />
                       <h2 className="text-2xl font-bold text-slate-800">Signos Vitales</h2>
                     </div>
-                    <div className="grid md:grid-cols-2 gap-6">
+
+                    {mostrarAlerta && (
+                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                          <span className="font-medium text-yellow-900">Alerta</span>
+                        </div>
+                        <p className="text-yellow-800 text-sm">{mensajeAlerta}</p>
+                      </div>
+                    )}
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-base font-medium text-slate-700">Frecuencia Cardíaca (lpm):</Label>
+                        <input
+                          type="number"
+                          placeholder="Ingrese la frecuencia cardíaca"
+                          value={frecuenciaCardiaca}
+                          onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-base font-medium text-slate-700">Presión Sistólica (mmHg):</Label>
+                          <input
+                            type="number"
+                            placeholder="Ingrese la presión sistólica"
+                            value={presionSistolica}
+                            onChange={(e) => setPresionSistolica(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-base font-medium text-slate-700">Presión Diastólica (mmHg):</Label>
+                          <input
+                            type="number"
+                            placeholder="Ingrese la presión diastólica"
+                            value={presionDiastolica}
+                            onChange={(e) => setPresionDiastolica(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
                       <div className="space-y-2">
                         <Label className="text-base font-medium text-slate-700">Estado de Conciencia:</Label>
                         <select
@@ -1414,72 +1451,29 @@ Sistema CMG Health Solutions
                           onChange={(e) => setEstadoConciencia(e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         >
-                          <option value="">Seleccione una opción</option>
+                          <option value="">Seleccione un estado</option>
                           <option value="alerta">Alerta</option>
                           <option value="somnolienta">Somnolienta</option>
-                          <option value="confusa">Confusa</option>
                           <option value="estuporosa">Estuporosa</option>
                           <option value="comatosa">Comatosa</option>
                         </select>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">Frecuencia Cardíaca (lpm):</Label>
-                        <input
-                          type="number"
-                          placeholder="Ej: 80"
-                          value={frecuenciaCardiaca}
-                          onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">
-                          Presión Arterial Sistólica (mmHg):
-                        </Label>
-                        <input
-                          type="number"
-                          placeholder="Ej: 120"
-                          value={presionSistolica}
-                          onChange={(e) => setPresionSistolica(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">
-                          Presión Arterial Diastólica (mmHg):
-                        </Label>
-                        <input
-                          type="number"
-                          placeholder="Ej: 80"
-                          value={presionDiastolica}
-                          onChange={(e) => setPresionDiastolica(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        />
-                      </div>
                     </div>
-
-                    {mostrarAlerta && (
-                      <div className="bg-orange-500 text-white p-4 rounded-lg flex items-center space-x-2">
-                        <AlertTriangle className="h-5 w-5" />
-                        <div>
-                          <div className="font-semibold">ALERTA</div>
-                          <div>{mensajeAlerta}</div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex justify-end">
+                    <div className="flex justify-between">
+                      <Button
+                        onClick={() => setSeccionActual(1)}
+                        variant="outline"
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
+                        Anterior
+                      </Button>
                       <Button
                         onClick={() => {
-                          if (frecuenciaCardiaca && presionSistolica && presionDiastolica && estadoConciencia) {
-                            if (validarSignosVitales()) {
-                              completarSeccion(2)
-                            }
-                          } else {
-                            alert("Por favor complete todos los campos")
+                          if (validarSignosVitales()) {
+                            completarSeccion(2)
                           }
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
                       >
                         Continuar
                       </Button>
@@ -1490,13 +1484,13 @@ Sistema CMG Health Solutions
                 {seccionActual === 3 && (
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
-                      <FileText className="h-6 w-6 text-green-600" />
+                      <FileText className="h-6 w-6 text-blue-600" />
                       <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo</h2>
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label className="text-base font-medium text-slate-700">
-                          ¿Se ha realizado prueba de embarazo?
+                          ¿Se realizó la prueba de embarazo?
                         </Label>
                         <select
                           value={pruebaEmbarazoRealizada}
@@ -1510,34 +1504,36 @@ Sistema CMG Health Solutions
                       </div>
                       {pruebaEmbarazoRealizada === "si" && (
                         <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">Resultado de la prueba:</Label>
+                          <Label className="text-base font-medium text-slate-700">
+                            Resultado de la prueba de embarazo:
+                          </Label>
                           <select
                             value={resultadoPruebaEmbarazo}
                             onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                           >
-                            <option value="">Seleccione una opción</option>
+                            <option value="">Seleccione un resultado</option>
                             <option value="positiva">Positiva</option>
                             <option value="negativa">Negativa</option>
                           </select>
                         </div>
                       )}
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-between">
+                      <Button
+                        onClick={() => setSeccionActual(2)}
+                        variant="outline"
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
+                        Anterior
+                      </Button>
                       <Button
                         onClick={() => {
-                          if (
-                            pruebaEmbarazoRealizada &&
-                            (pruebaEmbarazoRealizada === "no" || resultadoPruebaEmbarazo)
-                          ) {
-                            if (validarPruebaEmbarazo()) {
-                              completarSeccion(3)
-                            }
-                          } else {
-                            alert("Por favor complete todos los campos")
+                          if (validarPruebaEmbarazo()) {
+                            completarSeccion(3)
                           }
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
                       >
                         Continuar
                       </Button>
@@ -1548,24 +1544,24 @@ Sistema CMG Health Solutions
                 {seccionActual === 4 && (
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
-                      <Stethoscope className="h-6 w-6 text-purple-600" />
+                      <Stethoscope className="h-6 w-6 text-blue-600" />
                       <h2 className="text-2xl font-bold text-slate-800">Evaluación Previa</h2>
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label className="text-base font-medium text-slate-700">
-                          Hallazgos en la exploración física (opcional):
+                          Hallazgos en la exploración física:
                         </Label>
                         <textarea
-                          placeholder="Describa los hallazgos relevantes"
+                          placeholder="Ingrese los hallazgos de la exploración física"
                           value={hallazgosExploracion}
                           onChange={(e) => setHallazgosExploracion(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-20"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         />
                       </div>
                       <div className="space-y-2">
                         <Label className="text-base font-medium text-slate-700">
-                          ¿Se ha realizado ecografía transabdominal?
+                          ¿Se realizó ecografía transabdominal?
                         </Label>
                         <select
                           value={tieneEcoTransabdominal}
@@ -1579,43 +1575,40 @@ Sistema CMG Health Solutions
                       </div>
                       {tieneEcoTransabdominal === "si" && (
                         <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">Resultado de la ecografía:</Label>
+                          <Label className="text-base font-medium text-slate-700">
+                            Resultado de la ecografía transabdominal:
+                          </Label>
                           <select
                             value={resultadoEcoTransabdominal}
                             onChange={(e) => setResultadoEcoTransabdominal(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                           >
                             <option value="">Seleccione un resultado</option>
-                            <option value="saco_embrion_fc">Saco gestacional con embrión y FC</option>
-                            <option value="saco_vitelino_embrion">Saco vitelino con embrión sin FC</option>
+                            <option value="saco_embrion_fc">Saco embrionario con FC</option>
+                            <option value="saco_vitelino_embrion">Saco vitelino con embrión</option>
                             <option value="saco_vitelino_sin_embrion">Saco vitelino sin embrión</option>
-                            <option value="saco_sin_embrion">Saco gestacional sin embrión</option>
-                            <option value="saco_10mm_decidual_2mm">
-                              Saco gestacional ≥10mm con anillo decidual ≥2mm
-                            </option>
-                            <option value="ausencia_saco">Ausencia de saco gestacional</option>
-                            <option value="imagen_ectopico">Imagen compatible con embarazo ectópico</option>
-                            <option value="quiste_cuerpo_luteo">Quiste de cuerpo lúteo</option>
-                            <option value="otros_hallazgos">Otros hallazgos</option>
+                            <option value="saco_sin_embrion">Saco sin embrión</option>
+                            <option value="saco_10mm_decidual_2mm">Saco ≥10mm con anillo decidual ≥2mm</option>
+                            <option value="ausencia_saco">Ausencia de saco</option>
                           </select>
                         </div>
                       )}
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-between">
+                      <Button
+                        onClick={() => setSeccionActual(3)}
+                        variant="outline"
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
+                        Anterior
+                      </Button>
                       <Button
                         onClick={() => {
-                          if (
-                            tieneEcoTransabdominal &&
-                            (tieneEcoTransabdominal === "no" || resultadoEcoTransabdominal)
-                          ) {
-                            if (validarEcoTransabdominal()) {
-                              completarSeccion(4)
-                            }
-                          } else {
-                            alert("Por favor complete todos los campos")
+                          if (validarEcoTransabdominal()) {
+                            completarSeccion(4)
                           }
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
                       >
                         Continuar
                       </Button>
@@ -1630,118 +1623,113 @@ Sistema CMG Health Solutions
                       <h2 className="text-2xl font-bold text-slate-800">Consultas</h2>
                     </div>
 
-                    <div className="bg-red-50 p-6 rounded-lg border border-red-200 mb-6">
-                      <div className="flex items-center space-x-2 mb-4">
-                        <AlertTriangle className="h-5 w-5 text-red-600" />
-                        <h3 className="text-lg font-semibold text-red-900">Síntomas Presentes</h3>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {sintomas.map((sintoma) => (
-                          <div key={sintoma.id} className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={sintoma.id}
-                              checked={sintomasSeleccionados.includes(sintoma.id)}
-                              onChange={(e) => handleSintomaChange(sintoma.id, e.target.checked)}
-                              className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
-                            />
-                            <label htmlFor={sintoma.id} className="text-sm font-medium text-red-700">
-                              {sintoma.label}
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-base font-medium text-slate-700">Síntomas:</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {sintomas.map((sintoma) => (
+                            <label key={sintoma.id} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={sintomasSeleccionados.includes(sintoma.id)}
+                                onChange={(e) => handleSintomaChange(sintoma.id, e.target.checked)}
+                                className="h-5 w-5 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
+                              />
+                              <span className="text-sm font-medium text-slate-700">{sintoma.label}</span>
                             </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="bg-orange-50 p-6 rounded-lg border border-orange-200 mb-6">
-                      <div className="flex items-center space-x-2 mb-4">
-                        <Heart className="h-5 w-5 text-orange-600" />
-                        <h3 className="text-lg font-semibold text-orange-900">Factores de Riesgo</h3>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {factoresRiesgo.map((factor) => (
-                          <div key={factor.id} className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={factor.id}
-                              checked={factoresSeleccionados.includes(factor.id)}
-                              onChange={(e) => handleFactorChange(factor.id, e.target.checked)}
-                              className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                            />
-                            <label htmlFor={factor.id} className="text-sm font-medium text-orange-700">
-                              {factor.label}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Nueva sección de Estudios Complementarios */}
-                    <div className="bg-purple-50 p-6 rounded-lg border border-purple-200 mb-6">
-                      <div className="flex items-center space-x-2 mb-4">
-                        <Stethoscope className="h-5 w-5 text-purple-600" />
-                        <h3 className="text-lg font-semibold text-purple-900">Estudios Complementarios</h3>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label className="text-base font-medium text-purple-700">
-                            Resultado de la ecografía transvaginal:
-                          </Label>
-                          <select
-                            value={tvus}
-                            onChange={(e) => setTvus(e.target.value)}
-                            className="w-full px-3 py-2 border border-purple-300 rounded-md focus:border-purple-500 focus:ring-1 focus:ring-purple-500 bg-white"
-                          >
-                            <option value="">Seleccione una opción</option>
-                            <option value="normal">Normal</option>
-                            <option value="libre">Líquido libre</option>
-                            <option value="masa">Masa anexial</option>
-                            <option value="masa_libre">Masa anexial + líquido libre</option>
-                          </select>
+                          ))}
                         </div>
+                      </div>
 
+                      <div className="space-y-2">
+                        <Label className="text-base font-medium text-slate-700">Factores de Riesgo:</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {factoresRiesgo.map((factor) => (
+                            <label key={factor.id} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={factoresSeleccionados.includes(factor.id)}
+                                onChange={(e) => handleFactorChange(factor.id, e.target.checked)}
+                                className="h-5 w-5 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
+                              />
+                              <span className="text-sm font-medium text-slate-700">{factor.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-base font-medium text-slate-700">TVUS:</Label>
+                        <select
+                          value={tvus}
+                          onChange={(e) => setTvus(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        >
+                          <option value="">Seleccione un resultado</option>
+                          <option value="normal">Normal</option>
+                          <option value="libre">Líquido libre</option>
+                          <option value="masa">Masa anexial</option>
+                          <option value="masa_libre">Masa anexial + líquido libre</option>
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="text-base font-medium text-purple-700">Valor de β-hCG (mUI/mL):</Label>
+                          <Label className="text-base font-medium text-slate-700">β-hCG (mUI/mL):</Label>
                           <input
                             type="number"
-                            placeholder="Ej: 1500"
+                            placeholder="Ingrese el valor de β-hCG"
                             value={hcgValor}
                             onChange={(e) => setHcgValor(e.target.value)}
-                            className="w-full px-3 py-2 border border-purple-300 rounded-md focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                           />
-                          <p className="text-sm text-purple-600">Zona discriminatoria: 2000 mUI/mL</p>
                         </div>
 
-                        {esConsultaSeguimiento && hcgAnterior && (
+                        {!esConsultaSeguimiento && (
                           <div className="space-y-2">
-                            <Label className="text-base font-medium text-purple-700">
-                              β-hCG anterior (consulta previa):
-                            </Label>
+                            <Label className="text-base font-medium text-slate-700">¿Dispone de β-hCG anterior?</Label>
                             <input
                               type="number"
+                              placeholder="Ingrese el valor anterior de β-hCG"
+                              value={hcgAnterior}
+                              onChange={(e) => setHcgAnterior(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            />
+                          </div>
+                        )}
+
+                        {esConsultaSeguimiento && (
+                          <div className="space-y-2">
+                            <Label className="text-base font-medium text-slate-700">β-hCG Anterior (mUI/mL):</Label>
+                            <input
+                              type="number"
+                              placeholder="Valor cargado automáticamente"
                               value={hcgAnterior}
                               readOnly
-                              className="w-full px-3 py-2 border border-purple-300 rounded-md bg-purple-100 text-purple-600"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
                             />
-                            <p className="text-xs text-purple-500">
-                              Valor cargado automáticamente de la consulta anterior
-                            </p>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex justify-end">
-                      <Button onClick={calcular} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2">
-                        <Calculator className="h-4 w-4 mr-2" />
-                        Calcular Probabilidad
+                    <div className="flex justify-between">
+                      <Button
+                        onClick={() => setSeccionActual(4)}
+                        variant="outline"
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        onClick={calcular}
+                        className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6"
+                      >
+                        Calcular
                       </Button>
                     </div>
                   </div>
                 )}
-
-                <CMGFooter />
               </CardContent>
             </Card>
           </div>

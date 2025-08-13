@@ -231,6 +231,7 @@ export default function CalculadoraEctopico() {
             fechaCreacion: data.fecha_creacion,
             fechaUltimaActualizacion: data.fecha_ultima_actualizacion,
             usuarioCreador: data.usuario_creador,
+            // Mapear correctamente todos los campos
             nombre_paciente: data.nombre_paciente,
             edad_paciente: data.edad_paciente,
             frecuencia_cardiaca: data.frecuencia_cardiaca,

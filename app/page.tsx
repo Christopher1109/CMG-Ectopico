@@ -38,8 +38,6 @@ const USUARIOS_AUTORIZADOS = [
 ]
 
 // ==================== FUNCIONES DE API ====================
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api"
-
 async function enviarDatosAlBackend(datos: any): Promise<boolean> {
   try {
     const { error } = await supabase.from("consultas").insert([
@@ -248,7 +246,7 @@ const sintomas = [
   { id: "sangrado", label: "Sangrado vaginal" },
   { id: "dolor", label: "Dolor pélvico/abdominal" },
   { id: "dolor_sangrado", label: "Sangrado vaginal + Dolor pélvico/abdominal" },
-  { id: "sincope", label: "Síncope o mareo", informativo: true },
+  { id: "sincope", label: "Síncope o mareo" },
 ]
 
 export default function CalculadoraEctopico() {
@@ -276,11 +274,8 @@ export default function CalculadoraEctopico() {
   const [resultadoEcoTransabdominal, setResultadoEcoTransabdominal] = useState("")
   const [protocoloFinalizado, setProtocoloFinalizado] = useState(false)
   const [mensajeFinal, setMensajeFinal] = useState("")
-  const [mostrarInforme, setMostrarInforme] = useState(false)
   const [resultado, setResultado] = useState<number | null>(null)
-  const [fase, setFase] = useState(0)
   const [mostrarResultados, setMostrarResultados] = useState(false)
-  const [dz] = useState(2000)
   const [mostrarAlerta, setMostrarAlerta] = useState(false)
   const [mensajeAlerta, setMensajeAlerta] = useState("")
 
@@ -353,23 +348,23 @@ export default function CalculadoraEctopico() {
   const continuarConsultaCargada = () => {
     // Cargar todos los datos de la consulta previa
     setIdSeguimiento(consultaCargada.id)
-    setNombrePaciente(consultaCargada.nombrePaciente || "")
-    setEdadPaciente(consultaCargada.edadPaciente || "")
-    setFrecuenciaCardiaca(consultaCargada.frecuenciaCardiaca || "")
-    setPresionSistolica(consultaCargada.presionSistolica || "")
-    setPresionDiastolica(consultaCargada.presionDiastolica || "")
-    setEstadoConciencia(consultaCargada.estadoConciencia || "")
-    setPruebaEmbarazoRealizada(consultaCargada.pruebaEmbarazoRealizada || "")
-    setResultadoPruebaEmbarazo(consultaCargada.resultadoPruebaEmbarazo || "")
-    setHallazgosExploracion(consultaCargada.hallazgosExploracion || "")
-    setTieneEcoTransabdominal(consultaCargada.tieneEcoTransabdominal || "")
-    setResultadoEcoTransabdominal(consultaCargada.resultadoEcoTransabdominal || "")
-    setSintomasSeleccionados(consultaCargada.sintomasSeleccionados || [])
-    setFactoresSeleccionados(consultaCargada.factoresSeleccionados || [])
+    setNombrePaciente(consultaCargada.nombre_paciente || "")
+    setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
+    setFrecuenciaCardiaca(consultaCargada.frecuencia_cardiaca?.toString() || "")
+    setPresionSistolica(consultaCargada.presion_sistolica?.toString() || "")
+    setPresionDiastolica(consultaCargada.presion_diastolica?.toString() || "")
+    setEstadoConciencia(consultaCargada.estado_conciencia || "")
+    setPruebaEmbarazoRealizada(consultaCargada.prueba_embarazo_realizada || "")
+    setResultadoPruebaEmbarazo(consultaCargada.resultado_prueba_embarazo || "")
+    setHallazgosExploracion(consultaCargada.hallazgos_exploracion || "")
+    setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
+    setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
+    setSintomasSeleccionados(consultaCargada.sintomas_seleccionados || [])
+    setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
     setTvus(consultaCargada.tvus || "")
 
     // Configurar automáticamente el β-hCG anterior con el valor de la consulta previa
-    setHcgAnterior(consultaCargada.hcgValor || "")
+    setHcgAnterior(consultaCargada.hcg_valor?.toString() || "")
     setHcgValor("") // Limpiar para que ingrese el nuevo valor
     setEsConsultaSeguimiento(true) // Marcar como consulta de seguimiento
 
@@ -397,7 +392,6 @@ export default function CalculadoraEctopico() {
 
   const resetCalculadora = () => {
     setResultado(null)
-    setFase(0)
     setSeccionActual(1)
     setSeccionesCompletadas([])
     setNombrePaciente("")
@@ -419,7 +413,6 @@ export default function CalculadoraEctopico() {
     setHcgValor("")
     setVariacionHcg("")
     setHcgAnterior("")
-    setMostrarInforme(false)
     setIdSeguimiento("")
     setMostrarIdSeguimiento(false)
     setModoCargarConsulta(false)
@@ -577,7 +570,7 @@ export default function CalculadoraEctopico() {
       return false
     }
 
-    // Alertas (permiten continuar pero con advertencia) - CORREGIDO
+    // Alertas (permiten continuar pero con advertencia)
     let hayAlerta = false
     let mensajeAlertaTemp = ""
 
@@ -692,7 +685,7 @@ export default function CalculadoraEctopico() {
   const calcular = async () => {
     const probPre = calcularProbabilidadPretest(sintomasSeleccionados, factoresSeleccionados)
     const lrTvus = tvusMap[tvus as keyof typeof tvusMap]
-    const nivelHcg = determinarNivelHcg(hcgValor, dz)
+    const nivelHcg = determinarNivelHcg(hcgValor, 2000)
     const lrHcg = hcgMap[tvus as keyof typeof hcgMap]?.[nivelHcg as keyof (typeof hcgMap)[keyof typeof hcgMap]]
 
     if (!probPre || !lrTvus || !lrHcg) {
@@ -1143,13 +1136,13 @@ Sistema CMG Health Solutions
                         <strong>ID:</strong> {consultaCargada.id}
                       </p>
                       <p>
-                        <strong>Paciente:</strong> {consultaCargada.nombrePaciente}
+                        <strong>Paciente:</strong> {consultaCargada.nombre_paciente}
                       </p>
                       <p>
-                        <strong>Edad:</strong> {consultaCargada.edadPaciente} años
+                        <strong>Edad:</strong> {consultaCargada.edad_paciente} años
                       </p>
                       <p>
-                        <strong>β-hCG anterior:</strong> {consultaCargada.hcgValor} mUI/mL
+                        <strong>β-hCG anterior:</strong> {consultaCargada.hcg_valor} mUI/mL
                       </p>
                     </div>
                     <div>
@@ -1164,33 +1157,33 @@ Sistema CMG Health Solutions
                       </p>
                       <p>
                         <strong>Fecha:</strong>{" "}
-                        {consultaCargada.fechaCreacion
-                          ? new Date(consultaCargada.fechaCreacion).toLocaleDateString()
+                        {consultaCargada.fecha_creacion
+                          ? new Date(consultaCargada.fecha_creacion).toLocaleDateString()
                           : "No disponible"}
                       </p>
                     </div>
                   </div>
 
-                  {consultaCargada.sintomasSeleccionados && consultaCargada.sintomasSeleccionados.length > 0 && (
+                  {consultaCargada.sintomas_seleccionados && consultaCargada.sintomas_seleccionados.length > 0 && (
                     <div className="mt-4">
                       <p>
                         <strong>Síntomas:</strong>
                       </p>
                       <ul className="list-disc list-inside text-sm text-blue-800">
-                        {consultaCargada.sintomasSeleccionados.map((sintoma: string) => (
+                        {consultaCargada.sintomas_seleccionados.map((sintoma: string) => (
                           <li key={sintoma}>{obtenerNombreSintoma(sintoma)}</li>
                         ))}
                       </ul>
                     </div>
                   )}
 
-                  {consultaCargada.factoresSeleccionados && consultaCargada.factoresSeleccionados.length > 0 && (
+                  {consultaCargada.factores_seleccionados && consultaCargada.factores_seleccionados.length > 0 && (
                     <div className="mt-4">
                       <p>
                         <strong>Factores de Riesgo:</strong>
                       </p>
                       <ul className="list-disc list-inside text-sm text-blue-800">
-                        {consultaCargada.factoresSeleccionados.map((factor: string) => (
+                        {consultaCargada.factores_seleccionados.map((factor: string) => (
                           <li key={factor}>{obtenerNombreFactorRiesgo(factor)}</li>
                         ))}
                       </ul>
@@ -1717,7 +1710,7 @@ Sistema CMG Health Solutions
                             onChange={(e) => setHcgValor(e.target.value)}
                             className="w-full px-3 py-2 border border-purple-300 rounded-md focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                           />
-                          <p className="text-sm text-purple-600">Zona discriminatoria: 2000 mUI/mL ()</p>
+                          <p className="text-sm text-purple-600">Zona discriminatoria: 2000 mUI/mL</p>
                         </div>
 
                         {esConsultaSeguimiento && hcgAnterior && (

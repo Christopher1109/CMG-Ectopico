@@ -194,6 +194,41 @@ function generarIdConsulta(): string {
   return `ID-${siguienteNumero.toString().padStart(5, "0")}`
 }
 
+function normalizarDesdeLocal(d: any) {
+  return {
+    id: d.id,
+    fecha_creacion: d.fechaCreacion ?? d.fecha_creacion ?? null,
+    fecha_ultima_actualizacion: d.fechaUltimaActualizacion ?? d.fecha_ultima_actualizacion ?? null,
+    usuario_creador: d.usuarioCreador ?? d.usuario_creador ?? null,
+
+    nombre_paciente: d.nombrePaciente ?? d.nombre_paciente ?? null,
+    edad_paciente: d.edadPaciente ?? d.edad_paciente ?? null,
+
+    frecuencia_cardiaca: d.frecuenciaCardiaca ?? d.frecuencia_cardiaca ?? null,
+    presion_sistolica: d.presionSistolica ?? d.presion_sistolica ?? null,
+    presion_diastolica: d.presionDiastolica ?? d.presion_diastolica ?? null,
+    estado_conciencia: d.estadoConciencia ?? d.estado_conciencia ?? null,
+
+    prueba_embarazo_realizada: d.pruebaEmbarazoRealizada ?? d.prueba_embarazo_realizada ?? null,
+    resultado_prueba_embarazo: d.resultadoPruebaEmbarazo ?? d.resultado_prueba_embarazo ?? null,
+
+    hallazgos_exploracion: d.hallazgosExploracion ?? d.hallazgos_exploracion ?? null,
+    tiene_eco_transabdominal: d.tieneEcoTransabdominal ?? d.tiene_eco_transabdominal ?? null,
+    resultado_eco_transabdominal: d.resultadoEcoTransabdominal ?? d.resultado_eco_transabdominal ?? null,
+
+    sintomas_seleccionados: d.sintomasSeleccionados ?? d.sintomas_seleccionados ?? [],
+    factores_seleccionados: d.factoresSeleccionados ?? d.factores_seleccionados ?? [],
+
+    tvus: d.tvus ?? null,
+    hcg_valor: d.hcgValor ?? d.hcg_valor ?? null,
+    variacion_hcg: d.variacionHcg ?? d.variacion_hcg ?? null,
+    hcg_anterior: d.hcgAnterior ?? d.hcg_anterior ?? null,
+
+    resultado: d.resultado ?? null,
+  };
+}
+
+
 // Modificar la función buscarConsulta para mostrar todas las consultas del paciente
 export default function CalculadoraEctopico() {
   const [idBusqueda, setIdBusqueda] = useState("")
@@ -213,52 +248,40 @@ export default function CalculadoraEctopico() {
     const datosLocal = localStorage.getItem(`ectopico_${id}`)
     if (datosLocal) {
       try {
-        consultaEncontrada = JSON.parse(datosLocal)
+        consultaEncontrada = normalizarConsulta(JSON.parse(datosLocal))
       } catch (error) {
         console.warn("Error al parsear datos de localStorage:", error)
       }
     }
 
     // Si no está en localStorage, buscar en Supabase
+    // Si no está en localStorage, buscar en Supabase
     if (!consultaEncontrada) {
       try {
-        const { data } = await supabase.from("consultas").select("*").eq("id", id).single()
+       const { data, error } = await supabase
+        .from("consultas")
+        .select("*")
+        .eq("id", id)
+        .single()
+
+        if (error) {
+          console.error("Error al buscar en Supabase:", error)
+        }
 
         if (data) {
-          // Mapear los campos de la base de datos al formato local
-          consultaEncontrada = {
-            id: data.id,
-            fechaCreacion: data.fecha_creacion,
-            fechaUltimaActualizacion: data.fecha_ultima_actualizacion,
-            usuarioCreador: data.usuario_creador,
-            // Mapear correctamente todos los campos
-            nombre_paciente: data.nombre_paciente,
-            edad_paciente: data.edad_paciente,
-            frecuencia_cardiaca: data.frecuencia_cardiaca,
-            presion_sistolica: data.presion_sistolica,
-            presion_diastolica: data.presion_diastolica,
-            estado_conciencia: data.estado_conciencia,
-            prueba_embarazo_realizada: data.prueba_embarazo_realizada,
-            resultado_prueba_embarazo: data.resultado_prueba_embarazo,
-            hallazgos_exploracion: data.hallazgos_exploracion,
-            tiene_eco_transabdominal: data.tiene_eco_transabdominal,
-            resultado_eco_transabdominal: data.resultado_eco_transabdominal,
-            sintomas_seleccionados: data.sintomas_seleccionados || [],
-            factores_seleccionados: data.factores_seleccionados || [],
-            tvus: data.tvus,
-            hcg_valor: data.hcg_valor,
-            variacion_hcg: data.variacion_hcg,
-            hcg_anterior: data.hcg_anterior,
-            resultado: data.resultado,
-          }
+          // ⚠️ Normaliza aquí (convierte camelCase/snake_case a un objeto CONSISTENTE en snake_case)
+          const normalizada = normalizarConsulta(data)
 
-          // Guardar en localStorage para futuras consultas
-          localStorage.setItem(`ectopico_${id}`, JSON.stringify(consultaEncontrada))
+          consultaEncontrada = normalizada
+
+          // Guarda la versión normalizada para futuras lecturas
+          localStorage.setItem(`ectopico_${id}`, JSON.stringify(normalizada))
         }
       } catch (error) {
         console.error("Error al buscar en Supabase:", error)
       }
     }
+
 
     if (consultaEncontrada) {
       setConsultaCargada(consultaEncontrada)

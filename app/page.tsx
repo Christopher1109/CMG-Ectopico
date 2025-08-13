@@ -171,7 +171,7 @@ function calcularProbabilidad(pretestProb: number, LRs: number[]) {
 // Ejemplo: ID-00001-C1, ID-00001-C2, ID-00001-C3
 
 // Modificar la función generarIdSeguimiento para generar ID base
-function generarIdBasePaciente(): string {
+function generarIdConsulta(): string {
   const idsExistentes = []
 
   // Buscar en localStorage
@@ -179,8 +179,7 @@ function generarIdBasePaciente(): string {
     const key = localStorage.key(i)
     if (key && key.startsWith("ectopico_ID-")) {
       const idCompleto = key.replace("ectopico_", "")
-      const idBase = idCompleto.split("-C")[0] // Extraer solo la parte base
-      const numeroId = Number.parseInt(idBase.replace("ID-", ""))
+      const numeroId = Number.parseInt(idCompleto.replace("ID-", ""))
       if (!isNaN(numeroId)) {
         idsExistentes.push(numeroId)
       }
@@ -195,124 +194,74 @@ function generarIdBasePaciente(): string {
   return `ID-${siguienteNumero.toString().padStart(5, "0")}`
 }
 
-// Nueva función para obtener el siguiente número de consulta
-async function obtenerSiguienteNumeroConsulta(idBase: string): Promise<number> {
-  const consultasExistentes = []
-
-  // Buscar en localStorage
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key && key.startsWith(`ectopico_${idBase}-C`)) {
-      const numeroConsulta = Number.parseInt(key.split("-C")[1])
-      consultasExistentes.push(numeroConsulta)
-    }
-  }
-
-  // Buscar en Supabase
-  try {
-    const { data } = await supabase.from("consultas").select("id").like("id", `${idBase}-C%`)
-
-    if (data) {
-      data.forEach((consulta) => {
-        const numeroConsulta = Number.parseInt(consulta.id.split("-C")[1])
-        if (!consultasExistentes.includes(numeroConsulta)) {
-          consultasExistentes.push(numeroConsulta)
-        }
-      })
-    }
-  } catch (error) {
-    console.error("Error al buscar consultas en Supabase:", error)
-  }
-
-  return consultasExistentes.length > 0 ? Math.max(...consultasExistentes) + 1 : 1
-}
-
 // Modificar la función buscarConsulta para mostrar todas las consultas del paciente
 export default function CalculadoraEctopico() {
   const [idBusqueda, setIdBusqueda] = useState("")
-  const [consultasCargadas, setConsultasCargadas] = useState<any[]>([])
-  const [mostrarResumenConsultas, setMostrarResumenConsultas] = useState(false)
+  const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
+  const [consultaCargada, setConsultaCargada] = useState<any>(null)
   const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
 
   const buscarConsulta = async () => {
-    const idBase = idBusqueda.trim().toUpperCase()
-    if (!idBase.startsWith("ID-") || idBase.length !== 8) {
+    const id = idBusqueda.trim().toUpperCase()
+    if (!id.startsWith("ID-") || id.length !== 8) {
       alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)")
       return
     }
 
-    // Buscar todas las consultas de este paciente
-    const consultasEncontradas = []
-
-    // Buscar en localStorage
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key && key.startsWith(`ectopico_${idBase}-C`)) {
-        try {
-          const datos = JSON.parse(localStorage.getItem(key)!)
-          consultasEncontradas.push(datos)
-        } catch (error) {
-          console.warn("Error al parsear datos de localStorage:", error)
-        }
+    // Buscar en localStorage primero
+    let consultaEncontrada = null
+    const datosLocal = localStorage.getItem(`ectopico_${id}`)
+    if (datosLocal) {
+      try {
+        consultaEncontrada = JSON.parse(datosLocal)
+      } catch (error) {
+        console.warn("Error al parsear datos de localStorage:", error)
       }
     }
 
-    // Buscar en Supabase
-    try {
-      const { data } = await supabase
-        .from("consultas")
-        .select("*")
-        .like("id", `${idBase}-C%`)
-        .order("id", { ascending: true })
+    // Si no está en localStorage, buscar en Supabase
+    if (!consultaEncontrada) {
+      try {
+        const { data } = await supabase.from("consultas").select("*").eq("id", id).single()
 
-      if (data) {
-        data.forEach((consultaSupabase) => {
-          // Verificar si ya existe en localStorage
-          const existeLocal = consultasEncontradas.find((c) => c.id === consultaSupabase.id)
-          if (!existeLocal) {
-            // Mapear los campos de la base de datos al formato local
-            const consultaMapeada = {
-              id: consultaSupabase.id,
-              fechaCreacion: consultaSupabase.fecha_creacion,
-              fechaUltimaActualizacion: consultaSupabase.fecha_ultima_actualizacion,
-              usuarioCreador: consultaSupabase.usuario_creador,
-              nombre_paciente: consultaSupabase.nombre_paciente,
-              edad_paciente: consultaSupabase.edad_paciente,
-              frecuencia_cardiaca: consultaSupabase.frecuencia_cardiaca,
-              presion_sistolica: consultaSupabase.presion_sistolica,
-              presion_diastolica: consultaSupabase.presion_diastolica,
-              estado_conciencia: consultaSupabase.estado_conciencia,
-              prueba_embarazo_realizada: consultaSupabase.prueba_embarazo_realizada,
-              resultado_prueba_embarazo: consultaSupabase.resultado_prueba_embarazo,
-              hallazgos_exploracion: consultaSupabase.hallazgos_exploracion,
-              tiene_eco_transabdominal: consultaSupabase.tiene_eco_transabdominal,
-              resultado_eco_transabdominal: consultaSupabase.resultado_eco_transabdominal,
-              sintomas_seleccionados: consultaSupabase.sintomas_seleccionados || [],
-              factores_seleccionados: consultaSupabase.factores_seleccionados || [],
-              tvus: consultaSupabase.tvus,
-              hcg_valor: consultaSupabase.hcg_valor,
-              variacion_hcg: consultaSupabase.variacion_hcg,
-              hcg_anterior: consultaSupabase.hcg_anterior,
-              resultado: consultaSupabase.resultado,
-            }
-            consultasEncontradas.push(consultaMapeada)
+        if (data) {
+          // Mapear los campos de la base de datos al formato local
+          consultaEncontrada = {
+            id: data.id,
+            fechaCreacion: data.fecha_creacion,
+            fechaUltimaActualizacion: data.fecha_ultima_actualizacion,
+            usuarioCreador: data.usuario_creador,
+            nombre_paciente: data.nombre_paciente,
+            edad_paciente: data.edad_paciente,
+            frecuencia_cardiaca: data.frecuencia_cardiaca,
+            presion_sistolica: data.presion_sistolica,
+            presion_diastolica: data.presion_diastolica,
+            estado_conciencia: data.estado_conciencia,
+            prueba_embarazo_realizada: data.prueba_embarazo_realizada,
+            resultado_prueba_embarazo: data.resultado_prueba_embarazo,
+            hallazgos_exploracion: data.hallazgos_exploracion,
+            tiene_eco_transabdominal: data.tiene_eco_transabdominal,
+            resultado_eco_transabdominal: data.resultado_eco_transabdominal,
+            sintomas_seleccionados: data.sintomas_seleccionados || [],
+            factores_seleccionados: data.factores_seleccionados || [],
+            tvus: data.tvus,
+            hcg_valor: data.hcg_valor,
+            variacion_hcg: data.variacion_hcg,
+            hcg_anterior: data.hcg_anterior,
+            resultado: data.resultado,
           }
-        })
+
+          // Guardar en localStorage para futuras consultas
+          localStorage.setItem(`ectopico_${id}`, JSON.stringify(consultaEncontrada))
+        }
+      } catch (error) {
+        console.error("Error al buscar en Supabase:", error)
       }
-    } catch (error) {
-      console.error("Error al buscar en Supabase:", error)
     }
 
-    if (consultasEncontradas.length > 0) {
-      // Ordenar por número de consulta
-      consultasEncontradas.sort((a, b) => {
-        const numA = Number.parseInt(a.id.split("-C")[1])
-        const numB = Number.parseInt(b.id.split("-C")[1])
-        return numA - numB
-      })
-
-      setConsultasCargadas(consultasEncontradas)
-      setMostrarResumenConsultas(true)
+    if (consultaEncontrada) {
+      setConsultaCargada(consultaEncontrada)
+      setMostrarResumenConsulta(true)
       setModoCargarConsulta(false)
     } else {
       alert("No se encontró ninguna consulta con ese ID")
@@ -405,15 +354,15 @@ export default function CalculadoraEctopico() {
   const [mostrarIdSeguimiento, setMostrarIdSeguimiento] = useState(false)
   //const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
   //const [idBusqueda, setIdBusqueda] = useState("")
-  const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
-  const [consultaCargada, setConsultaCargada] = useState<any>(null)
+  //const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
+  //const [consultaCargada, setConsultaCargada] = useState<any>(null)
   const [esConsultaSeguimiento, setEsConsultaSeguimiento] = useState(false)
 
   // Agregar nuevos estados para manejar múltiples consultas
   //const [consultasCargadas, setConsultasCargadas] = useState<any[]>([])
   //const [mostrarResumenConsultas, setMostrarResumenConsultas] = useState(false)
-  const [idBasePaciente, setIdBasePaciente] = useState("")
-  const [numeroConsultaActual, setNumeroConsultaActual] = useState(1)
+  //const [idBasePaciente, setIdBasePaciente] = useState("")
+  //const [numeroConsultaActual, setNumeroConsultaActual] = useState(1)
 
   // Estados para controlar las secciones
   const [seccionActual, setSeccionActual] = useState(1)
@@ -432,54 +381,43 @@ export default function CalculadoraEctopico() {
 
   // Modificar la función iniciarNuevaEvaluacion
   const iniciarNuevaEvaluacion = async () => {
-    const nuevoIdBase = generarIdBasePaciente()
-    const numeroConsulta = 1
-    const idCompleto = `${nuevoIdBase}-C${numeroConsulta}`
+    const nuevoId = generarIdConsulta()
 
     resetCalculadora()
-    setIdBasePaciente(nuevoIdBase)
-    setNumeroConsultaActual(numeroConsulta)
-    setIdSeguimiento(idCompleto)
+    setIdSeguimiento(nuevoId)
     setMostrarPantallaBienvenida(false)
     setEsConsultaSeguimiento(false)
   }
 
   // Modificar la función continuarConsultaCargada
   const continuarConsultaCargada = async () => {
-    const ultimaConsulta = consultasCargadas[consultasCargadas.length - 1]
-    const idBase = ultimaConsulta.id.split("-C")[0]
-    const siguienteNumero = await obtenerSiguienteNumeroConsulta(idBase)
-    const nuevoIdCompleto = `${idBase}-C${siguienteNumero}`
+    // Cargar datos de la consulta encontrada
+    setIdSeguimiento(consultaCargada.id)
+    setNombrePaciente(consultaCargada.nombre_paciente || "")
+    setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
 
-    // Cargar datos de la última consulta
-    setIdBasePaciente(idBase)
-    setNumeroConsultaActual(siguienteNumero)
-    setIdSeguimiento(nuevoIdCompleto)
-    setNombrePaciente(ultimaConsulta.nombre_paciente || "")
-    setEdadPaciente(ultimaConsulta.edad_paciente?.toString() || "")
+    // Cargar datos médicos básicos de la consulta
+    setFrecuenciaCardiaca(consultaCargada.frecuencia_cardiaca?.toString() || "")
+    setPresionSistolica(consultaCargada.presion_sistolica?.toString() || "")
+    setPresionDiastolica(consultaCargada.presion_diastolica?.toString() || "")
+    setEstadoConciencia(consultaCargada.estado_conciencia || "")
+    setPruebaEmbarazoRealizada(consultaCargada.prueba_embarazo_realizada || "")
+    setResultadoPruebaEmbarazo(consultaCargada.resultado_prueba_embarazo || "")
+    setHallazgosExploracion(consultaCargada.hallazgos_exploracion || "")
+    setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
+    setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
+    setSintomasSeleccionados(consultaCargada.sintomas_seleccionados || [])
+    setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
+    setTvus(consultaCargada.tvus || "")
 
-    // Cargar datos médicos básicos de la última consulta
-    setFrecuenciaCardiaca(ultimaConsulta.frecuencia_cardiaca?.toString() || "")
-    setPresionSistolica(ultimaConsulta.presion_sistolica?.toString() || "")
-    setPresionDiastolica(ultimaConsulta.presion_diastolica?.toString() || "")
-    setEstadoConciencia(ultimaConsulta.estado_conciencia || "")
-    setPruebaEmbarazoRealizada(ultimaConsulta.prueba_embarazo_realizada || "")
-    setResultadoPruebaEmbarazo(ultimaConsulta.resultado_prueba_embarazo || "")
-    setHallazgosExploracion(ultimaConsulta.hallazgos_exploracion || "")
-    setTieneEcoTransabdominal(ultimaConsulta.tiene_eco_transabdominal || "")
-    setResultadoEcoTransabdominal(ultimaConsulta.resultado_eco_transabdominal || "")
-    setSintomasSeleccionados(ultimaConsulta.sintomas_seleccionados || [])
-    setFactoresSeleccionados(ultimaConsulta.factores_seleccionados || [])
-    setTvus(ultimaConsulta.tvus || "")
-
-    // Configurar β-hCG anterior automáticamente
-    setHcgAnterior(ultimaConsulta.hcg_valor?.toString() || "")
+    // Configurar β-hCG anterior automáticamente para seguimiento
+    setHcgAnterior(consultaCargada.hcg_valor?.toString() || "")
     setHcgValor("") // Limpiar para nuevo valor
     setEsConsultaSeguimiento(true)
 
     // Marcar secciones como completadas y ir a consultas
     setSeccionesCompletadas([1, 2, 3, 4])
-    setMostrarResumenConsultas(false)
+    setMostrarResumenConsulta(false)
     setModoCargarConsulta(false)
     setMostrarPantallaBienvenida(false)
     setSeccionActual(5)
@@ -951,7 +889,7 @@ export default function CalculadoraEctopico() {
     const fechaActual = new Date().toISOString()
     const datosCompletos = {
       id: idSeguimiento,
-      fechaCreacion: numeroConsultaActual === 1 ? fechaActual : consultasCargadas[0]?.fecha_creacion || fechaActual,
+      fechaCreacion: fechaActual,
       fechaUltimaActualizacion: fechaActual,
       usuarioCreador: usuarioActual,
       nombrePaciente: nombrePaciente,
@@ -972,7 +910,6 @@ export default function CalculadoraEctopico() {
       variacionHcg: variacionCalculada,
       hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
       resultado: probPost,
-      numeroConsulta: numeroConsultaActual,
     }
 
     // Guarda localmente
@@ -1471,96 +1408,6 @@ Sistema CMG Health Solutions
                       setMostrarResumenConsulta(false)
                       setModoCargarConsulta(true)
                       setConsultaCargada(null)
-                    }}
-                    variant="outline"
-                    className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                  >
-                    Buscar Otra Consulta
-                  </Button>
-                </div>
-                <CMGFooter />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      ) : mostrarResumenConsultas ? (
-        <div className="max-w-4xl mx-auto p-6">
-          <Card className="shadow-lg">
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-slate-800">Consultas Encontradas</h2>
-                </div>
-
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-4">Resumen de Consultas Previas</h3>
-                  {consultasCargadas.map((consulta: any) => (
-                    <div key={consulta.id} className="mb-4 p-4 rounded-lg bg-white border border-gray-200">
-                      <h4 className="text-md font-semibold text-blue-800 mb-2">
-                        Consulta {consulta.id.split("-C")[1]}
-                      </h4>
-                      <div className="grid md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p>
-                            <strong>ID:</strong> {consulta.id}
-                          </p>
-                          <p>
-                            <strong>Paciente:</strong> {consulta.nombre_paciente}
-                          </p>
-                          <p>
-                            <strong>Edad:</strong> {consulta.edad_paciente} años
-                          </p>
-                          <p>
-                            <strong>β-hCG:</strong> {consulta.hcg_valor} mUI/mL
-                          </p>
-                        </div>
-                        <div>
-                          <p>
-                            <strong>TVUS:</strong> {obtenerNombreTVUS(consulta.tvus)}
-                          </p>
-                          <p>
-                            <strong>Resultado:</strong>{" "}
-                            {consulta.resultado ? `${(consulta.resultado * 100).toFixed(1)}%` : "No calculado"}
-                          </p>
-                          <p>
-                            <strong>Fecha:</strong>{" "}
-                            {consulta.fecha_creacion
-                              ? new Date(consulta.fecha_creacion).toLocaleDateString()
-                              : "No disponible"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                    <span className="font-medium text-yellow-900">Consulta de Seguimiento</span>
-                  </div>
-                  <p className="text-yellow-800 text-sm">
-                    Al continuar, se cargará automáticamente la información de la última consulta. El valor de β-hCG
-                    anterior se configurará automáticamente para calcular la variación. Solo necesitará ingresar el
-                    nuevo valor de β-hCG.
-                  </p>
-                </div>
-
-                <div className="flex space-x-4">
-                  <Button
-                    onClick={continuarConsultaCargada}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6"
-                  >
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    Continuar Consulta
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setMostrarResumenConsultas(false)
-                      setModoCargarConsulta(true)
                     }}
                     variant="outline"
                     className="border-gray-300 text-gray-600 hover:bg-gray-50"

@@ -1328,13 +1328,13 @@ Sistema CMG Health Solutions
                         <strong>ID:</strong> {consultaCargada.id}
                       </p>
                       <p>
-                        <strong>Paciente:</strong> {consultaCargada.nombre_paciente}
+                        <strong>Paciente:</strong> {consultaCargada.nombre_paciente || "No especificado"}
                       </p>
                       <p>
-                        <strong>Edad:</strong> {consultaCargada.edad_paciente} años
+                        <strong>Edad:</strong> {consultaCargada.edad_paciente || "No especificado"} años
                       </p>
                       <p>
-                        <strong>β-hCG anterior:</strong> {consultaCargada.hcg_valor} mUI/mL
+                        <strong>β-hCG anterior:</strong> {consultaCargada.hcg_valor || "No especificado"} mUI/mL
                       </p>
                     </div>
                     <div>
@@ -1349,9 +1349,31 @@ Sistema CMG Health Solutions
                       </p>
                       <p>
                         <strong>Fecha:</strong>{" "}
-                        {consultaCargada.fecha_creacion
-                          ? new Date(consultaCargada.fecha_creacion).toLocaleDateString()
+                        {consultaCargada.fechaCreacion || consultaCargada.fecha_creacion
+                          ? new Date(
+                              consultaCargada.fechaCreacion || consultaCargada.fecha_creacion,
+                            ).toLocaleDateString()
                           : "No disponible"}
+                      </p>
+                      <p>
+                        <strong>Frecuencia Cardíaca:</strong> {consultaCargada.frecuencia_cardiaca || "No especificado"}{" "}
+                        lpm
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">Signos Vitales:</h4>
+                    <div className="grid md:grid-cols-3 gap-4 text-sm">
+                      <p>
+                        <strong>Presión Arterial:</strong> {consultaCargada.presion_sistolica || "N/A"}/
+                        {consultaCargada.presion_diastolica || "N/A"} mmHg
+                      </p>
+                      <p>
+                        <strong>Estado de Conciencia:</strong> {consultaCargada.estado_conciencia || "No especificado"}
+                      </p>
+                      <p>
+                        <strong>Prueba Embarazo:</strong>{" "}
+                        {consultaCargada.resultado_prueba_embarazo || "No especificado"}
                       </p>
                     </div>
                   </div>

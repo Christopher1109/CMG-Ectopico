@@ -1,8 +1,7 @@
-"use client";
-
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+"use client"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
 import {
   Heart,
   Stethoscope,
@@ -18,14 +17,18 @@ import {
   CheckCircle,
   Download,
   ArrowRight,
-} from "lucide-react";
-import { useState } from "react";
-import type React from "react";
+} from "lucide-react"
+import { useState } from "react"
+import type React from "react"
+import { createClient } from "@supabase/supabase-js"
+import { crearConsulta, actualizarConsulta, obtenerConsulta } from "@/lib/api/consultas"
 
-// Usamos tu API Next (lib/api/consultas) en lugar de hablar directo a supabase desde el cliente
-import { crearConsulta, actualizarConsulta, obtenerConsulta } from "@/lib/api/consultas";
+// ==================== SUPABASE ====================
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabase = createClient(supabaseUrl, supabaseKey)
 
-/* ==================== USUARIOS AUTORIZADOS ==================== */
+// ==================== USUARIOS AUTORIZADOS ====================
 const USUARIOS_AUTORIZADOS = [
   { usuario: "dr.martinez", contraseña: "CMG2024Med!", nombre: "Dr. Martínez" },
   { usuario: "dra.rodriguez", contraseña: "Ectopico2024#", nombre: "Dra. Rodríguez" },
@@ -33,63 +36,9 @@ const USUARIOS_AUTORIZADOS = [
   { usuario: "dra.lopez", contraseña: "DocAuth2024!", nombre: "Dra. López" },
   { usuario: "admin", contraseña: "CMGAdmin2024#", nombre: "Administrador" },
   { usuario: "Christopher", contraseña: "Matutito22", nombre: "Christopher" },
-];
+]
 
-/* ==================== HELPERS ==================== */
-const toIntNull = (v: any) => {
-  const n = typeof v === "string" && v.trim() === "" ? NaN : Number.parseInt(v as any, 10);
-  return Number.isFinite(n) ? n : null;
-};
-const toFloatNull = (v: any) => {
-  const n = typeof v === "string" && v.trim() === "" ? NaN : Number.parseFloat(v as any);
-  return Number.isFinite(n) ? n : null;
-};
-
-/** Normaliza cualquier objeto (local camelCase o fila de DB snake_case)
- * a un OBJETO CONSISTENTE en **snake_case** (lo que usa tu UI).
- */
-function normalizarConsulta(d: any) {
-  if (!d) return null;
-  return {
-    id: d.id,
-
-    fecha_creacion: d.fechaCreacion ?? d.fecha_creacion ?? null,
-    fecha_ultima_actualizacion: d.fechaUltimaActualizacion ?? d.fecha_ultima_actualizacion ?? null,
-    usuario_creador: d.usuarioCreador ?? d.usuario_creador ?? null,
-
-    nombre_paciente: d.nombrePaciente ?? d.nombre_paciente ?? null,
-    edad_paciente: toIntNull(d.edadPaciente ?? d.edad_paciente),
-
-    frecuencia_cardiaca: toIntNull(d.frecuenciaCardiaca ?? d.frecuencia_cardiaca),
-    presion_sistolica: toIntNull(d.presionSistolica ?? d.presion_sistolica),
-    presion_diastolica: toIntNull(d.presionDiastolica ?? d.presion_diastolica),
-    estado_conciencia: d.estadoConciencia ?? d.estado_conciencia ?? null,
-
-    prueba_embarazo_realizada: d.pruebaEmbarazoRealizada ?? d.prueba_embarazo_realizada ?? null,
-    resultado_prueba_embarazo: d.resultadoPruebaEmbarazo ?? d.resultado_prueba_embarazo ?? null,
-
-    hallazgos_exploracion: d.hallazgosExploracion ?? d.hallazgos_exploracion ?? null,
-    tiene_eco_transabdominal: d.tieneEcoTransabdominal ?? d.tiene_eco_transabdominal ?? null,
-    resultado_eco_transabdominal: d.resultadoEcoTransabdominal ?? d.resultado_eco_transabdominal ?? null,
-
-    sintomas_seleccionados: d.sintomasSeleccionados ?? d.sintomas_seleccionados ?? [],
-    factores_seleccionados: d.factoresSeleccionados ?? d.factores_seleccionados ?? [],
-
-    tvus: d.tvus ?? null,
-    hcg_valor: toFloatNull(d.hcgValor ?? d.hcg_valor),
-    variacion_hcg: d.variacionHcg ?? d.variacion_hcg ?? null,
-    hcg_anterior: toFloatNull(d.hcgAnterior ?? d.hcg_anterior),
-
-    resultado:
-      typeof d.resultado === "number"
-        ? d.resultado
-        : d.resultado != null && d.resultado !== ""
-          ? Number(d.resultado)
-          : null,
-  };
-}
-
-/* ==================== API (tu backend Next) ==================== */
+// ==================== API HELPERS (tu Next API) ====================
 async function enviarDatosAlBackend(datos: any): Promise<boolean> {
   try {
     const payload = {
@@ -113,17 +62,16 @@ async function enviarDatosAlBackend(datos: any): Promise<boolean> {
       variacion_hcg: datos.variacionHcg || null,
       hcg_anterior: Number.isFinite(+datos.hcgAnterior) ? +datos.hcgAnterior : null,
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
-    };
-
-    const res = await crearConsulta(payload);
-    if (res?.error) {
-      console.error("API /api/consultas error:", res.error);
-      return false;
     }
-    return true;
+    const res = await crearConsulta(payload) // POST /api/consultas
+    if (res?.error) {
+      console.error("API /api/consultas error:", res.error)
+      return false
+    }
+    return true
   } catch (e) {
-    console.error("Error llamando /api/consultas:", e);
-    return false;
+    console.error("Error llamando /api/consultas:", e)
+    return false
   }
 }
 
@@ -148,455 +96,442 @@ async function actualizarDatosEnBackend(id: string, datos: any): Promise<boolean
       variacion_hcg: datos.variacionHcg || null,
       hcg_anterior: Number.isFinite(+datos.hcgAnterior) ? +datos.hcgAnterior : null,
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
-    };
-
-    const res = await actualizarConsulta(id, patch);
-    if (res?.error) {
-      console.error("API PATCH /api/consultas error:", res.error);
-      return false;
     }
-    return true;
+    const res = await actualizarConsulta(id, patch) // PATCH /api/consultas/:id
+    if (res?.error) {
+      console.error("API PATCH /api/consultas error:", res.error)
+      return false
+    }
+    return true
   } catch (e) {
-    console.error("Error llamando PATCH /api/consultas:", e);
-    return false;
+    console.error("Error llamando PATCH /api/consultas:", e)
+    return false
   }
 }
 
 async function leerDatosDesdeBackend(id: string): Promise<any | null> {
   try {
-    const res = await obtenerConsulta(id); // GET /api/consultas/:id
-    if (res?.error) return null;
-    return res?.data ?? null;
+    const res = await obtenerConsulta(id) // GET /api/consultas/:id
+    if (res?.error) return null
+    return res?.data ?? null
   } catch (e) {
-    console.error("Error llamando GET /api/consultas/:id:", e);
-    return null;
+    console.error("Error llamando GET /api/consultas/:id:", e)
+    return null
   }
 }
 
-/* ==================== SINCRONIZACIÓN LOCAL ==================== */
-async function sincronizarDatos(id: string, datos: any, esNuevo = false): Promise<void> {
-  localStorage.setItem(`ectopico_${id}`, JSON.stringify(datos));
-  if (esNuevo) {
-    await enviarDatosAlBackend(datos);
-  } else {
-    await actualizarDatosEnBackend(id, datos);
-  }
-}
-
-/** Busca datos por ID: primero localStorage, luego tu backend */
-async function buscarDatosPaciente(id: string): Promise<any | null> {
-  const datosLocal = localStorage.getItem(`ectopico_${id}`);
-  let datosLocalParsed: any = null;
-  if (datosLocal) {
-    try {
-      datosLocalParsed = normalizarConsulta(JSON.parse(datosLocal));
-    } catch (error) {
-      console.warn("Error al parsear datos de localStorage:", error);
-    }
-  }
-
-  const datosBackend = await leerDatosDesdeBackend(id);
-  if (datosBackend) {
-    const normalizada = normalizarConsulta(datosBackend);
-    localStorage.setItem(`ectopico_${id}`, JSON.stringify(normalizada));
-    return normalizada;
-  }
-
-  return datosLocalParsed;
-}
-
-/* ==================== CÁLCULO ==================== */
-function calcularProbabilidad(pretestProb: number, LRs: number[]) {
-  let odds = pretestProb / (1 - pretestProb);
-  for (const LR of LRs) odds *= LR;
-  return +(odds / (1 + odds)).toFixed(4);
-}
-
-/* ============ ID solo como ID-00000 (sin sufijos como C1) ============ */
-function generarIdConsulta(): string {
-  const idsExistentes: number[] = [];
-
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    // almacenamos como "ectopico_ID-00001"
-    if (key && key.startsWith("ectopico_ID-")) {
-      const idCompleto = key.replace("ectopico_", ""); // ID-00001
-      const numeroId = Number.parseInt(idCompleto.replace("ID-", ""));
-      if (!Number.isNaN(numeroId)) idsExistentes.push(numeroId);
-    }
-  }
-
-  let siguienteNumero = 1;
-  if (idsExistentes.length > 0) siguienteNumero = Math.max(...idsExistentes) + 1;
-
-  return `ID-${siguienteNumero.toString().padStart(5, "0")}`;
-}
-
-/* ==================== COMPONENTE ==================== */
-export default function CalculadoraEctopico() {
-  // Búsqueda / carga
-  const [idBusqueda, setIdBusqueda] = useState("");
-  const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false);
-  const [consultaCargada, setConsultaCargada] = useState<any>(null);
-  const [modoCargarConsulta, setModoCargarConsulta] = useState(false);
-
-  const buscarConsulta = async () => {
-    const id = idBusqueda.trim().toUpperCase();
-    if (!id.startsWith("ID-") || id.length !== 8) {
-      alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)");
-      return;
+/** =================== GUARDADO INTELIGENTE ===================
+ * - Si es seguimiento: intenta PATCH; si falla, intenta POST.
+ * - Si es inicial: intenta GET; si existe → PATCH; si no existe → POST.
+ * - Siempre devuelve true/false según éxito final.
+ */
+async function guardarConsulta(id: string, datos: any, esSeguimiento: boolean): Promise<boolean> {
+  try {
+    if (esSeguimiento) {
+      const okUpd = await actualizarDatosEnBackend(id, datos)
+      if (okUpd) return true
+      // Si no existe en DB (solo local), intenta crearlo:
+      return await enviarDatosAlBackend(datos)
     }
 
-    const consultaEncontrada = await buscarDatosPaciente(id);
-
-    if (consultaEncontrada) {
-      setConsultaCargada(consultaEncontrada);
-      setMostrarResumenConsulta(true);
-      setModoCargarConsulta(false);
+    // No seguimiento (consulta inicial)
+    const existente = await leerDatosDesdeBackend(id)
+    if (existente) {
+      const okUpd = await actualizarDatosEnBackend(id, datos)
+      if (okUpd) return true
+      // plan B (raro): intenta crear
+      return await enviarDatosAlBackend(datos)
     } else {
-      alert("No se encontró ninguna consulta con ese ID");
+      const okCreate = await enviarDatosAlBackend(datos)
+      if (okCreate) return true
+      // plan B: si crear falló por duplicado, intenta actualizar
+      return await actualizarDatosEnBackend(id, datos)
     }
-  };
+  } catch (e) {
+    console.error("Error en guardarConsulta:", e)
+    return false
+  }
+}
 
-  // Datos del algoritmo
-  const probabilidadesSinFactores = {
-    asintomatica: 0.017,
-    sangrado: 0.03,
-    dolor: 0.13,
-    dolor_sangrado: 0.15,
-  };
+// ==================== UTILIDADES CÁLCULO ====================
+function calcularProbabilidad(pretestProb: number, LRs: number[]) {
+  let odds = pretestProb / (1 - pretestProb)
+  for (const LR of LRs) odds *= LR
+  return +(odds / (1 + odds)).toFixed(4)
+}
 
-  const probabilidadesConFactores = {
-    asintomatica: 0.05,
-    sangrado: 0.08,
-    dolor: 0.4,
-    dolor_sangrado: 0.46,
-  };
+// ==================== ID: SOLO ID-00000 ====================
+function generarIdConsulta(): string {
+  const idsExistentes: number[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && key.startsWith("ectopico_ID-")) {
+      const idCompleto = key.replace("ectopico_", "")
+      const numeroId = Number.parseInt(idCompleto.replace("ID-", ""))
+      if (!Number.isNaN(numeroId)) idsExistentes.push(numeroId)
+    }
+  }
+  let siguienteNumero = 1
+  if (idsExistentes.length > 0) siguienteNumero = Math.max(...idsExistentes) + 1
+  return `ID-${siguienteNumero.toString().padStart(5, "0")}`
+}
 
-  const tvusMap = { normal: 0.07, libre: 2.4, masa: 38, masa_libre: 47 };
+// ==================== NORMALIZACIÓN (local o DB → snake_case) ====================
+function normalizarDesdeLocal(d: any) {
+  return {
+    id: d.id,
+    fecha_creacion: d.fechaCreacion ?? d.fecha_creacion ?? null,
+    fecha_ultima_actualizacion: d.fechaUltimaActualizacion ?? d.fecha_ultima_actualizacion ?? null,
+    usuario_creador: d.usuarioCreador ?? d.usuario_creador ?? null,
 
+    nombre_paciente: d.nombrePaciente ?? d.nombre_paciente ?? null,
+    edad_paciente: d.edadPaciente ?? d.edad_paciente ?? null,
+
+    frecuencia_cardiaca: d.frecuenciaCardiaca ?? d.frecuencia_cardiaca ?? null,
+    presion_sistolica: d.presionSistolica ?? d.presion_sistolica ?? null,
+    presion_diastolica: d.presionDiastolica ?? d.presion_diastolica ?? null,
+    estado_conciencia: d.estadoConciencia ?? d.estado_conciencia ?? null,
+
+    prueba_embarazo_realizada: d.pruebaEmbarazoRealizada ?? d.prueba_embarazo_realizada ?? null,
+    resultado_prueba_embarazo: d.resultadoPruebaEmbarazo ?? d.resultado_prueba_embarazo ?? null,
+
+    hallazgos_exploracion: d.hallazgosExploracion ?? d.hallazgos_exploracion ?? null,
+    tiene_eco_transabdominal: d.tieneEcoTransabdominal ?? d.tiene_eco_transabdominal ?? null,
+    resultado_eco_transabdominal: d.resultadoEcoTransabdominal ?? d.resultado_eco_transabdominal ?? null,
+
+    sintomas_seleccionados: d.sintomasSeleccionados ?? d.sintomas_seleccionados ?? [],
+    factores_seleccionados: d.factoresSeleccionados ?? d.factores_seleccionados ?? [],
+
+    tvus: d.tvus ?? null,
+    hcg_valor: d.hcgValor ?? d.hcg_valor ?? null,
+    variacion_hcg: d.variacionHcg ?? d.variacion_hcg ?? null,
+    hcg_anterior: d.hcgAnterior ?? d.hcg_anterior ?? null,
+
+    resultado: d.resultado ?? null,
+  }
+}
+
+// ==================== COMPONENTE ====================
+export default function CalculadoraEctopico() {
+  // -------- Auth --------
+  const [estaAutenticado, setEstaAutenticado] = useState(false)
+  const [usuarioActual, setUsuarioActual] = useState("")
+  const [nombreUsuario, setNombreUsuario] = useState("")
+  const [usuario, setUsuario] = useState("")
+  const [contraseña, setContraseña] = useState("")
+  const [mostrarContraseña, setMostrarContraseña] = useState(false)
+  const [errorLogin, setErrorLogin] = useState("")
+  const [intentosLogin, setIntentosLogin] = useState(0)
+
+  // -------- Flujos --------
+  const [mostrarPantallaBienvenida, setMostrarPantallaBienvenida] = useState(true)
+  const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
+
+  // -------- Búsqueda / resumen --------
+  const [idBusqueda, setIdBusqueda] = useState("")
+  const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
+  const [consultaCargada, setConsultaCargada] = useState<any>(null)
+
+  // -------- Seguimiento / ID --------
+  const [idSeguimiento, setIdSeguimiento] = useState("")
+  const [mostrarIdSeguimiento, setMostrarIdSeguimiento] = useState(false)
+  const [esConsultaSeguimiento, setEsConsultaSeguimiento] = useState(false)
+
+  // -------- UI / Secciones --------
+  const [seccionActual, setSeccionActual] = useState(1)
+  const [seccionesCompletadas, setSeccionesCompletadas] = useState<number[]>([])
+
+  // -------- Datos clínicos --------
+  const [nombrePaciente, setNombrePaciente] = useState("")
+  const [edadPaciente, setEdadPaciente] = useState("")
+  const [frecuenciaCardiaca, setFrecuenciaCardiaca] = useState("")
+  const [presionSistolica, setPresionSistolica] = useState("")
+  const [presionDiastolica, setPresionDiastolica] = useState("")
+  const [estadoConciencia, setEstadoConciencia] = useState("")
+  const [pruebaEmbarazoRealizada, setPruebaEmbarazoRealizada] = useState("")
+  const [resultadoPruebaEmbarazo, setResultadoPruebaEmbarazo] = useState("")
+  const [hallazgosExploracion, setHallazgosExploracion] = useState("")
+  const [tieneEcoTransabdominal, setTieneEcoTransabdominal] = useState("")
+  const [resultadoEcoTransabdominal, setResultadoEcoTransabdominal] = useState("")
+  const [sintomasSeleccionados, setSintomasSeleccionados] = useState<string[]>([])
+  const [factoresSeleccionados, setFactoresSeleccionados] = useState<string[]>([])
+  const [tvus, setTvus] = useState("")
+  const [hcgValor, setHcgValor] = useState("")
+  const [variacionHcg, setVariacionHcg] = useState("")
+  const [hcgAnterior, setHcgAnterior] = useState("")
+
+  // -------- Resultado / mensajes --------
+  const [protocoloFinalizado, setProtocoloFinalizado] = useState(false)
+  const [mensajeFinal, setMensajeFinal] = useState("")
+  const [resultado, setResultado] = useState<number | null>(null)
+  const [mostrarResultados, setMostrarResultados] = useState(false)
+  const [mostrarAlerta, setMostrarAlerta] = useState(false)
+  const [mensajeAlerta, setMensajeAlerta] = useState("")
+
+  // ==================== DATOS DEL ALGORITMO ====================
+  const probabilidadesSinFactores = { asintomatica: 0.017, sangrado: 0.03, dolor: 0.13, dolor_sangrado: 0.15 }
+  const probabilidadesConFactores = { asintomatica: 0.05, sangrado: 0.08, dolor: 0.4, dolor_sangrado: 0.46 }
+  const tvusMap = { normal: 0.07, libre: 2.4, masa: 38, masa_libre: 47 }
   const hcgMap = {
     normal: { bajo: 1, alto: 1 },
     libre: { bajo: 1.8, alto: 2.1 },
     masa: { bajo: 13, alto: 45 },
     masa_libre: { bajo: 17, alto: 55 },
-  };
-
+  }
   const variacionHcgMap = {
     reduccion_1_35: 16.6,
     reduccion_35_50: 0.8,
     reduccion_mayor_50: 0,
     aumento: 3.3,
     no_disponible: 1,
-  };
-
+  }
   const factoresRiesgo = [
     { id: "infertilidad", label: "Historia de infertilidad" },
     { id: "ectopico_previo", label: "Embarazo ectópico previo" },
     { id: "enfermedad_pelvica", label: "Enfermedad inflamatoria pélvica previa" },
     { id: "cirugia_tubarica", label: "Cirugía tubárica previa" },
-  ];
-
+  ]
   const sintomas = [
     { id: "sangrado", label: "Sangrado vaginal" },
     { id: "dolor", label: "Dolor pélvico/abdominal" },
     { id: "dolor_sangrado", label: "Sangrado vaginal + Dolor pélvico/abdominal" },
     { id: "sincope", label: "Síncope o mareo" },
-  ];
+  ]
 
-  /* ==================== LOGIN ==================== */
-  const [estaAutenticado, setEstaAutenticado] = useState(false);
-  const [usuarioActual, setUsuarioActual] = useState("");
-  const [nombreUsuario, setNombreUsuario] = useState("");
-  const [usuario, setUsuario] = useState("");
-  const [contraseña, setContraseña] = useState("");
-  const [mostrarContraseña, setMostrarContraseña] = useState(false);
-  const [errorLogin, setErrorLogin] = useState("");
-  const [intentosLogin, setIntentosLogin] = useState(0);
-
-  /* ==================== ESTADOS PRINCIPALES ==================== */
-  const [nombrePaciente, setNombrePaciente] = useState("");
-  const [edadPaciente, setEdadPaciente] = useState("");
-  const [frecuenciaCardiaca, setFrecuenciaCardiaca] = useState("");
-  const [presionSistolica, setPresionSistolica] = useState("");
-  const [presionDiastolica, setPresionDiastolica] = useState("");
-  const [estadoConciencia, setEstadoConciencia] = useState("");
-  const [pruebaEmbarazoRealizada, setPruebaEmbarazoRealizada] = useState("");
-  const [resultadoPruebaEmbarazo, setResultadoPruebaEmbarazo] = useState("");
-  const [hallazgosExploracion, setHallazgosExploracion] = useState("");
-  const [tieneEcoTransabdominal, setTieneEcoTransabdominal] = useState("");
-  const [resultadoEcoTransabdominal, setResultadoEcoTransabdominal] = useState("");
-  const [protocoloFinalizado, setProtocoloFinalizado] = useState(false);
-  const [mensajeFinal, setMensajeFinal] = useState("");
-  const [resultado, setResultado] = useState<number | null>(null);
-  const [mostrarResultados, setMostrarResultados] = useState(false);
-  const [mostrarAlerta, setMostrarAlerta] = useState(false);
-  const [mensajeAlerta, setMensajeAlerta] = useState("");
-
-  // Seguimiento
-  const [idSeguimiento, setIdSeguimiento] = useState("");
-  const [mostrarIdSeguimiento, setMostrarIdSeguimiento] = useState(false);
-  const [esConsultaSeguimiento, setEsConsultaSeguimiento] = useState(false);
-
-  // Flujo de UI
-  const [seccionActual, setSeccionActual] = useState(1);
-  const [seccionesCompletadas, setSeccionesCompletadas] = useState<number[]>([]);
-  const [mostrarPantallaBienvenida, setMostrarPantallaBienvenida] = useState(true);
-
-  // Consultas
-  const [sintomasSeleccionados, setSintomasSeleccionados] = useState<string[]>([]);
-  const [factoresSeleccionados, setFactoresSeleccionados] = useState<string[]>([]);
-  const [tvus, setTvus] = useState("");
-  const [hcgValor, setHcgValor] = useState("");
-  const [variacionHcg, setVariacionHcg] = useState("");
-  const [hcgAnterior, setHcgAnterior] = useState("");
-
-  /* ==================== FUNCIONES DE FLUJO ==================== */
+  // ==================== FLUJO ====================
   const iniciarNuevaEvaluacion = async () => {
-    const nuevoId = generarIdConsulta();
-    resetCalculadora();
-    setIdSeguimiento(nuevoId);
-    setMostrarPantallaBienvenida(false);
-    setEsConsultaSeguimiento(false);
-  };
+    const nuevoId = generarIdConsulta()
+    resetCalculadora()
+    setIdSeguimiento(nuevoId)
+    setMostrarPantallaBienvenida(false)
+    setEsConsultaSeguimiento(false)
+  }
 
   const continuarConsultaCargada = async () => {
-    // Cargar datos normalizados (snake_case)
-    setIdSeguimiento(consultaCargada.id);
-    setNombrePaciente(consultaCargada.nombre_paciente || "");
-    setEdadPaciente(consultaCargada.edad_paciente?.toString() || "");
+    setIdSeguimiento(consultaCargada.id)
+    setNombrePaciente(consultaCargada.nombre_paciente || "")
+    setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
+    setFrecuenciaCardiaca(consultaCargada.frecuencia_cardiaca?.toString() || "")
+    setPresionSistolica(consultaCargada.presion_sistolica?.toString() || "")
+    setPresionDiastolica(consultaCargada.presion_diastolica?.toString() || "")
+    setEstadoConciencia(consultaCargada.estado_conciencia || "")
+    setPruebaEmbarazoRealizada(consultaCargada.prueba_embarazo_realizada || "")
+    setResultadoPruebaEmbarazo(consultaCargada.resultado_prueba_embarazo || "")
+    setHallazgosExploracion(consultaCargada.hallazgos_exploracion || "")
+    setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
+    setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
+    setSintomasSeleccionados(consultaCargada.sintomas_seleccionados || [])
+    setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
+    setTvus(consultaCargada.tvus || "")
+    setHcgAnterior(consultaCargada.hcg_valor?.toString() || "")
+    setHcgValor("")
+    setEsConsultaSeguimiento(true)
+    setSeccionesCompletadas([1, 2, 3, 4])
+    setMostrarResumenConsulta(false)
+    setModoCargarConsulta(false)
+    setMostrarPantallaBienvenida(false)
+    setSeccionActual(5)
+  }
 
-    setFrecuenciaCardiaca(consultaCargada.frecuencia_cardiaca?.toString() || "");
-    setPresionSistolica(consultaCargada.presion_sistolica?.toString() || "");
-    setPresionDiastolica(consultaCargada.presion_diastolica?.toString() || "");
-    setEstadoConciencia(consultaCargada.estado_conciencia || "");
-    setPruebaEmbarazoRealizada(consultaCargada.prueba_embarazo_realizada || "");
-    setResultadoPruebaEmbarazo(consultaCargada.resultado_prueba_embarazo || "");
-    setHallazgosExploracion(consultaCargada.hallazgos_exploracion || "");
-    setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "");
-    setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "");
-    setSintomasSeleccionados(consultaCargada.sintomas_seleccionados || []);
-    setFactoresSeleccionados(consultaCargada.factores_seleccionados || []);
-    setTvus(consultaCargada.tvus || "");
+  // Búsqueda por ID (local → DB; normaliza y muestra)
+  const buscarConsulta = async () => {
+    const id = idBusqueda.trim().toUpperCase()
+    if (!id.startsWith("ID-") || id.length !== 8) {
+      alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)")
+      return
+    }
 
-    // β-hCG anterior desde la consulta previa
-    setHcgAnterior(
-      (consultaCargada.hcg_valor ?? consultaCargada.hcg_anterior ?? "")?.toString() || ""
-    );
-    setHcgValor("");
-    setEsConsultaSeguimiento(true);
+    let consultaEncontrada: any = null
 
-    setSeccionesCompletadas([1, 2, 3, 4]);
-    setMostrarResumenConsulta(false);
-    setModoCargarConsulta(false);
-    setMostrarPantallaBienvenida(false);
-    setSeccionActual(5);
-  };
+    // 1) Local
+    const datosLocal = localStorage.getItem(`ectopico_${id}`)
+    if (datosLocal) {
+      try {
+        consultaEncontrada = normalizarDesdeLocal(JSON.parse(datosLocal))
+      } catch (error) {
+        console.warn("Error al parsear datos de localStorage:", error)
+      }
+    }
+
+    // 2) DB si no está local
+    if (!consultaEncontrada) {
+      try {
+        const { data, error } = await supabase.from("consultas").select("*").eq("id", id).single()
+        if (error) console.error("Error al buscar en Supabase:", error)
+        if (data) {
+          consultaEncontrada = normalizarDesdeLocal(data)
+          localStorage.setItem(`ectopico_${id}`, JSON.stringify(consultaEncontrada))
+        }
+      } catch (error) {
+        console.error("Error al buscar en Supabase:", error)
+      }
+    }
+
+    if (consultaEncontrada) {
+      setConsultaCargada(consultaEncontrada)
+      setMostrarResumenConsulta(true)
+      setModoCargarConsulta(false)
+    } else {
+      alert("No se encontró ninguna consulta con ese ID")
+    }
+  }
+
+  // ==================== UTILIDADES UI ====================
+  const obtenerNombreSintoma = (sintomaId: string) => {
+    const sintoma = sintomas.find((s) => s.id === sintomaId)
+    return sintoma ? sintoma.label : sintomaId
+  }
+  const obtenerNombreFactorRiesgo = (factorId: string) => {
+    const factor = factoresRiesgo.find((f) => f.id === factorId)
+    return factor ? factor.label : factorId
+  }
+  const obtenerNombreTVUS = (tvusId: string) => {
+    if (!tvusId) return "No especificado"
+    switch (tvusId) {
+      case "normal":
+        return "Normal"
+      case "libre":
+        return "Líquido libre"
+      case "masa":
+        return "Masa anexial"
+      case "masa_libre":
+        return "Masa anexial + líquido libre"
+      default:
+        return tvusId
+    }
+  }
+
+  const calcularVariacionHcgAutomatica = (hcgAnterior: string, hcgActual: string) => {
+    if (!hcgAnterior || !hcgActual) return "no_disponible"
+    const anterior = Number.parseFloat(hcgAnterior)
+    const actual = Number.parseFloat(hcgActual)
+    if (actual > anterior) return "aumento"
+    const reduccionPorcentaje = ((anterior - actual) / anterior) * 100
+    if (reduccionPorcentaje >= 50) return "reduccion_mayor_50"
+    if (reduccionPorcentaje >= 35) return "reduccion_35_50"
+    if (reduccionPorcentaje >= 1) return "reduccion_1_35"
+    return "aumento"
+  }
 
   const resetCalculadora = () => {
-    setResultado(null);
-    setSeccionActual(1);
-    setSeccionesCompletadas([]);
-    setNombrePaciente("");
-    setEdadPaciente("");
-    setFrecuenciaCardiaca("");
-    setPresionSistolica("");
-    setPresionDiastolica("");
-    setEstadoConciencia("");
-    setPruebaEmbarazoRealizada("");
-    setResultadoPruebaEmbarazo("");
-    setHallazgosExploracion("");
-    setTieneEcoTransabdominal("");
-    setResultadoEcoTransabdominal("");
-    setProtocoloFinalizado(false);
-    setMensajeFinal("");
-    setSintomasSeleccionados([]);
-    setFactoresSeleccionados([]);
-    setTvus("");
-    setHcgValor("");
-    setVariacionHcg("");
-    setHcgAnterior("");
-    setIdSeguimiento("");
-    setMostrarIdSeguimiento(false);
-    setModoCargarConsulta(false);
-    setIdBusqueda("");
-    setMostrarResumenConsulta(false);
-    setConsultaCargada(null);
-    setMostrarPantallaBienvenida(true);
-    setMostrarResultados(false);
-    setMostrarAlerta(false);
-    setMensajeAlerta("");
-    setEsConsultaSeguimiento(false);
-  };
+    setResultado(null)
+    setSeccionActual(1)
+    setSeccionesCompletadas([])
+    setNombrePaciente("")
+    setEdadPaciente("")
+    setFrecuenciaCardiaca("")
+    setPresionSistolica("")
+    setPresionDiastolica("")
+    setEstadoConciencia("")
+    setPruebaEmbarazoRealizada("")
+    setResultadoPruebaEmbarazo("")
+    setHallazgosExploracion("")
+    setTieneEcoTransabdominal("")
+    setResultadoEcoTransabdominal("")
+    setProtocoloFinalizado(false)
+    setMensajeFinal("")
+    setSintomasSeleccionados([])
+    setFactoresSeleccionados([])
+    setTvus("")
+    setHcgValor("")
+    setVariacionHcg("")
+    setHcgAnterior("")
+    setIdSeguimiento("")
+    setMostrarIdSeguimiento(false)
+    setModoCargarConsulta(false)
+    setIdBusqueda("")
+    setMostrarResumenConsulta(false)
+    setConsultaCargada(null)
+    setMostrarPantallaBienvenida(true)
+    setMostrarResultados(false)
+    setMostrarAlerta(false)
+    setMensajeAlerta("")
+    setEsConsultaSeguimiento(false)
+  }
 
   const copiarId = () => {
     if (idSeguimiento) {
-      navigator.clipboard.writeText(idSeguimiento);
-      alert("ID copiado al portapapeles");
+      navigator.clipboard.writeText(idSeguimiento)
+      alert("ID copiado al portapapeles")
     }
-  };
-
-  const volverAInicio = () => resetCalculadora();
-
-  /* ==================== UI helpers ==================== */
-  const CMGFooter = () => (
-    <div className="text-center mt-8 pt-4 border-t border-gray-200">
-      <p className="text-sm text-gray-500">
-        Desarrollado por <span className="font-semibold text-blue-600">CMG Health Solutions</span> - Sistema de
-        Evaluación Diagnóstica Avanzada
-      </p>
-    </div>
-  );
-
-  const ProgressBar = () => {
-    const steps = [
-      { id: 1, name: "Expediente Clínico", icon: User },
-      { id: 2, name: "Signos Vitales", icon: Activity },
-      { id: 3, name: "Prueba Embarazo", icon: FileText },
-      { id: 4, name: "Evaluación Previa", icon: Stethoscope },
-      { id: 5, name: "Consultas", icon: Calculator },
-    ];
-
-    return (
-      <div className="bg-gray-100 py-6 mb-8">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex items-center justify-between">
-            {steps.map((step, index) => {
-              const Icon = step.icon as any;
-              const isCompleted = seccionesCompletadas.includes(step.id);
-              const isCurrent = seccionActual === step.id;
-              const isAccessible = step.id <= Math.max(...seccionesCompletadas, seccionActual);
-
-              return (
-                <div key={step.id} className="flex items-center">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        isCompleted
-                          ? "bg-green-500 text-white"
-                          : isCurrent
-                          ? "bg-blue-500 text-white"
-                          : isAccessible
-                          ? "bg-gray-300 text-gray-600"
-                          : "bg-gray-200 text-gray-400"
-                      }`}
-                    >
-                      {isCompleted ? <CheckCircle className="h-6 w-6" /> : <Icon className="h-6 w-6" />}
-                    </div>
-                    <span
-                      className={`text-xs mt-2 text-center max-w-20 ${
-                        isCurrent ? "font-semibold text-blue-600" : "text-gray-600"
-                      }`}
-                    >
-                      {step.name}
-                    </span>
-                  </div>
-                  {index < steps.length - 1 && <ArrowRight className="h-5 w-5 text-gray-400 mx-4 flex-shrink-0" />}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  };
+  }
 
   const completarSeccion = (seccion: number) => {
     if (!seccionesCompletadas.includes(seccion)) {
-      setSeccionesCompletadas([...seccionesCompletadas, seccion]);
+      setSeccionesCompletadas([...seccionesCompletadas, seccion])
     }
-    setSeccionActual(seccion + 1);
-  };
+    setSeccionActual(seccion + 1)
+  }
 
-  /* ==================== VALIDACIONES ==================== */
   const validarSignosVitales = () => {
-    const fc = Number.parseFloat(frecuenciaCardiaca);
-    const sistolica = Number.parseFloat(presionSistolica);
-    const diastolica = Number.parseFloat(presionDiastolica);
+    const fc = Number.parseFloat(frecuenciaCardiaca)
+    const sistolica = Number.parseFloat(presionSistolica)
+    const diastolica = Number.parseFloat(presionDiastolica)
 
-    setMostrarAlerta(false);
-    setMensajeAlerta("");
+    setMostrarAlerta(false)
+    setMensajeAlerta("")
 
     if (sistolica >= 180 || diastolica >= 110) {
-      setMensajeFinal(
-        "🚨 EMERGENCIA MÉDICA: Crisis hipertensiva detectada (PA ≥ 180/110 mmHg). Se requiere TRASLADO INMEDIATO a la sala de urgencias del hospital para manejo de emergencia."
-      );
-      setProtocoloFinalizado(true);
-      return false;
+      setMensajeFinal("🚨 EMERGENCIA MÉDICA: Crisis hipertensiva (PA ≥ 180/110). Traslado inmediato.")
+      setProtocoloFinalizado(true)
+      return false
     }
-
     if (fc > 100 && (sistolica <= 90 || diastolica <= 60)) {
-      setMensajeFinal(
-        "🚨 EMERGENCIA MÉDICA: Paciente presenta taquicardia con hipotensión (FC > 100 lpm y PA ≤ 90/60 mmHg), sugestivo de compromiso hemodinámico severo. Se requiere TRASLADO INMEDIATO."
-      );
-      setProtocoloFinalizado(true);
-      return false;
+      setMensajeFinal("🚨 EMERGENCIA MÉDICA: Taquicardia + hipotensión. Traslado inmediato.")
+      setProtocoloFinalizado(true)
+      return false
     }
-
     if (fc > 120) {
-      setMensajeFinal(
-        "🚨 EMERGENCIA MÉDICA: Taquicardia severa detectada (FC > 120 lpm). Se requiere TRASLADO INMEDIATO."
-      );
-      setProtocoloFinalizado(true);
-      return false;
+      setMensajeFinal("🚨 EMERGENCIA MÉDICA: Taquicardia severa. Traslado inmediato.")
+      setProtocoloFinalizado(true)
+      return false
     }
-
     if (fc < 50) {
-      setMensajeFinal(
-        "🚨 EMERGENCIA MÉDICA: Bradicardia severa detectada (FC < 50 lpm). Se requiere TRASLADO INMEDIATO."
-      );
-      setProtocoloFinalizado(true);
-      return false;
+      setMensajeFinal("🚨 EMERGENCIA MÉDICA: Bradicardia severa. Traslado inmediato.")
+      setProtocoloFinalizado(true)
+      return false
     }
-
     if (estadoConciencia === "estuporosa" || estadoConciencia === "comatosa") {
-      setMensajeFinal(
-        "🚨 EMERGENCIA MÉDICA: Alteración severa del estado de conciencia. Traslado inmediato a urgencias."
-      );
-      setProtocoloFinalizado(true);
-      return false;
+      setMensajeFinal("🚨 EMERGENCIA MÉDICA: Alteración severa de conciencia. Traslado inmediato.")
+      setProtocoloFinalizado(true)
+      return false
     }
 
-    let hayAlerta = false;
-    let mensajeAlertaTemp = "";
-
+    let hayAlerta = false
+    let mensaje = ""
     if (sistolica < 90 || diastolica < 60) {
-      hayAlerta = true;
-      mensajeAlertaTemp = "Hipotensión arterial detectada. Requiere evaluación inmediata.";
+      hayAlerta = true
+      mensaje = "Hipotensión arterial. Evaluación inmediata."
     } else if (sistolica >= 140 || diastolica >= 90) {
-      hayAlerta = true;
-      mensajeAlertaTemp = "Hipertensión arterial detectada. Requiere evaluación y seguimiento.";
+      hayAlerta = true
+      mensaje = "Hipertensión arterial. Evaluación y seguimiento."
     } else if (fc > 100) {
-      hayAlerta = true;
-      mensajeAlertaTemp = "Taquicardia detectada. Monitoreo continuo requerido.";
+      hayAlerta = true
+      mensaje = "Taquicardia. Requiere monitoreo."
     } else if (fc < 60) {
-      hayAlerta = true;
-      mensajeAlertaTemp = "Bradicardia detectada. Evaluación cardiovascular recomendada.";
+      hayAlerta = true
+      mensaje = "Bradicardia. Evaluación recomendada."
     }
-
     if (hayAlerta) {
-      setMostrarAlerta(true);
-      setMensajeAlerta(mensajeAlertaTemp);
+      setMostrarAlerta(true)
+      setMensajeAlerta(mensaje)
     }
-
-    return true;
-  };
+    return true
+  }
 
   const validarPruebaEmbarazo = () => {
     if (pruebaEmbarazoRealizada === "no") {
-      setMensajeFinal(
-        "Se necesita realizar una prueba de embarazo cualitativa antes de continuar con la evaluación."
-      );
-      setProtocoloFinalizado(true);
-      return false;
+      setMensajeFinal("Realice una prueba de embarazo cualitativa antes de continuar.")
+      setProtocoloFinalizado(true)
+      return false
     }
     if (resultadoPruebaEmbarazo === "negativa") {
-      setMensajeFinal("Embarazo ectópico descartado por prueba negativa.");
-      setProtocoloFinalizado(true);
-      return false;
+      setMensajeFinal("Embarazo ectópico descartado por prueba negativa.")
+      setProtocoloFinalizado(true)
+      return false
     }
-    return true;
-  };
+    return true
+  }
 
   const validarEcoTransabdominal = () => {
     const opcionesConfirmatorias = [
@@ -605,73 +540,70 @@ export default function CalculadoraEctopico() {
       "saco_vitelino_sin_embrion",
       "saco_sin_embrion",
       "saco_10mm_decidual_2mm",
-    ];
-
+    ]
     if (tieneEcoTransabdominal === "si" && opcionesConfirmatorias.includes(resultadoEcoTransabdominal)) {
-      setMensajeFinal("Evidencia suficiente de embarazo intrauterino. Embarazo ectópico descartado.");
-      setProtocoloFinalizado(true);
-      return false;
+      setMensajeFinal("Evidencia de embarazo intrauterino. Ectópico descartado.")
+      setProtocoloFinalizado(true)
+      return false
     }
-    return true;
-  };
+    return true
+  }
 
-  /* ==================== CÁLCULO Y GUARDADO ==================== */
+  // ==================== CALCULAR y GUARDAR ====================
   const calcular = async () => {
     if (!tvus || !hcgValor || sintomasSeleccionados.length === 0) {
-      alert("Por favor complete todos los campos requeridos: síntomas, TVUS y β-hCG");
-      return;
+      alert("Por favor complete: síntomas, TVUS y β-hCG")
+      return
     }
 
-    // 1) Pre-test
-    const tieneFactoresRiesgo = factoresSeleccionados.length > 0;
-    const sintomasParaCalculo = sintomasSeleccionados.filter((s) => s !== "sincope");
-    let claveSintoma = "asintomatica";
-    if (sintomasParaCalculo.includes("dolor_sangrado")) claveSintoma = "dolor_sangrado";
-    else if (sintomasParaCalculo.includes("sangrado") && sintomasParaCalculo.includes("dolor")) claveSintoma = "dolor_sangrado";
-    else if (sintomasParaCalculo.includes("sangrado")) claveSintoma = "sangrado";
-    else if (sintomasParaCalculo.includes("dolor")) claveSintoma = "dolor";
+    // Pre-test
+    const tieneFactoresRiesgo = factoresSeleccionados.length > 0
+    const sintomasParaCalculo = sintomasSeleccionados.filter((s) => s !== "sincope")
+    let claveSintoma = "asintomatica"
+    if (sintomasParaCalculo.includes("dolor_sangrado") || (sintomasParaCalculo.includes("sangrado") && sintomasParaCalculo.includes("dolor"))) {
+      claveSintoma = "dolor_sangrado"
+    } else if (sintomasParaCalculo.includes("sangrado")) {
+      claveSintoma = "sangrado"
+    } else if (sintomasParaCalculo.includes("dolor")) {
+      claveSintoma = "dolor"
+    }
+    const tablaProb = tieneFactoresRiesgo ? probabilidadesConFactores : probabilidadesSinFactores
+    const probPre = tablaProb[claveSintoma as keyof typeof tablaProb]
 
-    const tablaProb = tieneFactoresRiesgo ? probabilidadesConFactores : probabilidadesSinFactores;
-    const probPre = tablaProb[claveSintoma as keyof typeof tablaProb];
+    // LRs
+    const lrs: number[] = []
+    const lrTvus = tvusMap[tvus as keyof typeof tvusMap]
+    if (lrTvus) lrs.push(lrTvus)
 
-    // 2) LRs
-    const lrs: number[] = [];
+    const hcgNumerico = Number.parseFloat(hcgValor)
+    const nivelHcg = hcgNumerico >= 2000 ? "alto" : "bajo"
+    const lrHcg = hcgMap[tvus as keyof typeof hcgMap]?.[nivelHcg as keyof (typeof hcgMap)[keyof typeof hcgMap]]
+    if (lrHcg) lrs.push(lrHcg)
 
-    const lrTvus = tvusMap[tvus as keyof typeof tvusMap];
-    if (lrTvus) lrs.push(lrTvus);
-
-    const hcgNumerico = Number.parseFloat(hcgValor);
-    const nivelHcg = hcgNumerico >= 2000 ? "alto" : "bajo";
-    const lrHcg =
-      hcgMap[tvus as keyof typeof hcgMap]?.[nivelHcg as keyof (typeof hcgMap)[keyof typeof hcgMap]];
-    if (lrHcg) lrs.push(lrHcg);
-
-    let variacionCalculada: keyof typeof variacionHcgMap | "no_disponible" = "no_disponible";
+    let variacionCalculada = "no_disponible"
     if (hcgAnterior && hcgValor) {
-      const hcgAnteriorNum = Number.parseFloat(hcgAnterior);
-      const hcgActualNum = Number.parseFloat(hcgValor);
-
+      const hcgAnteriorNum = Number.parseFloat(hcgAnterior)
+      const hcgActualNum = Number.parseFloat(hcgValor)
       if (hcgActualNum > hcgAnteriorNum) {
-        variacionCalculada = "aumento";
+        variacionCalculada = "aumento"
       } else {
-        const reduccionPorcentaje = ((hcgAnteriorNum - hcgActualNum) / hcgAnteriorNum) * 100;
-        if (reduccionPorcentaje >= 50) variacionCalculada = "reduccion_mayor_50";
-        else if (reduccionPorcentaje >= 35) variacionCalculada = "reduccion_35_50";
-        else if (reduccionPorcentaje >= 1) variacionCalculada = "reduccion_1_35";
-        else variacionCalculada = "aumento";
+        const reduccionPorcentaje = ((hcgAnteriorNum - hcgActualNum) / hcgAnteriorNum) * 100
+        if (reduccionPorcentaje >= 50) variacionCalculada = "reduccion_mayor_50"
+        else if (reduccionPorcentaje >= 35) variacionCalculada = "reduccion_35_50"
+        else if (reduccionPorcentaje >= 1) variacionCalculada = "reduccion_1_35"
+        else variacionCalculada = "aumento"
       }
-
-      setVariacionHcg(variacionCalculada);
-      const lrVariacion = variacionHcgMap[variacionCalculada as keyof typeof variacionHcgMap];
-      if (lrVariacion) lrs.push(lrVariacion);
+      setVariacionHcg(variacionCalculada)
+      const lrVariacion = variacionHcgMap[variacionCalculada as keyof typeof variacionHcgMap]
+      if (lrVariacion) lrs.push(lrVariacion)
     }
 
-    // 3) Bayes
-    const probPost = calcularProbabilidad(probPre, lrs);
-    setResultado(probPost);
+    // Post-test
+    const probPost = calcularProbabilidad(probPre, lrs)
+    setResultado(probPost)
 
-    // 4) Guardar
-    const fechaActual = new Date().toISOString();
+    // Construir objeto a guardar (camelCase)
+    const fechaActual = new Date().toISOString()
     const datosCompletos = {
       id: idSeguimiento,
       fechaCreacion: fechaActual,
@@ -695,66 +627,43 @@ export default function CalculadoraEctopico() {
       variacionHcg: variacionCalculada,
       hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
       resultado: probPost,
-    };
+    }
 
-    localStorage.setItem(`ectopico_${idSeguimiento}`, JSON.stringify(datosCompletos));
+    // Guardar local SIEMPRE
+    localStorage.setItem(`ectopico_${idSeguimiento}`, JSON.stringify(datosCompletos))
 
+    // Guardar en DB con helper
     try {
-      const ok = await enviarDatosAlBackend(datosCompletos);
+      const ok = await guardarConsulta(idSeguimiento, datosCompletos, esConsultaSeguimiento)
       if (!ok) {
-        alert("Advertencia: guardado local OK, pero falló la sincronización con la base de datos.");
+        alert("Advertencia: guardado local OK, pero falló la sincronización con la base de datos.")
       } else {
-        console.log("Datos guardados exitosamente vía /api/consultas");
+        console.log("Datos sincronizados con la base de datos")
       }
     } catch (e) {
-      console.error("Error llamando /api/consultas:", e);
-      alert("Advertencia: guardado local OK, pero no se pudo conectar con la base de datos.");
+      console.error("Error sincronizando con la base de datos:", e)
+      alert("Advertencia: guardado local OK, pero no se pudo conectar con la base de datos.")
     }
 
-    // 5) Mostrar resultado
+    // Mostrar resultados
     if (probPost >= 0.95) {
-      setMensajeFinal("Embarazo ectópico confirmado (probabilidad ≥95%). Proceder con tratamiento inmediato.");
-      setProtocoloFinalizado(true);
+      setMensajeFinal("Embarazo ectópico confirmado (≥95%). Iniciar tratamiento.")
+      setProtocoloFinalizado(true)
     } else if (probPost < 0.01) {
-      setMensajeFinal("Embarazo ectópico descartado (probabilidad <1%).");
-      setProtocoloFinalizado(true);
+      setMensajeFinal("Embarazo ectópico descartado (<1%).")
+      setProtocoloFinalizado(true)
     } else {
-      setMostrarResultados(true);
-      setMostrarIdSeguimiento(true);
+      setMostrarResultados(true)
+      setMostrarIdSeguimiento(true)
     }
-  };
+  }
 
-  /* ==================== PDF (TXT) ==================== */
-  const obtenerNombreSintoma = (sintomaId: string) => {
-    const sintoma = sintomas.find((s) => s.id === sintomaId);
-    return sintoma ? sintoma.label : sintomaId;
-  };
-  const obtenerNombreFactorRiesgo = (factorId: string) => {
-    const factor = factoresRiesgo.find((f) => f.id === factorId);
-    return factor ? factor.label : factorId;
-  };
-  const obtenerNombreTVUS = (tvusId: string) => {
-    if (!tvusId) return "No especificado";
-    switch (tvusId) {
-      case "normal":
-        return "Normal";
-      case "libre":
-        return "Líquido libre";
-      case "masa":
-        return "Masa anexial";
-      case "masa_libre":
-        return "Masa anexial + líquido libre";
-      default:
-        return tvusId;
-    }
-  };
-
+  // ==================== PDF ====================
   const generarInformePDF = () => {
     try {
       const contenidoInforme = `
 INFORME MÉDICO - EVALUACIÓN DE EMBARAZO ECTÓPICO
 ================================================
-
 ID de Consulta: ${idSeguimiento}
 Fecha: ${new Date().toLocaleDateString()}
 Médico: ${nombreUsuario}
@@ -780,79 +689,74 @@ FACTORES DE RIESGO:
 ${factoresSeleccionados.map((f) => `- ${obtenerNombreFactorRiesgo(f)}`).join("\n")}
 
 RESULTADO:
-${resultado !== null ? `Probabilidad de Embarazo Ectópico: ${(resultado * 100).toFixed(1)}%` : "No calculado"}
+${resultado ? `Probabilidad de Embarazo Ectópico: ${(resultado * 100).toFixed(1)}%` : "No calculado"}
 
 CONCLUSIÓN:
 ${
   mensajeFinal ||
-  (resultado !== null
+  (resultado
     ? resultado >= 0.95
       ? "Alta probabilidad - Confirmar diagnóstico"
       : resultado < 0.01
-      ? "Baja probabilidad - Descartar diagnóstico"
-      : "Probabilidad intermedia - Seguimiento requerido"
+        ? "Baja probabilidad - Descartar diagnóstico"
+        : "Probabilidad intermedia - Seguimiento requerido"
     : "Evaluación en proceso")
 }
-
 ================================================
 Sistema CMG Health Solutions
-      `;
-
-      const elemento = document.createElement("a");
-      const archivo = new Blob([contenidoInforme], { type: "text/plain" });
-      elemento.href = URL.createObjectURL(archivo);
-      elemento.download = `Informe_Ectopico_${idSeguimiento}_${new Date().toISOString().split("T")[0]}.txt`;
-      document.body.appendChild(elemento);
-      elemento.click();
-      document.body.removeChild(elemento);
-      alert("Informe generado y descargado exitosamente");
+      `
+      const elemento = document.createElement("a")
+      const archivo = new Blob([contenidoInforme], { type: "text/plain" })
+      elemento.href = URL.createObjectURL(archivo)
+      elemento.download = `Informe_Ectopico_${idSeguimiento}_${new Date().toISOString().split("T")[0]}.txt`
+      document.body.appendChild(elemento)
+      elemento.click()
+      document.body.removeChild(elemento)
+      alert("Informe generado y descargado exitosamente")
     } catch (error) {
-      console.error("Error al generar el informe:", error);
-      alert("Error al generar el informe. Por favor, inténtelo de nuevo.");
+      console.error("Error al generar el informe:", error)
+      alert("Error al generar el informe. Por favor, inténtelo de nuevo.")
     }
-  };
+  }
 
-  /* ==================== LOGIN FLOW ==================== */
+  // ==================== LOGIN ====================
   const manejarLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorLogin("");
-
+    e.preventDefault()
+    setErrorLogin("")
     if (intentosLogin >= 5) {
-      setErrorLogin("Demasiados intentos fallidos. Contacte al administrador.");
-      return;
+      setErrorLogin("Demasiados intentos fallidos. Contacte al administrador.")
+      return
     }
-
     const usuarioEncontrado = USUARIOS_AUTORIZADOS.find(
-      (u) => u.usuario.toLowerCase() === usuario.toLowerCase() && u.contraseña === contraseña
-    );
-
+      (u) => u.usuario.toLowerCase() === usuario.toLowerCase() && u.contraseña === contraseña,
+    )
     if (usuarioEncontrado) {
-      setEstaAutenticado(true);
-      setUsuarioActual(usuarioEncontrado.usuario);
-      setNombreUsuario(usuarioEncontrado.nombre);
-      setErrorLogin("");
-      setIntentosLogin(0);
-      setUsuario("");
-      setContraseña("");
+      setEstaAutenticado(true)
+      setUsuarioActual(usuarioEncontrado.usuario)
+      setNombreUsuario(usuarioEncontrado.nombre)
+      setErrorLogin("")
+      setIntentosLogin(0)
+      setUsuario("")
+      setContraseña("")
     } else {
-      setIntentosLogin((prev) => prev + 1);
-      setErrorLogin(`Credenciales incorrectas. Intento ${intentosLogin + 1} de 5.`);
-      setContraseña("");
+      setIntentosLogin((prev) => prev + 1)
+      setErrorLogin(`Credenciales incorrectas. Intento ${intentosLogin + 1} de 5.`)
+      setContraseña("")
     }
-  };
+  }
 
   const cerrarSesion = () => {
-    setEstaAutenticado(false);
-    setUsuarioActual("");
-    setNombreUsuario("");
-    setUsuario("");
-    setContraseña("");
-    setErrorLogin("");
-    setIntentosLogin(0);
-    resetCalculadora();
-  };
+    setEstaAutenticado(false)
+    setUsuarioActual("")
+    setNombreUsuario("")
+    setUsuario("")
+    setContraseña("")
+    setErrorLogin("")
+    setIntentosLogin(0)
+    resetCalculadora()
+  }
 
-  /* ==================== RENDER ==================== */
+  // ==================== UI ====================
   if (!estaAutenticado) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-100 flex items-center justify-center">
@@ -872,7 +776,9 @@ Sistema CMG Health Solutions
               <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 mb-6">
                 <div className="flex items-center space-x-2 mb-2">
                   <AlertTriangle className="h-5 w-5 text-amber-600" />
-                  <span className="font-medium text-amber-900 text-sm">Acceso Solo para Personal Médico Autorizado</span>
+                  <span className="font-medium text-amber-900 text-sm">
+                    Acceso Solo para Personal Médico Autorizado
+                  </span>
                 </div>
                 <p className="text-amber-800 text-xs">
                   Este sistema está destinado exclusivamente para uso de profesionales médicos autorizados. El acceso no
@@ -930,17 +836,7 @@ Sistema CMG Health Solutions
                   className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 text-base"
                   disabled={intentosLogin >= 5}
                 >
-                  {intentosLogin >= 5 ? (
-                    <>
-                      <Lock className="mr-2 h-4 w-4" />
-                      Acceso Bloqueado
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="mr-2 h-4 w-4" />
-                      Iniciar Sesión
-                    </>
-                  )}
+                  {intentosLogin >= 5 ? (<><Lock className="mr-2 h-4 w-4" />Acceso Bloqueado</>) : (<><Lock className="mr-2 h-4 w-4" />Iniciar Sesión</>)}
                 </Button>
               </form>
 
@@ -954,10 +850,63 @@ Sistema CMG Health Solutions
           </CardContent>
         </Card>
       </div>
-    );
+    )
   }
 
-  /* ==================== APP AUTENTICADA ==================== */
+  // ==================== APP PRINCIPAL ====================
+  const CMGFooter = () => (
+    <div className="text-center mt-8 pt-4 border-t border-gray-200">
+      <p className="text-sm text-gray-500">
+        Desarrollado por <span className="font-semibold text-blue-600">CMG Health Solutions</span> - Sistema de
+        Evaluación Diagnóstica Avanzada
+      </p>
+    </div>
+  )
+
+  const ProgressBar = () => {
+    const steps = [
+      { id: 1, name: "Expediente Clínico", icon: User },
+      { id: 2, name: "Signos Vitales", icon: Activity },
+      { id: 3, name: "Prueba Embarazo", icon: FileText },
+      { id: 4, name: "Evaluación Previa", icon: Stethoscope },
+      { id: 5, name: "Consultas", icon: Calculator },
+    ]
+    return (
+      <div className="bg-gray-100 py-6 mb-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => {
+              const Icon = step.icon
+              const isCompleted = seccionesCompletadas.includes(step.id)
+              const isCurrent = seccionActual === step.id
+              const isAccessible = step.id <= Math.max(...seccionesCompletadas, seccionActual)
+              return (
+                <div key={step.id} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        isCompleted ? "bg-green-500 text-white" :
+                        isCurrent ? "bg-blue-500 text-white" :
+                        isAccessible ? "bg-gray-300 text-gray-600" :
+                        "bg-gray-200 text-gray-400"
+                      }`}
+                    >
+                      {isCompleted ? <CheckCircle className="h-6 w-6" /> : <Icon className="h-6 w-6" />}
+                    </div>
+                    <span className={`text-xs mt-2 text-center max-w-20 ${isCurrent ? "font-semibold text-blue-600" : "text-gray-600"}`}>
+                      {step.name}
+                    </span>
+                  </div>
+                  {index < steps.length - 1 && <ArrowRight className="h-5 w-5 text-gray-400 mx-4 flex-shrink-0" />}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header con ID */}
@@ -1014,10 +963,7 @@ Sistema CMG Health Solutions
                     </div>
                   </Button>
                   <Button
-                    onClick={() => {
-                      setMostrarPantallaBienvenida(false);
-                      setModoCargarConsulta(true);
-                    }}
+                    onClick={() => { setMostrarPantallaBienvenida(false); setModoCargarConsulta(true) }}
                     variant="outline"
                     className="h-24 border-blue-300 text-blue-600 hover:bg-blue-50 font-semibold text-lg"
                   >
@@ -1043,16 +989,18 @@ Sistema CMG Health Solutions
                   </div>
                   <h2 className="text-2xl font-bold text-slate-800">Continuar Consulta Existente</h2>
                 </div>
+
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                   <div className="flex items-center space-x-2 mb-2">
                     <AlertTriangle className="h-5 w-5 text-blue-600" />
                     <span className="font-medium text-blue-900">Información Importante</span>
                   </div>
                   <p className="text-blue-800 text-sm">
-                    Las consultas de seguimiento deben realizarse entre 48-72 horas después de la consulta inicial.
-                    Ingrese el ID de seguimiento que recibió al completar su primera consulta.
+                    Las consultas de seguimiento deben realizarse entre 48-72 horas después de la consulta inicial. Ingrese el ID de
+                    seguimiento que recibió al completar su primera consulta.
                   </p>
                 </div>
+
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-base font-medium text-slate-700">ID de Seguimiento:</Label>
@@ -1071,10 +1019,7 @@ Sistema CMG Health Solutions
                       Buscar Consulta
                     </Button>
                     <Button
-                      onClick={() => {
-                        setModoCargarConsulta(false);
-                        setMostrarPantallaBienvenida(true);
-                      }}
+                      onClick={() => { setModoCargarConsulta(false); setMostrarPantallaBienvenida(true) }}
                       variant="outline"
                       className="border-gray-300 text-gray-600 hover:bg-gray-50"
                     >
@@ -1105,52 +1050,45 @@ Sistema CMG Health Solutions
                     <div>
                       <p><strong>ID:</strong> {consultaCargada.id}</p>
                       <p><strong>Paciente:</strong> {consultaCargada.nombre_paciente || "No especificado"}</p>
-                      <p><strong>Edad:</strong> {consultaCargada.edad_paciente ?? "No especificado"} años</p>
-                      <p><strong>β-hCG anterior:</strong> {consultaCargada.hcg_valor ?? "No especificado"} mUI/mL</p>
+                      <p><strong>Edad:</strong> {consultaCargada.edad_paciente || "No especificado"} años</p>
+                      <p><strong>β-hCG anterior:</strong> {consultaCargada.hcg_valor || "No especificado"} mUI/mL</p>
                     </div>
                     <div>
                       <p><strong>TVUS:</strong> {obtenerNombreTVUS(consultaCargada.tvus)}</p>
-                      <p>
-                        <strong>Resultado anterior:</strong>{" "}
-                        {consultaCargada.resultado != null ? `${(Number(consultaCargada.resultado) * 100).toFixed(1)}%` : "No calculado"}
-                      </p>
+                      <p><strong>Resultado anterior:</strong> {consultaCargada.resultado ? `${(consultaCargada.resultado * 100).toFixed(1)}%` : "No calculado"}</p>
                       <p>
                         <strong>Fecha:</strong>{" "}
-                        {consultaCargada.fecha_creacion
-                          ? new Date(consultaCargada.fecha_creacion).toLocaleDateString()
+                        {consultaCargada.fechaCreacion || consultaCargada.fecha_creacion
+                          ? new Date(consultaCargada.fechaCreacion || consultaCargada.fecha_creacion).toLocaleDateString()
                           : "No disponible"}
                       </p>
-                      <p><strong>Frecuencia Cardíaca:</strong> {consultaCargada.frecuencia_cardiaca ?? "No especificado"} lpm</p>
+                      <p><strong>Frecuencia Cardíaca:</strong> {consultaCargada.frecuencia_cardiaca || "No especificado"} lpm</p>
                     </div>
                   </div>
 
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                     <h4 className="font-medium text-gray-900 mb-2">Signos Vitales:</h4>
                     <div className="grid md:grid-cols-3 gap-4 text-sm">
-                      <p><strong>Presión Arterial:</strong> {consultaCargada.presion_sistolica ?? "N/A"}/{consultaCargada.presion_diastolica ?? "N/A"} mmHg</p>
+                      <p><strong>Presión Arterial:</strong> {consultaCargada.presion_sistolica || "N/A"}/{consultaCargada.presion_diastolica || "N/A"} mmHg</p>
                       <p><strong>Estado de Conciencia:</strong> {consultaCargada.estado_conciencia || "No especificado"}</p>
                       <p><strong>Prueba Embarazo:</strong> {consultaCargada.resultado_prueba_embarazo || "No especificado"}</p>
                     </div>
                   </div>
 
-                  {Array.isArray(consultaCargada.sintomas_seleccionados) && consultaCargada.sintomas_seleccionados.length > 0 && (
+                  {consultaCargada.sintomas_seleccionados?.length > 0 && (
                     <div className="mt-4">
                       <p><strong>Síntomas:</strong></p>
                       <ul className="list-disc list-inside text-sm text-blue-800">
-                        {consultaCargada.sintomas_seleccionados.map((s: string) => (
-                          <li key={s}>{obtenerNombreSintoma(s)}</li>
-                        ))}
+                        {consultaCargada.sintomas_seleccionados.map((s: string) => <li key={s}>{obtenerNombreSintoma(s)}</li>)}
                       </ul>
                     </div>
                   )}
 
-                  {Array.isArray(consultaCargada.factores_seleccionados) && consultaCargada.factores_seleccionados.length > 0 && (
+                  {consultaCargada.factores_seleccionados?.length > 0 && (
                     <div className="mt-4">
                       <p><strong>Factores de Riesgo:</strong></p>
                       <ul className="list-disc list-inside text-sm text-blue-800">
-                        {consultaCargada.factores_seleccionados.map((f: string) => (
-                          <li key={f}>{obtenerNombreFactorRiesgo(f)}</li>
-                        ))}
+                        {consultaCargada.factores_seleccionados.map((f: string) => <li key={f}>{obtenerNombreFactorRiesgo(f)}</li>)}
                       </ul>
                     </div>
                   )}
@@ -1174,11 +1112,7 @@ Sistema CMG Health Solutions
                     Continuar Consulta
                   </Button>
                   <Button
-                    onClick={() => {
-                      setMostrarResumenConsulta(false);
-                      setModoCargarConsulta(true);
-                      setConsultaCargada(null);
-                    }}
+                    onClick={() => { setMostrarResumenConsulta(false); setModoCargarConsulta(true); setConsultaCargada(null) }}
                     variant="outline"
                     className="border-gray-300 text-gray-600 hover:bg-gray-50"
                   >
@@ -1211,10 +1145,8 @@ Sistema CMG Health Solutions
                     <h3 className="text-lg font-semibold text-blue-900 mb-4">Probabilidad de Embarazo Ectópico</h3>
                     <div className="text-4xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
                     <p className="text-blue-800 text-sm">
-                      {resultado >= 0.95
-                        ? "Alta probabilidad - Confirmar diagnóstico"
-                        : resultado < 0.01
-                        ? "Baja probabilidad - Descartar diagnóstico"
+                      {resultado >= 0.95 ? "Alta probabilidad - Confirmar diagnóstico"
+                        : resultado < 0.01 ? "Baja probabilidad - Descartar diagnóstico"
                         : "Probabilidad intermedia - Seguimiento requerido"}
                     </p>
                   </div>
@@ -1225,7 +1157,7 @@ Sistema CMG Health Solutions
                     <Download className="h-4 w-4 mr-2" />
                     Generar Informe PDF
                   </Button>
-                  <Button onClick={volverAInicio} className="bg-green-600 hover:bg-green-700 text-white">
+                  <Button onClick={() => resetCalculadora()} className="bg-green-600 hover:bg-green-700 text-white">
                     <User className="h-4 w-4 mr-2" />
                     Nueva Evaluación
                   </Button>
@@ -1251,10 +1183,8 @@ Sistema CMG Health Solutions
                   <h3 className="text-lg font-semibold text-blue-900 mb-4">Probabilidad de Embarazo Ectópico</h3>
                   <div className="text-4xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
                   <p className="text-blue-800 text-sm">
-                    {resultado >= 0.95
-                      ? "Alta probabilidad - Confirmar diagnóstico"
-                      : resultado < 0.01
-                      ? "Baja probabilidad - Descartar diagnóstico"
+                    {resultado >= 0.95 ? "Alta probabilidad - Confirmar diagnóstico"
+                      : resultado < 0.01 ? "Baja probabilidad - Descartar diagnóstico"
                       : "Probabilidad intermedia - Seguimiento requerido"}
                   </p>
                 </div>
@@ -1290,7 +1220,7 @@ Sistema CMG Health Solutions
                     <Download className="h-4 w-4 mr-2" />
                     Generar Informe PDF
                   </Button>
-                  <Button onClick={volverAInicio} className="bg-green-600 hover:bg-green-700 text-white">
+                  <Button onClick={() => resetCalculadora()} className="bg-green-600 hover:bg-green-700 text-white">
                     <User className="h-4 w-4 mr-2" />
                     Nueva Evaluación
                   </Button>
@@ -1303,9 +1233,11 @@ Sistema CMG Health Solutions
       ) : (
         <div>
           <ProgressBar />
+
           <div className="max-w-4xl mx-auto p-6">
             <Card className="shadow-lg">
               <CardContent className="p-8">
+                {/* Sección 1 */}
                 {seccionActual === 1 && (
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
@@ -1342,6 +1274,7 @@ Sistema CMG Health Solutions
                   </div>
                 )}
 
+                {/* Sección 2 */}
                 {seccionActual === 2 && (
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
@@ -1407,14 +1340,13 @@ Sistema CMG Health Solutions
                         </select>
                       </div>
                     </div>
+
                     <div className="flex justify-between">
                       <Button onClick={() => setSeccionActual(1)} variant="outline" className="border-gray-300 text-gray-600 hover:bg-gray-50">
                         Anterior
                       </Button>
                       <Button
-                        onClick={() => {
-                          if (validarSignosVitales()) completarSeccion(2);
-                        }}
+                        onClick={() => { if (validarSignosVitales()) completarSeccion(2) }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
                       >
                         Continuar
@@ -1423,6 +1355,7 @@ Sistema CMG Health Solutions
                   </div>
                 )}
 
+                {/* Sección 3 */}
                 {seccionActual === 3 && (
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
@@ -1462,9 +1395,7 @@ Sistema CMG Health Solutions
                         Anterior
                       </Button>
                       <Button
-                        onClick={() => {
-                          if (validarPruebaEmbarazo()) completarSeccion(3);
-                        }}
+                        onClick={() => { if (validarPruebaEmbarazo()) completarSeccion(3) }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
                       >
                         Continuar
@@ -1473,6 +1404,7 @@ Sistema CMG Health Solutions
                   </div>
                 )}
 
+                {/* Sección 4 */}
                 {seccionActual === 4 && (
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
@@ -1525,9 +1457,7 @@ Sistema CMG Health Solutions
                         Anterior
                       </Button>
                       <Button
-                        onClick={() => {
-                          if (validarEcoTransabdominal()) completarSeccion(4);
-                        }}
+                        onClick={() => { if (validarEcoTransabdominal()) completarSeccion(4) }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
                       >
                         Continuar
@@ -1536,6 +1466,7 @@ Sistema CMG Health Solutions
                   </div>
                 )}
 
+                {/* Sección 5 */}
                 {seccionActual === 5 && (
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
@@ -1553,20 +1484,16 @@ Sistema CMG Health Solutions
                                 type="checkbox"
                                 checked={sintomasSeleccionados.includes(sintoma.id)}
                                 onChange={(e) => {
-                                  const checked = e.target.checked;
-                                  let nuevos = [...sintomasSeleccionados];
-                                  if (checked) {
-                                    nuevos.push(sintoma.id);
-                                  } else {
-                                    nuevos = nuevos.filter((id) => id !== sintoma.id);
-                                    if (sintoma.id === "dolor_sangrado") {
-                                      nuevos = nuevos.filter((id) => id !== "sangrado" && id !== "dolor");
-                                    }
-                                    if ((sintoma.id === "sangrado" || sintoma.id === "dolor") && nuevos.includes("dolor_sangrado")) {
-                                      nuevos = nuevos.filter((id) => id !== "dolor_sangrado");
-                                    }
+                                  let nuevos = e.target.checked
+                                    ? [...sintomasSeleccionados, sintoma.id]
+                                    : sintomasSeleccionados.filter((id) => id !== sintoma.id)
+                                  if (sintoma.id === "dolor_sangrado" && !e.target.checked) {
+                                    nuevos = nuevos.filter((id) => id !== "sangrado" && id !== "dolor")
                                   }
-                                  setSintomasSeleccionados(nuevos);
+                                  if ((sintoma.id === "sangrado" || sintoma.id === "dolor") && nuevos.includes("dolor_sangrado")) {
+                                    nuevos = nuevos.filter((id) => id !== "dolor_sangrado")
+                                  }
+                                  setSintomasSeleccionados(nuevos)
                                 }}
                                 className="h-5 w-5 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
                               />
@@ -1584,12 +1511,13 @@ Sistema CMG Health Solutions
                               <input
                                 type="checkbox"
                                 checked={factoresSeleccionados.includes(factor.id)}
-                                onChange={(e) => {
-                                  const checked = e.target.checked;
-                                  setFactoresSeleccionados((prev) =>
-                                    checked ? [...prev, factor.id] : prev.filter((id) => id !== factor.id)
-                                  );
-                                }}
+                                onChange={(e) =>
+                                  setFactoresSeleccionados(
+                                    e.target.checked
+                                      ? [...factoresSeleccionados, factor.id]
+                                      : factoresSeleccionados.filter((id) => id !== factor.id),
+                                  )
+                                }
                                 className="h-5 w-5 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
                               />
                               <span className="text-sm font-medium text-slate-700">{factor.label}</span>
@@ -1613,7 +1541,6 @@ Sistema CMG Health Solutions
                         </select>
                       </div>
 
-                      {/* Campos de β-hCG */}
                       <div className="space-y-2">
                         <Label className="text-base font-medium text-slate-700">β-hCG actual (mUI/mL):</Label>
                         <input
@@ -1627,12 +1554,8 @@ Sistema CMG Health Solutions
 
                       {esConsultaSeguimiento && hcgAnterior && (
                         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                          <p className="text-sm text-blue-800">
-                            <strong>β-hCG de consulta anterior:</strong> {hcgAnterior} mUI/mL
-                          </p>
-                          <p className="text-xs text-blue-600 mt-1">
-                            Se calculará automáticamente la variación con el valor actual
-                          </p>
+                          <p className="text-sm text-blue-800"><strong>β-hCG de consulta anterior:</strong> {hcgAnterior} mUI/mL</p>
+                          <p className="text-xs text-blue-600 mt-1">Se calculará automáticamente la variación con el valor actual</p>
                         </div>
                       )}
                     </div>
@@ -1653,5 +1576,5 @@ Sistema CMG Health Solutions
         </div>
       )}
     </div>
-  );
+  )
 }

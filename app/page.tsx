@@ -180,13 +180,22 @@ function calcularProbabilidad(pretestProb: number, LRs: number[]) {
   return +(odds / (1 + odds)).toFixed(4)
 }
 
-function generarIdSeguimiento(): string {
+// Modificar la estructura de datos para manejar múltiples consultas por paciente
+// Cambiar las funciones de base de datos para guardar consultas numeradas
+
+// En lugar de usar un solo ID, usar ID base + número de consulta
+// Ejemplo: ID-00001-C1, ID-00001-C2, ID-00001-C3
+
+// Modificar la función generarIdSeguimiento para generar ID base
+function generarIdBasePaciente(): string {
   const idsExistentes = []
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
     if (key && key.startsWith("ectopico_ID-")) {
-      const idNumero = key.replace("ectopico_ID-", "")
-      idsExistentes.push(Number.parseInt(idNumero))
+      const idCompleto = key.replace("ectopico_", "")
+      const idBase = idCompleto.split("-C")[0] // Extraer solo la parte base
+      const numeroId = idBase.replace("ID-", "")
+      idsExistentes.push(Number.parseInt(numeroId))
     }
   }
 
@@ -198,58 +207,157 @@ function generarIdSeguimiento(): string {
   return `ID-${siguienteNumero.toString().padStart(5, "0")}`
 }
 
-// Datos del algoritmo
-const probabilidadesSinFactores = {
-  asintomatica: 0.017,
-  sangrado: 0.03,
-  dolor: 0.13,
-  dolor_sangrado: 0.15,
+// Nueva función para obtener el siguiente número de consulta
+async function obtenerSiguienteNumeroConsulta(idBase: string): Promise<number> {
+  const consultasExistentes = []
+
+  // Buscar en localStorage
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && key.startsWith(`ectopico_${idBase}-C`)) {
+      const numeroConsulta = Number.parseInt(key.split("-C")[1])
+      consultasExistentes.push(numeroConsulta)
+    }
+  }
+
+  // Buscar en Supabase
+  try {
+    const { data } = await supabase.from("consultas").select("id").like("id", `${idBase}-C%`)
+
+    if (data) {
+      data.forEach((consulta) => {
+        const numeroConsulta = Number.parseInt(consulta.id.split("-C")[1])
+        if (!consultasExistentes.includes(numeroConsulta)) {
+          consultasExistentes.push(numeroConsulta)
+        }
+      })
+    }
+  } catch (error) {
+    console.error("Error al buscar consultas en Supabase:", error)
+  }
+
+  return consultasExistentes.length > 0 ? Math.max(...consultasExistentes) + 1 : 1
 }
 
-const probabilidadesConFactores = {
-  asintomatica: 0.05,
-  sangrado: 0.08,
-  dolor: 0.4,
-  dolor_sangrado: 0.46,
-}
-
-const tvusMap = {
-  normal: 0.07,
-  libre: 2.4,
-  masa: 38,
-  masa_libre: 47,
-}
-
-const hcgMap = {
-  normal: { bajo: 1, alto: 1 },
-  libre: { bajo: 1.8, alto: 2.1 },
-  masa: { bajo: 13, alto: 45 },
-  masa_libre: { bajo: 17, alto: 55 },
-}
-
-const variacionHcgMap = {
-  reduccion_1_35: 16.6,
-  reduccion_35_50: 0.8,
-  reduccion_mayor_50: 0,
-  aumento: 3.3,
-  no_disponible: 1,
-}
-
-const factoresRiesgo = [
-  { id: "infertilidad", label: "Historia de infertilidad" },
-  { id: "ectopico_previo", label: "Embarazo ectópico previo" },
-  { id: "enfermedad_pelvica", label: "Enfermedad inflamatoria pélvica previa" },
-  { id: "cirugia_tubarica", label: "Cirugía tubárica previa" },
-]
-
-const sintomas = [
-  { id: "sangrado", label: "Sangrado vaginal" },
-  { id: "dolor", label: "Dolor pélvico/abdominal" },
-  { id: "dolor_sangrado", label: "Sangrado vaginal + Dolor pélvico/abdominal" },
-  { id: "sincope", label: "Síncope o mareo" },
-]
-
+// Modificar la función buscarConsulta para mostrar todas las consultas del paciente
 export default function CalculadoraEctopico() {
+  const [idBusqueda, setIdBusqueda] = useState("")
+  const [consultasCargadas, setConsultasCargadas] = useState<any[]>([])
+  const [mostrarResumenConsultas, setMostrarResumenConsultas] = useState(false)
+  const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
+
+  const buscarConsulta = async () => {
+    const idBase = idBusqueda.trim().toUpperCase()
+    if (!idBase.startsWith("ID-") || idBase.length !== 8) {
+      alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)")
+      return
+    }
+
+    // Buscar todas las consultas de este paciente
+    const consultasEncontradas = []
+
+    // Buscar en localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && key.startsWith(`ectopico_${idBase}-C`)) {
+        try {
+          const datos = JSON.parse(localStorage.getItem(key)!)
+          consultasEncontradas.push(datos)
+        } catch (error) {
+          console.warn("Error al parsear datos de localStorage:", error)
+        }
+      }
+    }
+
+    // Buscar en Supabase
+    try {
+      const { data } = await supabase
+        .from("consultas")
+        .select("*")
+        .like("id", `${idBase}-C%`)
+        .order("id", { ascending: true })
+
+      if (data) {
+        data.forEach((consultaSupabase) => {
+          // Verificar si ya existe en localStorage
+          const existeLocal = consultasEncontradas.find((c) => c.id === consultaSupabase.id)
+          if (!existeLocal) {
+            consultasEncontradas.push(consultaSupabase)
+          }
+        })
+      }
+    } catch (error) {
+      console.error("Error al buscar en Supabase:", error)
+    }
+
+    if (consultasEncontradas.length > 0) {
+      // Ordenar por número de consulta
+      consultasEncontradas.sort((a, b) => {
+        const numA = Number.parseInt(a.id.split("-C")[1])
+        const numB = Number.parseInt(b.id.split("-C")[1])
+        return numA - numB
+      })
+
+      setConsultasCargadas(consultasEncontradas)
+      setMostrarResumenConsultas(true)
+      setModoCargarConsulta(false)
+    } else {
+      alert("No se encontró ninguna consulta con ese ID")
+    }
+  }
+
+  // Datos del algoritmo
+  const probabilidadesSinFactores = {
+    asintomatica: 0.017,
+    sangrado: 0.03,
+    dolor: 0.13,
+    dolor_sangrado: 0.15,
+  }
+
+  const probabilidadesConFactores = {
+    asintomatica: 0.05,
+    sangrado: 0.08,
+    dolor: 0.4,
+    dolor_sangrado: 0.46,
+  }
+
+  const tvusMap = {
+    normal: 0.07,
+    libre: 2.4,
+    masa: 38,
+    masa_libre: 47,
+  }
+
+  const hcgMap = {
+    normal: { bajo: 1, alto: 1 },
+    libre: { bajo: 1.8, alto: 2.1 },
+    masa: { bajo: 13, alto: 45 },
+    masa_libre: { bajo: 17, alto: 55 },
+  }
+
+  const variacionHcgMap = {
+    reduccion_1_35: 16.6,
+    reduccion_35_50: 0.8,
+    reduccion_mayor_50: 0,
+    aumento: 3.3,
+    no_disponible: 1,
+  }
+
+  const factoresRiesgo = [
+    { id: "infertilidad", label: "Historia de infertilidad" },
+    { id: "ectopico_previo", label: "Embarazo ectópico previo" },
+    { id: "enfermedad_pelvica", label: "Enfermedad inflamatoria pélvica previa" },
+    { id: "cirugia_tubarica", label: "Cirugía tubárica previa" },
+  ]
+
+  const sintomas = [
+    { id: "sangrado", label: "Sangrado vaginal" },
+    { id: "dolor", label: "Dolor pélvico/abdominal" },
+    { id: "dolor_sangrado", label: "Sangrado vaginal + Dolor pélvico/abdominal" },
+    { id: "sincope", label: "Síncope o mareo" },
+  ]
+
+  //export default function CalculadoraEctopico() {
   // Estados de autenticación
   const [estaAutenticado, setEstaAutenticado] = useState(false)
   const [usuarioActual, setUsuarioActual] = useState("")
@@ -282,11 +390,17 @@ export default function CalculadoraEctopico() {
   // Estados para el sistema de seguimiento
   const [idSeguimiento, setIdSeguimiento] = useState("")
   const [mostrarIdSeguimiento, setMostrarIdSeguimiento] = useState(false)
-  const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
-  const [idBusqueda, setIdBusqueda] = useState("")
+  //const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
+  //const [idBusqueda, setIdBusqueda] = useState("")
   const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
   const [consultaCargada, setConsultaCargada] = useState<any>(null)
   const [esConsultaSeguimiento, setEsConsultaSeguimiento] = useState(false)
+
+  // Agregar nuevos estados para manejar múltiples consultas
+  //const [consultasCargadas, setConsultasCargadas] = useState<any[]>([])
+  //const [mostrarResumenConsultas, setMostrarResumenConsultas] = useState(false)
+  const [idBasePaciente, setIdBasePaciente] = useState("")
+  const [numeroConsultaActual, setNumeroConsultaActual] = useState(1)
 
   // Estados para controlar las secciones
   const [seccionActual, setSeccionActual] = useState(1)
@@ -302,7 +416,63 @@ export default function CalculadoraEctopico() {
   const [hcgAnterior, setHcgAnterior] = useState("")
 
   // ==================== FUNCIONES ====================
-  const buscarConsulta = async () => {
+
+  // Modificar la función iniciarNuevaEvaluacion
+  const iniciarNuevaEvaluacion = async () => {
+    const nuevoIdBase = generarIdBasePaciente()
+    const numeroConsulta = 1
+    const idCompleto = `${nuevoIdBase}-C${numeroConsulta}`
+
+    resetCalculadora()
+    setIdBasePaciente(nuevoIdBase)
+    setNumeroConsultaActual(numeroConsulta)
+    setIdSeguimiento(idCompleto)
+    setMostrarPantallaBienvenida(false)
+    setEsConsultaSeguimiento(false)
+  }
+
+  // Modificar la función continuarConsultaCargada
+  const continuarConsultaCargada = async () => {
+    const ultimaConsulta = consultasCargadas[consultasCargadas.length - 1]
+    const idBase = ultimaConsulta.id.split("-C")[0]
+    const siguienteNumero = await obtenerSiguienteNumeroConsulta(idBase)
+    const nuevoIdCompleto = `${idBase}-C${siguienteNumero}`
+
+    // Cargar datos de la última consulta
+    setIdBasePaciente(idBase)
+    setNumeroConsultaActual(siguienteNumero)
+    setIdSeguimiento(nuevoIdCompleto)
+    setNombrePaciente(ultimaConsulta.nombre_paciente || "")
+    setEdadPaciente(ultimaConsulta.edad_paciente?.toString() || "")
+
+    // Cargar datos médicos básicos de la última consulta
+    setFrecuenciaCardiaca(ultimaConsulta.frecuencia_cardiaca?.toString() || "")
+    setPresionSistolica(ultimaConsulta.presion_sistolica?.toString() || "")
+    setPresionDiastolica(ultimaConsulta.presion_diastolica?.toString() || "")
+    setEstadoConciencia(ultimaConsulta.estado_conciencia || "")
+    setPruebaEmbarazoRealizada(ultimaConsulta.prueba_embarazo_realizada || "")
+    setResultadoPruebaEmbarazo(ultimaConsulta.resultado_prueba_embarazo || "")
+    setHallazgosExploracion(ultimaConsulta.hallazgos_exploracion || "")
+    setTieneEcoTransabdominal(ultimaConsulta.tiene_eco_transabdominal || "")
+    setResultadoEcoTransabdominal(ultimaConsulta.resultado_eco_transabdominal || "")
+    setSintomasSeleccionados(ultimaConsulta.sintomas_seleccionados || [])
+    setFactoresSeleccionados(ultimaConsulta.factores_seleccionados || [])
+    setTvus(ultimaConsulta.tvus || "")
+
+    // Configurar β-hCG anterior automáticamente
+    setHcgAnterior(ultimaConsulta.hcg_valor?.toString() || "")
+    setHcgValor("") // Limpiar para nuevo valor
+    setEsConsultaSeguimiento(true)
+
+    // Marcar secciones como completadas y ir a consultas
+    setSeccionesCompletadas([1, 2, 3, 4])
+    setMostrarResumenConsultas(false)
+    setModoCargarConsulta(false)
+    setMostrarPantallaBienvenida(false)
+    setSeccionActual(5)
+  }
+
+  const buscarConsulta_OLD = async () => {
     const id = idBusqueda.trim().toUpperCase()
     if (!id.startsWith("ID-") || id.length !== 8) {
       alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)")
@@ -345,7 +515,7 @@ export default function CalculadoraEctopico() {
     }
   }
 
-  const continuarConsultaCargada = () => {
+  const continuarConsultaCargada_OLD = () => {
     // Cargar todos los datos de la consulta previa
     setIdSeguimiento(consultaCargada.id)
     setNombrePaciente(consultaCargada.nombre_paciente || "")
@@ -433,7 +603,7 @@ export default function CalculadoraEctopico() {
     }
   }
 
-  const iniciarNuevaEvaluacion = () => {
+  const iniciarNuevaEvaluacion_OLD = () => {
     const nuevoId = generarIdSeguimiento()
     resetCalculadora()
     setIdSeguimiento(nuevoId)
@@ -682,45 +852,96 @@ export default function CalculadoraEctopico() {
     }
   }
 
+  // Corregir el algoritmo bayesiano - función calcular
   const calcular = async () => {
-    const probPre = calcularProbabilidadPretest(sintomasSeleccionados, factoresSeleccionados)
-    const lrTvus = tvusMap[tvus as keyof typeof tvusMap]
-    const nivelHcg = determinarNivelHcg(hcgValor, 2000)
-    const lrHcg = hcgMap[tvus as keyof typeof hcgMap]?.[nivelHcg as keyof (typeof hcgMap)[keyof typeof hcgMap]]
-
-    if (!probPre || !lrTvus || !lrHcg) {
-      alert("Por favor complete todos los campos")
+    // Validar datos requeridos
+    if (!tvus || !hcgValor || sintomasSeleccionados.length === 0) {
+      alert("Por favor complete todos los campos requeridos: síntomas, TVUS y β-hCG")
       return
     }
 
-    const lrs = [lrTvus, lrHcg]
+    // 1. CALCULAR PROBABILIDAD PRE-TEST
+    const tieneFactoresRiesgo = factoresSeleccionados.length > 0
 
-    // Calcular automáticamente la variación si hay β-hCG anterior
-    let variacionCalculada = variacionHcg
-    if (hcgAnterior && hcgValor && !variacionHcg) {
-      variacionCalculada = calcularVariacionHcgAutomatica(hcgAnterior, hcgValor)
+    // Determinar síntomas para el cálculo (excluyendo síncope)
+    const sintomasParaCalculo = sintomasSeleccionados.filter((s) => s !== "sincope")
+    let claveSintoma = "asintomatica"
+
+    if (sintomasParaCalculo.includes("dolor_sangrado")) {
+      claveSintoma = "dolor_sangrado"
+    } else if (sintomasParaCalculo.includes("sangrado") && sintomasParaCalculo.includes("dolor")) {
+      claveSintoma = "dolor_sangrado"
+    } else if (sintomasParaCalculo.includes("sangrado")) {
+      claveSintoma = "sangrado"
+    } else if (sintomasParaCalculo.includes("dolor")) {
+      claveSintoma = "dolor"
+    }
+
+    // Seleccionar tabla de probabilidades
+    const tablaProb = tieneFactoresRiesgo ? probabilidadesConFactores : probabilidadesSinFactores
+    const probPre = tablaProb[claveSintoma as keyof typeof tablaProb]
+
+    // 2. CALCULAR LIKELIHOOD RATIOS
+    const lrs = []
+
+    // LR para TVUS
+    const lrTvus = tvusMap[tvus as keyof typeof tvusMap]
+    if (lrTvus) {
+      lrs.push(lrTvus)
+    }
+
+    // LR para β-hCG (basado en discriminatory zone de 2000)
+    const hcgNumerico = Number.parseFloat(hcgValor)
+    const nivelHcg = hcgNumerico >= 2000 ? "alto" : "bajo"
+    const lrHcg = hcgMap[tvus as keyof typeof hcgMap]?.[nivelHcg as keyof (typeof hcgMap)[keyof typeof hcgMap]]
+    if (lrHcg) {
+      lrs.push(lrHcg)
+    }
+
+    // LR para variación de β-hCG (solo si hay valor anterior)
+    let variacionCalculada = "no_disponible"
+    if (hcgAnterior && hcgValor) {
+      const hcgAnteriorNum = Number.parseFloat(hcgAnterior)
+      const hcgActualNum = Number.parseFloat(hcgValor)
+
+      if (hcgActualNum > hcgAnteriorNum) {
+        variacionCalculada = "aumento"
+      } else {
+        const reduccionPorcentaje = ((hcgAnteriorNum - hcgActualNum) / hcgAnteriorNum) * 100
+        if (reduccionPorcentaje >= 50) {
+          variacionCalculada = "reduccion_mayor_50"
+        } else if (reduccionPorcentaje >= 35) {
+          variacionCalculada = "reduccion_35_50"
+        } else if (reduccionPorcentaje >= 1) {
+          variacionCalculada = "reduccion_1_35"
+        } else {
+          variacionCalculada = "aumento"
+        }
+      }
+
       setVariacionHcg(variacionCalculada)
-    }
-
-    if (variacionCalculada && variacionCalculada !== "no_disponible") {
       const lrVariacion = variacionHcgMap[variacionCalculada as keyof typeof variacionHcgMap]
-      lrs.push(lrVariacion)
+      if (lrVariacion) {
+        lrs.push(lrVariacion)
+      }
     }
 
+    // 3. APLICAR TEOREMA DE BAYES
     const probPost = calcularProbabilidad(probPre, lrs)
     setResultado(probPost)
 
+    // 4. GUARDAR DATOS AUTOMÁTICAMENTE
     const fechaActual = new Date().toISOString()
     const datosCompletos = {
       id: idSeguimiento,
-      fechaCreacion: fechaActual,
+      fechaCreacion: numeroConsultaActual === 1 ? fechaActual : consultasCargadas[0]?.fecha_creacion || fechaActual,
       fechaUltimaActualizacion: fechaActual,
       usuarioCreador: usuarioActual,
       nombrePaciente: nombrePaciente,
-      edadPaciente: edadPaciente,
-      frecuenciaCardiaca: frecuenciaCardiaca,
-      presionSistolica: presionSistolica,
-      presionDiastolica: presionDiastolica,
+      edadPaciente: Number.parseInt(edadPaciente),
+      frecuenciaCardiaca: Number.parseInt(frecuenciaCardiaca),
+      presionSistolica: Number.parseInt(presionSistolica),
+      presionDiastolica: Number.parseInt(presionDiastolica),
       estadoConciencia: estadoConciencia,
       pruebaEmbarazoRealizada: pruebaEmbarazoRealizada,
       resultadoPruebaEmbarazo: resultadoPruebaEmbarazo,
@@ -730,14 +951,56 @@ export default function CalculadoraEctopico() {
       sintomasSeleccionados: sintomasSeleccionados,
       factoresSeleccionados: factoresSeleccionados,
       tvus: tvus,
-      hcgValor: hcgValor,
-      variacionHcg: variacionHcg,
-      hcgAnterior: hcgAnterior,
+      hcgValor: Number.parseFloat(hcgValor),
+      variacionHcg: variacionCalculada,
+      hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
       resultado: probPost,
+      numeroConsulta: numeroConsultaActual,
     }
 
-    await sincronizarDatos(idSeguimiento, datosCompletos, false)
+    // Guardar en localStorage y Supabase
+    localStorage.setItem(`ectopico_${idSeguimiento}`, JSON.stringify(datosCompletos))
 
+    try {
+      const { error } = await supabase.from("consultas").insert([
+        {
+          id: datosCompletos.id,
+          fecha_creacion: datosCompletos.fechaCreacion,
+          fecha_ultima_actualizacion: datosCompletos.fechaUltimaActualizacion,
+          usuario_creador: datosCompletos.usuarioCreador,
+          nombre_paciente: datosCompletos.nombrePaciente,
+          edad_paciente: datosCompletos.edadPaciente,
+          frecuencia_cardiaca: datosCompletos.frecuenciaCardiaca,
+          presion_sistolica: datosCompletos.presionSistolica,
+          presion_diastolica: datosCompletos.presionDiastolica,
+          estado_conciencia: datosCompletos.estadoConciencia,
+          prueba_embarazo_realizada: datosCompletos.pruebaEmbarazoRealizada,
+          resultado_prueba_embarazo: datosCompletos.resultadoPruebaEmbarazo,
+          hallazgos_exploracion: datosCompletos.hallazgosExploracion,
+          tiene_eco_transabdominal: datosCompletos.tieneEcoTransabdominal,
+          resultado_eco_transabdominal: datosCompletos.resultadoEcoTransabdominal,
+          sintomas_seleccionados: datosCompletos.sintomasSeleccionados,
+          factores_seleccionados: datosCompletos.factoresSeleccionados,
+          tvus: datosCompletos.tvus,
+          hcg_valor: datosCompletos.hcgValor,
+          variacion_hcg: datosCompletos.variacionHcg,
+          hcg_anterior: datosCompletos.hcgAnterior,
+          resultado: datosCompletos.resultado,
+        },
+      ])
+
+      if (error) {
+        console.error("Error al guardar en Supabase:", error)
+        alert("Advertencia: Los datos se guardaron localmente pero hubo un error al sincronizar con la base de datos.")
+      } else {
+        console.log("Datos guardados exitosamente en Supabase")
+      }
+    } catch (error) {
+      console.error("Error de conexión con Supabase:", error)
+      alert("Advertencia: Los datos se guardaron localmente pero no se pudo conectar con la base de datos.")
+    }
+
+    // 5. MOSTRAR RESULTADOS
     if (probPost >= 0.95) {
       setMensajeFinal("Embarazo ectópico confirmado (probabilidad ≥95%). Proceder con tratamiento inmediato.")
       setProtocoloFinalizado(true)
@@ -1228,6 +1491,96 @@ Sistema CMG Health Solutions
             </CardContent>
           </Card>
         </div>
+      ) : mostrarResumenConsultas ? (
+        <div className="max-w-4xl mx-auto p-6">
+          <Card className="shadow-lg">
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <CheckCircle className="h-6 w-6 text-green-600" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-800">Consultas Encontradas</h2>
+                </div>
+
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-4">Resumen de Consultas Previas</h3>
+                  {consultasCargadas.map((consulta: any) => (
+                    <div key={consulta.id} className="mb-4 p-4 rounded-lg bg-white border border-gray-200">
+                      <h4 className="text-md font-semibold text-blue-800 mb-2">
+                        Consulta {consulta.id.split("-C")[1]}
+                      </h4>
+                      <div className="grid md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p>
+                            <strong>ID:</strong> {consulta.id}
+                          </p>
+                          <p>
+                            <strong>Paciente:</strong> {consulta.nombre_paciente}
+                          </p>
+                          <p>
+                            <strong>Edad:</strong> {consulta.edad_paciente} años
+                          </p>
+                          <p>
+                            <strong>β-hCG:</strong> {consulta.hcg_valor} mUI/mL
+                          </p>
+                        </div>
+                        <div>
+                          <p>
+                            <strong>TVUS:</strong> {obtenerNombreTVUS(consulta.tvus)}
+                          </p>
+                          <p>
+                            <strong>Resultado:</strong>{" "}
+                            {consulta.resultado ? `${(consulta.resultado * 100).toFixed(1)}%` : "No calculado"}
+                          </p>
+                          <p>
+                            <strong>Fecha:</strong>{" "}
+                            {consulta.fecha_creacion
+                              ? new Date(consulta.fecha_creacion).toLocaleDateString()
+                              : "No disponible"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                    <span className="font-medium text-yellow-900">Consulta de Seguimiento</span>
+                  </div>
+                  <p className="text-yellow-800 text-sm">
+                    Al continuar, se cargará automáticamente la información de la última consulta. El valor de β-hCG
+                    anterior se configurará automáticamente para calcular la variación. Solo necesitará ingresar el
+                    nuevo valor de β-hCG.
+                  </p>
+                </div>
+
+                <div className="flex space-x-4">
+                  <Button
+                    onClick={continuarConsultaCargada}
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6"
+                  >
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    Continuar Consulta
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setMostrarResumenConsultas(false)
+                      setModoCargarConsulta(true)
+                    }}
+                    variant="outline"
+                    className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                  >
+                    Buscar Otra Consulta
+                  </Button>
+                </div>
+                <CMGFooter />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       ) : protocoloFinalizado ? (
         <div className="max-w-4xl mx-auto p-6">
           <Card className="shadow-lg">
@@ -1640,7 +1993,6 @@ Sistema CMG Health Solutions
                           ))}
                         </div>
                       </div>
-
                       <div className="space-y-2">
                         <Label className="text-base font-medium text-slate-700">Factores de Riesgo:</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -1657,7 +2009,6 @@ Sistema CMG Health Solutions
                           ))}
                         </div>
                       </div>
-
                       <div className="space-y-2">
                         <Label className="text-base font-medium text-slate-700">TVUS:</Label>
                         <select
@@ -1672,45 +2023,27 @@ Sistema CMG Health Solutions
                           <option value="masa_libre">Masa anexial + líquido libre</option>
                         </select>
                       </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">β-hCG (mUI/mL):</Label>
-                          <input
-                            type="number"
-                            placeholder="Ingrese el valor de β-hCG"
-                            value={hcgValor}
-                            onChange={(e) => setHcgValor(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                          />
-                        </div>
-
-                        {!esConsultaSeguimiento && (
-                          <div className="space-y-2">
-                            <Label className="text-base font-medium text-slate-700">¿Dispone de β-hCG anterior?</Label>
-                            <input
-                              type="number"
-                              placeholder="Ingrese el valor anterior de β-hCG"
-                              value={hcgAnterior}
-                              onChange={(e) => setHcgAnterior(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                            />
-                          </div>
-                        )}
-
-                        {esConsultaSeguimiento && (
-                          <div className="space-y-2">
-                            <Label className="text-base font-medium text-slate-700">β-hCG Anterior (mUI/mL):</Label>
-                            <input
-                              type="number"
-                              placeholder="Valor cargado automáticamente"
-                              value={hcgAnterior}
-                              readOnly
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
-                            />
-                          </div>
-                        )}
+                      // En la sección 5, reemplazar los campos de β-hCG con:
+                      <div className="space-y-2">
+                        <Label className="text-base font-medium text-slate-700">β-hCG actual (mUI/mL):</Label>
+                        <input
+                          type="number"
+                          placeholder="Ingrese el valor actual de β-hCG"
+                          value={hcgValor}
+                          onChange={(e) => setHcgValor(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        />
                       </div>
+                      {esConsultaSeguimiento && hcgAnterior && (
+                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                          <p className="text-sm text-blue-800">
+                            <strong>β-hCG de consulta anterior:</strong> {hcgAnterior} mUI/mL
+                          </p>
+                          <p className="text-xs text-blue-600 mt-1">
+                            Se calculará automáticamente la variación con el valor actual
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex justify-between">

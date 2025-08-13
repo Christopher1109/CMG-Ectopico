@@ -182,7 +182,7 @@ function calcularProbabilidad(pretestProb: number, LRs: number[]) {
 
 function generarIdSeguimiento(): string {
   const idsExistentes = []
-  for (let i = 0; i < localStorage.length, i < localStorage.length; i++) {
+  for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
     if (key && key.startsWith("ectopico_ID-")) {
       const idNumero = key.replace("ectopico_ID-", "")

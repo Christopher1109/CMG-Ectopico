@@ -173,13 +173,17 @@ function calcularProbabilidad(pretestProb: number, LRs: number[]) {
 // Modificar la función generarIdSeguimiento para generar ID base
 function generarIdBasePaciente(): string {
   const idsExistentes = []
+
+  // Buscar en localStorage
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
     if (key && key.startsWith("ectopico_ID-")) {
       const idCompleto = key.replace("ectopico_", "")
       const idBase = idCompleto.split("-C")[0] // Extraer solo la parte base
-      const numeroId = idBase.replace("ID-", "")
-      idsExistentes.push(Number.parseInt(numeroId))
+      const numeroId = Number.parseInt(idBase.replace("ID-", ""))
+      if (!isNaN(numeroId)) {
+        idsExistentes.push(numeroId)
+      }
     }
   }
 
@@ -266,7 +270,32 @@ export default function CalculadoraEctopico() {
           // Verificar si ya existe en localStorage
           const existeLocal = consultasEncontradas.find((c) => c.id === consultaSupabase.id)
           if (!existeLocal) {
-            consultasEncontradas.push(consultaSupabase)
+            // Mapear los campos de la base de datos al formato local
+            const consultaMapeada = {
+              id: consultaSupabase.id,
+              fechaCreacion: consultaSupabase.fecha_creacion,
+              fechaUltimaActualizacion: consultaSupabase.fecha_ultima_actualizacion,
+              usuarioCreador: consultaSupabase.usuario_creador,
+              nombre_paciente: consultaSupabase.nombre_paciente,
+              edad_paciente: consultaSupabase.edad_paciente,
+              frecuencia_cardiaca: consultaSupabase.frecuencia_cardiaca,
+              presion_sistolica: consultaSupabase.presion_sistolica,
+              presion_diastolica: consultaSupabase.presion_diastolica,
+              estado_conciencia: consultaSupabase.estado_conciencia,
+              prueba_embarazo_realizada: consultaSupabase.prueba_embarazo_realizada,
+              resultado_prueba_embarazo: consultaSupabase.resultado_prueba_embarazo,
+              hallazgos_exploracion: consultaSupabase.hallazgos_exploracion,
+              tiene_eco_transabdominal: consultaSupabase.tiene_eco_transabdominal,
+              resultado_eco_transabdominal: consultaSupabase.resultado_eco_transabdominal,
+              sintomas_seleccionados: consultaSupabase.sintomas_seleccionados || [],
+              factores_seleccionados: consultaSupabase.factores_seleccionados || [],
+              tvus: consultaSupabase.tvus,
+              hcg_valor: consultaSupabase.hcg_valor,
+              variacion_hcg: consultaSupabase.variacion_hcg,
+              hcg_anterior: consultaSupabase.hcg_anterior,
+              resultado: consultaSupabase.resultado,
+            }
+            consultasEncontradas.push(consultaMapeada)
           }
         })
       }

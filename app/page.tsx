@@ -2,7 +2,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { crearConsulta, actualizarConsulta, obtenerConsulta } from '../lib/api/consultas'
 import {
   Heart,
   Stethoscope,
@@ -79,7 +78,6 @@ async function enviarDatosAlBackend(datos: any): Promise<boolean> {
   }
 }
 
-
 async function actualizarDatosEnBackend(id: string, datos: any): Promise<boolean> {
   try {
     const patch = {
@@ -116,8 +114,6 @@ async function actualizarDatosEnBackend(id: string, datos: any): Promise<boolean
   }
 }
 
-
-
 async function leerDatosDesdeBackend(id: string): Promise<any | null> {
   try {
     const res = await obtenerConsulta(id) // GET /api/consultas/:id
@@ -128,7 +124,6 @@ async function leerDatosDesdeBackend(id: string): Promise<any | null> {
     return null
   }
 }
-
 
 async function sincronizarDatos(id: string, datos: any, esNuevo = false): Promise<void> {
   localStorage.setItem(`ectopico_${id}`, JSON.stringify(datos))
@@ -592,6 +587,10 @@ export default function CalculadoraEctopico() {
     }
   }
 
+  const generarIdSeguimiento = () => {
+    return "ID-" + Math.random().toString(36).substring(2, 9).toUpperCase()
+  }
+
   const iniciarNuevaEvaluacion_OLD = () => {
     const nuevoId = generarIdSeguimiento()
     resetCalculadora()
@@ -953,7 +952,7 @@ export default function CalculadoraEctopico() {
     try {
       // Ahora usamos tu API Next (/api/consultas), NO supabase.from(...).insert()
       const ok = await enviarDatosAlBackend(datosCompletos)
-  
+
       if (!ok) {
         alert("Advertencia: Los datos se guardaron localmente pero hubo un error al sincronizar con la base de datos.")
       } else {
@@ -963,7 +962,6 @@ export default function CalculadoraEctopico() {
       console.error("Error llamando /api/consultas:", e)
       alert("Advertencia: Los datos se guardaron localmente pero no se pudo conectar con la base de datos.")
     }
-
 
     // 5. MOSTRAR RESULTADOS
     if (probPost >= 0.95) {

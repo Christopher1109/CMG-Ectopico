@@ -7,24 +7,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import {
-  Heart,
-  Stethoscope,
-  FileText,
-  Calculator,
-  User,
-  Activity,
-  AlertTriangle,
-  Copy,
-  Lock,
-  Eye,
-  EyeOff,
-  CheckCircle,
-  Download,
-  ArrowRight,
+  Heart, Stethoscope, FileText, Calculator, User, Activity, AlertTriangle,
+  Copy, Lock, Eye, EyeOff, CheckCircle, Download, ArrowRight,
 } from "lucide-react"
 import { crearConsulta, actualizarConsulta, obtenerConsulta } from "@/lib/api/consultas"
 
-// ==================== SUPABASE (opcional) ====================
+// ==================== SUPABASE (fallback directo) ====================
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
@@ -46,7 +34,6 @@ const numOrNull = (v: any) => {
 }
 const esNumero = (v: any) => Number.isFinite(Number(v))
 
-// Genera ID incremental basado en localStorage (ID-00001, ID-00002, …)
 function generarIdConsulta(): string {
   const ids: number[] = []
   for (let i = 0; i < localStorage.length; i++) {
@@ -61,7 +48,6 @@ function generarIdConsulta(): string {
   return `ID-${String(next).padStart(5, "0")}`
 }
 
-// Normaliza a snake_case
 function normalizarConsulta(d: any) {
   if (!d) return null
   return {
@@ -94,7 +80,6 @@ function normalizarConsulta(d: any) {
     hcg_anterior: d.hcg_anterior ?? d.hcgAnterior ?? null,
 
     resultado: d.resultado ?? null,
-
     consulta_numero: d.consulta_numero ?? null,
 
     consulta1_tvus: d.consulta1_tvus ?? null,
@@ -124,39 +109,58 @@ async function leerDatosDesdeBackend(id: string) {
     const res = await obtenerConsulta(id)
     if (res?.error) return null
     return res?.data ?? null
-  } catch (e) {
-    console.error("GET /api/consultas error:", e)
+  } catch {
     return null
   }
 }
 
-// Intenta crear la fila si no existe (para evitar error en consulta 2/3)
-async function asegurarFilaEnBD(id: string, usuarioActual: string, nombrePaciente?: string, edad?: string) {
+async function rowExists(id: string) {
   try {
-    const res = await obtenerConsulta(id)
-    if (res && !res.error && res.data) return true
-  } catch (_) {}
+    const r = await obtenerConsulta(id)
+    if (r && !r.error && r.data) return true
+  } catch {}
   try {
-    const payloadMin = {
-      id,
-      usuario_creador: usuarioActual || null,
-      nombre_paciente: nombrePaciente ?? null,
-      edad_paciente: numOrNull(edad),
-      consulta_numero: 1 as const,
-    }
-    const r2 = await crearConsulta(payloadMin)
-    if (r2?.error) {
-      console.error("asegurarFilaEnBD -> crearConsulta falló:", r2.error)
-      return false
-    }
-    return true
-  } catch (e) {
-    console.error("asegurarFilaEnBD -> excepción creando fila:", e)
+    const { data, error } = await supabase.from("consultas").select("id").eq("id", id).maybeSingle()
+    if (!error && data?.id) return true
+  } catch {}
+  return false
+}
+
+async function insertDirectSupabase(payloadMin: any) {
+  try {
+    const { error } = await supabase.from("consultas").insert(payloadMin)
+    return !error
+  } catch {
+    return false
+  }
+}
+async function updateDirectSupabase(id: string, patchMin: any) {
+  try {
+    const { error } = await supabase.from("consultas").update(patchMin).eq("id", id)
+    return !error
+  } catch {
     return false
   }
 }
 
-// Guarda/actualiza por consulta, con fallback mínimo si el PATCH falla
+// Asegura fila para C2/C3
+async function asegurarFilaEnBD(id: string, usuarioActual: string, nombrePaciente?: string, edad?: string) {
+  if (await rowExists(id)) return true
+  const payloadMin = {
+    id,
+    usuario_creador: usuarioActual || null,
+    nombre_paciente: nombrePaciente ?? null,
+    edad_paciente: numOrNull(edad),
+    consulta_numero: 1 as const,
+  }
+  try {
+    const r = await crearConsulta(payloadMin)
+    if (!r?.error) return true
+  } catch {}
+  return await insertDirectSupabase(payloadMin)
+}
+
+// Guardado robusto por consulta (incluye fallbacks en cascada)
 async function guardarEnDB_porConsulta(
   id: string,
   numeroConsulta: 1 | 2 | 3,
@@ -185,9 +189,9 @@ async function guardarEnDB_porConsulta(
 ): Promise<boolean> {
   const fechaISO = new Date().toISOString()
 
-  // Inserción (consulta 1)
+  // ---- CONSULTA 1: crear si no existe, si existe actualiza ----
   if (numeroConsulta === 1) {
-    const payload = {
+    const payloadFull = {
       id,
       usuario_creador: datos.usuarioActual || null,
 
@@ -223,31 +227,45 @@ async function guardarEnDB_porConsulta(
       consulta1_usuario: datos.usuarioActual || null,
     }
 
-    const res = await crearConsulta(payload)
-    if (res?.error) {
-      // Fallback: inserción mínima (por si faltan columnas nuevas en tu tabla)
-      const payloadMin = {
-        id,
-        usuario_creador: datos.usuarioActual || null,
-        nombre_paciente: datos.nombrePaciente ?? null,
-        edad_paciente: numOrNull(datos.edadPaciente),
-        tvus: datos.tvus ?? null,
-        hcg_valor: numOrNull(datos.hcgValor),
-        hcg_anterior: numOrNull(datos.hcgAnterior),
-        variacion_hcg: datos.variacionHcg ?? null,
-        resultado: typeof datos.resultado === "number" ? datos.resultado : null,
-        consulta_numero: 1 as const,
-      }
-      const r2 = await crearConsulta(payloadMin)
-      if (r2?.error) {
-        console.error("crearConsulta falló (payload completo y mínimo):", res.error, r2.error)
-        return false
-      }
+    const payloadMin = {
+      id,
+      usuario_creador: datos.usuarioActual || null,
+      nombre_paciente: datos.nombrePaciente ?? null,
+      edad_paciente: numOrNull(datos.edadPaciente),
+      tvus: datos.tvus ?? null,
+      hcg_valor: numOrNull(datos.hcgValor),
+      hcg_anterior: numOrNull(datos.hcgAnterior),
+      variacion_hcg: datos.variacionHcg ?? null,
+      resultado: typeof datos.resultado === "number" ? datos.resultado : null,
+      consulta_numero: 1 as const,
     }
-    return true
+
+    // 1) Si ya existe → actualiza
+    if (await rowExists(id)) {
+      try {
+        const r = await actualizarConsulta(id, payloadFull)
+        if (!r?.error) return true
+      } catch {}
+      try {
+        const r2 = await actualizarConsulta(id, payloadMin)
+        if (!r2?.error) return true
+      } catch {}
+      return await updateDirectSupabase(id, payloadMin)
+    }
+
+    // 2) No existe → crea
+    try {
+      const r = await crearConsulta(payloadFull)
+      if (!r?.error) return true
+    } catch {}
+    try {
+      const r2 = await crearConsulta(payloadMin)
+      if (!r2?.error) return true
+    } catch {}
+    return await insertDirectSupabase(payloadMin)
   }
 
-  // Actualizaciones (consulta 2 y 3)
+  // ---- CONSULTA 2/3: asegurar fila y actualizar con fallback mínimo ----
   const comunes = {
     tvus: datos.tvus ?? null,
     hcg_valor: numOrNull(datos.hcgValor),
@@ -257,7 +275,7 @@ async function guardarEnDB_porConsulta(
   }
 
   if (numeroConsulta === 2) {
-    const patchCompleto = {
+    const full = {
       ...comunes,
       consulta_numero: 2 as const,
       consulta2_tvus: datos.tvus ?? null,
@@ -267,21 +285,18 @@ async function guardarEnDB_porConsulta(
       consulta2_fecha: fechaISO,
       consulta2_usuario: datos.usuarioActual || null,
     }
-    const r = await actualizarConsulta(id, patchCompleto)
-    if (r?.error) {
-      // Fallback mínimo
-      const patchMin = { ...comunes, consulta_numero: 2 as const }
-      const r2 = await actualizarConsulta(id, patchMin)
-      if (r2?.error) {
-        console.error("actualizarConsulta (consulta2) falló:", r.error, r2.error)
-        return false
-      }
-    }
-    return true
+    try {
+      const r = await actualizarConsulta(id, full)
+      if (!r?.error) return true
+    } catch {}
+    try {
+      const r2 = await actualizarConsulta(id, { ...comunes, consulta_numero: 2 as const })
+      if (!r2?.error) return true
+    } catch {}
+    return await updateDirectSupabase(id, { ...comunes, consulta_numero: 2 as const })
   }
 
-  // consulta 3
-  const patchCompleto = {
+  const full3 = {
     ...comunes,
     consulta_numero: 3 as const,
     consulta3_tvus: datos.tvus ?? null,
@@ -291,16 +306,15 @@ async function guardarEnDB_porConsulta(
     consulta3_fecha: fechaISO,
     consulta3_usuario: datos.usuarioActual || null,
   }
-  const r = await actualizarConsulta(id, patchCompleto)
-  if (r?.error) {
-    const patchMin = { ...comunes, consulta_numero: 3 as const }
-    const r2 = await actualizarConsulta(id, patchMin)
-    if (r2?.error) {
-      console.error("actualizarConsulta (consulta3) falló:", r.error, r2.error)
-      return false
-    }
-  }
-  return true
+  try {
+    const r = await actualizarConsulta(id, full3)
+    if (!r?.error) return true
+  } catch {}
+  try {
+    const r2 = await actualizarConsulta(id, { ...comunes, consulta_numero: 3 as const })
+    if (!r2?.error) return true
+  } catch {}
+  return await updateDirectSupabase(id, { ...comunes, consulta_numero: 3 as const })
 }
 
 // Bayes
@@ -310,7 +324,7 @@ function calcularProbabilidad(pretestProb: number, LRs: number[]) {
   return +(odds / (1 + odds)).toFixed(4)
 }
 
-// ==================== MAPAS (Tabla 1) ====================
+// ==================== MAPAS Tabla 1 ====================
 const probabilidadesSinFactores = { asintomatica: 0.017, sangrado: 0.03, dolor: 0.13, dolor_sangrado: 0.15 }
 const probabilidadesConFactores = { asintomatica: 0.05, sangrado: 0.08, dolor: 0.4, dolor_sangrado: 0.46 }
 const tvusMap = { normal: 0.07, libre: 2.4, masa: 38, masa_libre: 47 }
@@ -321,11 +335,7 @@ const hcgMap = {
   masa_libre: { bajo: 17, alto: 55 },
 }
 const variacionHcgMap = {
-  reduccion_1_35: 16.6,
-  reduccion_35_50: 0.8,
-  reduccion_mayor_50: 0,
-  aumento: 3.3,
-  no_disponible: 1,
+  reduccion_1_35: 16.6, reduccion_35_50: 0.8, reduccion_mayor_50: 0, aumento: 3.3, no_disponible: 1,
 }
 
 // ==================== LISTAS ====================
@@ -343,7 +353,7 @@ const sintomasList = [
 ]
 
 // ============================================================================
-//                                 COMPONENTE
+//                               COMPONENTE
 // ============================================================================
 export default function CalculadoraEctopico() {
   // ----- auth -----
@@ -361,7 +371,7 @@ export default function CalculadoraEctopico() {
   const [seccionesCompletadas, setSeccionesCompletadas] = useState<number[]>([])
   const [mostrarPantallaBienvenida, setMostrarPantallaBienvenida] = useState(true)
 
-  // ----- estados clínicos base -----
+  // ----- datos base -----
   const [nombrePaciente, setNombrePaciente] = useState("")
   const [edadPaciente, setEdadPaciente] = useState("")
   const [frecuenciaCardiaca, setFrecuenciaCardiaca] = useState("")
@@ -400,7 +410,7 @@ export default function CalculadoraEctopico() {
   const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
   const [consultaCargada, setConsultaCargada] = useState<any>(null)
 
-  // ==================== UI Helpers ====================
+  // ==================== UI helpers ====================
   const ProgressBar = () => {
     const steps = [
       { id: 1, name: "Expediente Clínico", icon: User },
@@ -423,20 +433,12 @@ export default function CalculadoraEctopico() {
                   <div className="flex flex-col items-center">
                     <div
                       className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        isCompleted
-                          ? "bg-green-500 text-white"
-                          : isCurrent
-                          ? "bg-blue-500 text-white"
-                          : isAccessible
-                          ? "bg-gray-300 text-gray-600"
-                          : "bg-gray-200 text-gray-400"
+                        isCompleted ? "bg-green-500 text-white" : isCurrent ? "bg-blue-500 text-white" : isAccessible ? "bg-gray-300 text-gray-600" : "bg-gray-200 text-gray-400"
                       }`}
                     >
                       {isCompleted ? <CheckCircle className="h-6 w-6" /> : <Icon className="h-6 w-6" />}
                     </div>
-                    <span className={`text-xs mt-2 text-center max-w-20 ${isCurrent ? "font-semibold text-blue-600" : "text-gray-600"}`}>
-                      {step.name}
-                    </span>
+                    <span className={`text-xs mt-2 text-center max-w-20 ${isCurrent ? "font-semibold text-blue-600" : "text-gray-600"}`}>{step.name}</span>
                   </div>
                   {index < steps.length - 1 && <ArrowRight className="h-5 w-5 text-gray-400 mx-4 flex-shrink-0" />}
                 </div>
@@ -451,8 +453,7 @@ export default function CalculadoraEctopico() {
   const CMGFooter = () => (
     <div className="text-center mt-8 pt-4 border-t border-gray-200">
       <p className="text-sm text-gray-500">
-        Desarrollado por <span className="font-semibold text-blue-600">CMG Health Solutions</span> - Sistema de
-        Evaluación Diagnóstica Avanzada
+        Desarrollado por <span className="font-semibold text-blue-600">CMG Health Solutions</span> - Sistema de Evaluación Diagnóstica Avanzada
       </p>
     </div>
   )
@@ -533,10 +534,6 @@ export default function CalculadoraEctopico() {
     setEstaAutenticado(false)
     setUsuarioActual("")
     setNombreUsuario("")
-    setUsuario("")
-    setContraseña("")
-    setErrorLogin("")
-    setIntentosLogin(0)
     resetCalculadora()
   }
 
@@ -565,7 +562,7 @@ export default function CalculadoraEctopico() {
     setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
     setSintomasSeleccionados(consultaCargada.sintomas_seleccionados || [])
     setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
-    setTvus("") // NO preseleccionar TVUS
+    setTvus("") // no preseleccionado
     setHcgAnterior(consultaCargada.hcg_valor?.toString() || "")
     setHcgValor("")
     setEsConsultaSeguimiento(true)
@@ -585,16 +582,12 @@ export default function CalculadoraEctopico() {
     }
 
     let encontrada: any = null
-
     const local = localStorage.getItem(`ectopico_${id}`)
     if (local) {
       try {
         encontrada = normalizarConsulta(JSON.parse(local))
-      } catch (e) {
-        console.warn("Error parseando localStorage:", e)
-      }
+      } catch {}
     }
-
     if (!encontrada) {
       const row = await leerDatosDesdeBackend(id)
       if (row) {
@@ -603,7 +596,6 @@ export default function CalculadoraEctopico() {
         localStorage.setItem(`ectopico_${id}`, JSON.stringify(n))
       }
     }
-
     if (encontrada) {
       setConsultaCargada(encontrada)
       setMostrarResumenConsulta(true)
@@ -613,22 +605,18 @@ export default function CalculadoraEctopico() {
     }
   }
 
-  // ==================== VALIDACIONES (con registro temprano) ====================
+  // ==================== CORTES TEMPRANOS ====================
   async function registrarCorteTemprano(resultadoInferido: number | null, motivo: string) {
     try {
       const id = idSeguimiento || generarIdConsulta()
       if (!idSeguimiento) setIdSeguimiento(id)
-
-      // 1/2/3: si hay ya consulta2_fecha => 3, si no => 2 cuando es seguimiento
       let numero: 1 | 2 | 3 = esConsultaSeguimiento ? 2 : 1
       if (esConsultaSeguimiento) {
         const fila = await leerDatosDesdeBackend(id)
         numero = fila?.consulta2_fecha ? 3 : 2
       }
-
       await asegurarFilaEnBD(id, usuarioActual, nombrePaciente, edadPaciente)
-
-      const ok = await guardarEnDB_porConsulta(id, numero, {
+      await guardarEnDB_porConsulta(id, numero, {
         usuarioActual,
         tvus,
         hcgValor,
@@ -649,12 +637,10 @@ export default function CalculadoraEctopico() {
         sintomasSeleccionados,
         factoresSeleccionados,
       })
-      if (!ok) console.warn("No se pudo registrar el corte temprano:", motivo)
-    } catch (e) {
-      console.warn("Registro de corte temprano falló:", motivo, e)
-    }
+    } catch {}
   }
 
+  // ==================== VALIDACIONES ====================
   const validarSignosVitales = () => {
     const fc = Number.parseFloat(frecuenciaCardiaca)
     const sistolica = Number.parseFloat(presionSistolica)
@@ -663,7 +649,6 @@ export default function CalculadoraEctopico() {
     setMostrarAlerta(false)
     setMensajeAlerta("")
 
-    // Emergencias
     if (sistolica >= 180 || diastolica >= 110) {
       setMensajeFinal("🚨 Crisis hipertensiva. Traslado inmediato.")
       setProtocoloFinalizado(true)
@@ -695,21 +680,15 @@ export default function CalculadoraEctopico() {
       return false
     }
 
-    // Alertas
     if (sistolica < 90 || diastolica < 60) {
-      setMostrarAlerta(true)
-      setMensajeAlerta("Hipotensión arterial. Evaluar de inmediato.")
+      setMostrarAlerta(true); setMensajeAlerta("Hipotensión arterial. Evaluar de inmediato.")
     } else if (sistolica >= 140 || diastolica >= 90) {
-      setMostrarAlerta(true)
-      setMensajeAlerta("Hipertensión arterial. Requiere seguimiento.")
+      setMostrarAlerta(true); setMensajeAlerta("Hipertensión arterial. Requiere seguimiento.")
     } else if (fc > 100) {
-      setMostrarAlerta(true)
-      setMensajeAlerta("Taquicardia. Monitoreo recomendado.")
+      setMostrarAlerta(true); setMensajeAlerta("Taquicardia. Monitoreo recomendado.")
     } else if (fc < 60) {
-      setMostrarAlerta(true)
-      setMensajeAlerta("Bradicardia. Evaluación recomendada.")
+      setMostrarAlerta(true); setMensajeAlerta("Bradicardia. Evaluación recomendada.")
     }
-
     return true
   }
 
@@ -731,11 +710,8 @@ export default function CalculadoraEctopico() {
 
   const validarEcoTransabdominal = () => {
     const confirmatorias = [
-      "saco_embrion_fc",
-      "saco_vitelino_embrion",
-      "saco_vitelino_sin_embrion",
-      "saco_sin_embrion",
-      "saco_10mm_decidual_2mm",
+      "saco_embrion_fc", "saco_vitelino_embrion", "saco_vitelino_sin_embrion",
+      "saco_sin_embrion", "saco_10mm_decidual_2mm",
     ]
     if (tieneEcoTransabdominal === "si" && confirmatorias.includes(resultadoEcoTransabdominal)) {
       setMensajeFinal("Hallazgos compatibles con embarazo intrauterino.")
@@ -753,7 +729,6 @@ export default function CalculadoraEctopico() {
       return
     }
 
-    // Pretest
     const tieneFactores = factoresSeleccionados.length > 0
     const sintomasParaCalculo = sintomasSeleccionados.filter((s) => s !== "sincope")
     let clave: "asintomatica" | "sangrado" | "dolor" | "dolor_sangrado" = "asintomatica"
@@ -764,7 +739,6 @@ export default function CalculadoraEctopico() {
     const tabla = tieneFactores ? probabilidadesConFactores : probabilidadesSinFactores
     const probPre = tabla[clave]
 
-    // LRs
     const LRs: number[] = []
     const lrTvus = tvusMap[tvus as keyof typeof tvusMap]
     if (lrTvus) LRs.push(lrTvus)
@@ -774,7 +748,6 @@ export default function CalculadoraEctopico() {
     const lrHcg = hcgMap[tvus as keyof typeof hcgMap]?.[nivel as "alto" | "bajo"]
     if (lrHcg) LRs.push(lrHcg)
 
-    // variación (si hay anterior)
     let variacionCalculada: keyof typeof variacionHcgMap | "no_disponible" = "no_disponible"
     if (hcgAnterior && hcgValor) {
       const prev = Number.parseFloat(hcgAnterior)
@@ -797,7 +770,6 @@ export default function CalculadoraEctopico() {
     const probPost = calcularProbabilidad(probPre, LRs)
     setResultado(probPost)
 
-    // Local
     const fechaActual = new Date().toISOString()
     const paqueteLocal = {
       id: idSeguimiento,
@@ -825,7 +797,6 @@ export default function CalculadoraEctopico() {
     }
     localStorage.setItem(`ectopico_${idSeguimiento}`, JSON.stringify(paqueteLocal))
 
-    // 1/2/3
     let numeroConsulta: 1 | 2 | 3 = 1
     if (!esConsultaSeguimiento) numeroConsulta = 1
     else {
@@ -834,11 +805,8 @@ export default function CalculadoraEctopico() {
     }
 
     try {
-      // Asegurar fila
-      const okFila = await asegurarFilaEnBD(idSeguimiento, usuarioActual, nombrePaciente, edadPaciente)
-      if (!okFila) throw new Error("No se pudo asegurar la fila en BD")
-
-      // Guardar
+      // Asegurar fila para cualquier caso (si ya existía por corte temprano o similar)
+      await asegurarFilaEnBD(idSeguimiento, usuarioActual, nombrePaciente, edadPaciente)
       const ok = await guardarEnDB_porConsulta(idSeguimiento, numeroConsulta, {
         usuarioActual,
         tvus,
@@ -866,7 +834,6 @@ export default function CalculadoraEctopico() {
       alert("Advertencia: guardado local OK, pero falló la sincronización con la base de datos.")
     }
 
-    // Mensajes
     if (probPost >= 0.95) {
       setMensajeFinal("Embarazo ectópico confirmado (≥95%). Proceder con manejo.")
       setProtocoloFinalizado(true)
@@ -879,13 +846,11 @@ export default function CalculadoraEctopico() {
     }
   }
 
-  // ==================== NOMBRES AMIGABLES ====================
   const obtenerNombreSintoma = (id: string) => sintomasList.find((s) => s.id === id)?.label ?? id
   const obtenerNombreFactor = (id: string) => factoresRiesgo.find((f) => f.id === id)?.label ?? id
   const obtenerNombreTVUS = (id: string) =>
     id === "normal" ? "Normal" : id === "libre" ? "Líquido libre" : id === "masa" ? "Masa anexial" : id === "masa_libre" ? "Masa anexial + líquido libre" : "No especificado"
 
-  // ==================== INFORME (TXT) ====================
   const generarInforme = () => {
     try {
       const contenido = `
@@ -938,8 +903,7 @@ CMG Health Solutions
       a.click()
       document.body.removeChild(a)
       alert("Informe generado.")
-    } catch (e) {
-      console.error(e)
+    } catch {
       alert("No se pudo generar el informe.")
     }
   }
@@ -1095,10 +1059,7 @@ CMG Health Solutions
                     </div>
                   </Button>
                   <Button
-                    onClick={() => {
-                      setMostrarPantallaBienvenida(false)
-                      setModoCargarConsulta(true)
-                    }}
+                    onClick={() => { setMostrarPantallaBienvenida(false); setModoCargarConsulta(true) }}
                     variant="outline"
                     className="h-24 border-blue-300 text-blue-600 hover:bg-blue-50 font-semibold text-lg"
                   >
@@ -1148,14 +1109,7 @@ CMG Health Solutions
                       <FileText className="h-4 w-4 mr-2" />
                       Buscar Consulta
                     </Button>
-                    <Button
-                      onClick={() => {
-                        setModoCargarConsulta(false)
-                        setMostrarPantallaBienvenida(true)
-                      }}
-                      variant="outline"
-                      className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                    >
+                    <Button onClick={() => { setModoCargarConsulta(false); setMostrarPantallaBienvenida(true) }} variant="outline" className="border-gray-300 text-gray-600 hover:bg-gray-50">
                       Cancelar
                     </Button>
                   </div>
@@ -1166,7 +1120,6 @@ CMG Health Solutions
           </Card>
         </div>
       ) : mostrarResumenConsulta && consultaCargada ? (
-        // -------- Resumen anterior --------
         <div className="max-w-4xl mx-auto p-6">
           <Card className="shadow-lg">
             <CardContent className="p-8">
@@ -1219,15 +1172,7 @@ CMG Health Solutions
                     <ArrowRight className="h-4 w-4 mr-2" />
                     Continuar Consulta
                   </Button>
-                  <Button
-                    onClick={() => {
-                      setMostrarResumenConsulta(false)
-                      setModoCargarConsulta(true)
-                      setConsultaCargada(null)
-                    }}
-                    variant="outline"
-                    className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                  >
+                  <Button onClick={() => { setMostrarResumenConsulta(false); setModoCargarConsulta(true); setConsultaCargada(null) }} variant="outline" className="border-gray-300 text-gray-600 hover:bg-gray-50">
                     Buscar Otra Consulta
                   </Button>
                 </div>
@@ -1237,7 +1182,6 @@ CMG Health Solutions
           </Card>
         </div>
       ) : protocoloFinalizado ? (
-        // -------- Pantalla finalizada --------
         <div className="max-w-4xl mx-auto p-6">
           <Card className="shadow-lg">
             <CardContent className="p-8 space-y-6">
@@ -1277,7 +1221,6 @@ CMG Health Solutions
           </Card>
         </div>
       ) : mostrarResultados && resultado !== null ? (
-        // -------- Intermedio + seguimiento --------
         <div className="max-w-4xl mx-auto p-6">
           <Card className="shadow-lg">
             <CardContent className="p-8 space-y-6">
@@ -1338,7 +1281,6 @@ CMG Health Solutions
           </Card>
         </div>
       ) : (
-        // -------- Flujo principal --------
         <div>
           <ProgressBar />
           <div className="max-w-4xl mx-auto p-6">
@@ -1456,12 +1398,7 @@ CMG Health Solutions
                       <Button onClick={() => setSeccionActual(1)} variant="outline" className="border-gray-300">
                         Anterior
                       </Button>
-                      <Button
-                        onClick={() => {
-                          if (validarSignosVitales()) completarSeccion(2)
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
+                      <Button onClick={() => { if (validarSignosVitales()) completarSeccion(2) }} className="bg-blue-600 hover:bg-blue-700 text-white">
                         Continuar
                       </Button>
                     </div>
@@ -1509,12 +1446,7 @@ CMG Health Solutions
                       <Button onClick={() => setSeccionActual(2)} variant="outline" className="border-gray-300">
                         Anterior
                       </Button>
-                      <Button
-                        onClick={() => {
-                          if (validarPruebaEmbarazo()) completarSeccion(3)
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
+                      <Button onClick={() => { if (validarPruebaEmbarazo()) completarSeccion(3) }} className="bg-blue-600 hover:bg-blue-700 text-white">
                         Continuar
                       </Button>
                     </div>
@@ -1576,12 +1508,7 @@ CMG Health Solutions
                       <Button onClick={() => setSeccionActual(3)} variant="outline" className="border-gray-300">
                         Anterior
                       </Button>
-                      <Button
-                        onClick={() => {
-                          if (validarEcoTransabdominal()) completarSeccion(4)
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
+                      <Button onClick={() => { if (validarEcoTransabdominal()) completarSeccion(4) }} className="bg-blue-600 hover:bg-blue-700 text-white">
                         Continuar
                       </Button>
                     </div>
@@ -1597,7 +1524,6 @@ CMG Health Solutions
                     </div>
 
                     <div className="space-y-4">
-                      {/* Síntomas */}
                       <div className="space-y-2">
                         <Label className="text-base font-medium text-slate-700">Síntomas</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -1620,7 +1546,6 @@ CMG Health Solutions
                         <p className="text-xs text-slate-500">Marque los síntomas presentes.</p>
                       </div>
 
-                      {/* Factores de riesgo */}
                       <div className="space-y-2">
                         <Label className="text-base font-medium text-slate-700">Factores de riesgo</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -1643,7 +1568,6 @@ CMG Health Solutions
                         <p className="text-xs text-slate-500">Seleccione los factores de riesgo del paciente (si aplica).</p>
                       </div>
 
-                      {/* TVUS */}
                       <div className="space-y-2">
                         <Label className="text-base font-medium text-slate-700">Resultado de TVUS</Label>
                         <select
@@ -1660,7 +1584,6 @@ CMG Health Solutions
                         <p className="text-xs text-slate-500">Elija el hallazgo predominante del estudio transvaginal.</p>
                       </div>
 
-                      {/* hCG */}
                       <div className="space-y-2">
                         <Label className="text-base font-medium text-slate-700">β-hCG actual (mUI/mL)</Label>
                         <input
@@ -1675,9 +1598,7 @@ CMG Health Solutions
 
                       {esConsultaSeguimiento && hcgAnterior && (
                         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                          <p className="text-sm text-blue-800">
-                            <strong>β-hCG de consulta anterior:</strong> {hcgAnterior} mUI/mL
-                          </p>
+                          <p className="text-sm text-blue-800"><strong>β-hCG de consulta anterior:</strong> {hcgAnterior} mUI/mL</p>
                           <p className="text-xs text-blue-600 mt-1">Se calculará automáticamente la variación con el valor actual.</p>
                         </div>
                       )}

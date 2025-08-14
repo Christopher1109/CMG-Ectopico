@@ -24,7 +24,7 @@ import {
 } from "lucide-react"
 import { crearConsulta, actualizarConsulta, obtenerConsulta } from "@/lib/api/consultas"
 
-// ==================== SUPABASE (solo si te hacía falta para algo extra) ====================
+// ==================== SUPABASE (opcional) ====================
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
@@ -44,11 +44,7 @@ const numOrNull = (v: any) => {
   const n = Number(v)
   return Number.isFinite(n) ? n : null
 }
-
-function esNumero(v: any) {
-  const n = Number(v)
-  return Number.isFinite(n)
-}
+const esNumero = (v: any) => Number.isFinite(Number(v))
 
 // Genera ID incremental basado en localStorage (ID-00001, ID-00002, …)
 function generarIdConsulta(): string {
@@ -65,7 +61,7 @@ function generarIdConsulta(): string {
   return `ID-${String(next).padStart(5, "0")}`
 }
 
-// Normaliza a snake_case por si vienen datos camelCase/localStorage
+// Normaliza a snake_case
 function normalizarConsulta(d: any) {
   if (!d) return null
   return {
@@ -99,7 +95,6 @@ function normalizarConsulta(d: any) {
 
     resultado: d.resultado ?? null,
 
-    // columnas consulta 1/2/3 (por si vienen)
     consulta_numero: d.consulta_numero ?? null,
 
     consulta1_tvus: d.consulta1_tvus ?? null,
@@ -126,7 +121,7 @@ function normalizarConsulta(d: any) {
 
 async function leerDatosDesdeBackend(id: string) {
   try {
-    const res = await obtenerConsulta(id) // GET /api/consultas/:id
+    const res = await obtenerConsulta(id)
     if (res?.error) return null
     return res?.data ?? null
   } catch (e) {
@@ -135,7 +130,33 @@ async function leerDatosDesdeBackend(id: string) {
   }
 }
 
-// Guarda/actualiza en DB según el número de consulta (1, 2 o 3)
+// Intenta crear la fila si no existe (para evitar error en consulta 2/3)
+async function asegurarFilaEnBD(id: string, usuarioActual: string, nombrePaciente?: string, edad?: string) {
+  try {
+    const res = await obtenerConsulta(id)
+    if (res && !res.error && res.data) return true
+  } catch (_) {}
+  try {
+    const payloadMin = {
+      id,
+      usuario_creador: usuarioActual || null,
+      nombre_paciente: nombrePaciente ?? null,
+      edad_paciente: numOrNull(edad),
+      consulta_numero: 1 as const,
+    }
+    const r2 = await crearConsulta(payloadMin)
+    if (r2?.error) {
+      console.error("asegurarFilaEnBD -> crearConsulta falló:", r2.error)
+      return false
+    }
+    return true
+  } catch (e) {
+    console.error("asegurarFilaEnBD -> excepción creando fila:", e)
+    return false
+  }
+}
+
+// Guarda/actualiza por consulta, con fallback mínimo si el PATCH falla
 async function guardarEnDB_porConsulta(
   id: string,
   numeroConsulta: 1 | 2 | 3,
@@ -164,6 +185,7 @@ async function guardarEnDB_porConsulta(
 ): Promise<boolean> {
   const fechaISO = new Date().toISOString()
 
+  // Inserción (consulta 1)
   if (numeroConsulta === 1) {
     const payload = {
       id,
@@ -187,7 +209,6 @@ async function guardarEnDB_porConsulta(
       sintomas_seleccionados: datos.sintomasSeleccionados ?? [],
       factores_seleccionados: datos.factoresSeleccionados ?? [],
 
-      // “corrientes”
       tvus: datos.tvus ?? null,
       hcg_valor: numOrNull(datos.hcgValor),
       hcg_anterior: numOrNull(datos.hcgAnterior),
@@ -204,22 +225,41 @@ async function guardarEnDB_porConsulta(
 
     const res = await crearConsulta(payload)
     if (res?.error) {
-      console.error("crearConsulta (consulta 1) ->", res.error)
-      return false
+      // Fallback: inserción mínima (por si faltan columnas nuevas en tu tabla)
+      const payloadMin = {
+        id,
+        usuario_creador: datos.usuarioActual || null,
+        nombre_paciente: datos.nombrePaciente ?? null,
+        edad_paciente: numOrNull(datos.edadPaciente),
+        tvus: datos.tvus ?? null,
+        hcg_valor: numOrNull(datos.hcgValor),
+        hcg_anterior: numOrNull(datos.hcgAnterior),
+        variacion_hcg: datos.variacionHcg ?? null,
+        resultado: typeof datos.resultado === "number" ? datos.resultado : null,
+        consulta_numero: 1 as const,
+      }
+      const r2 = await crearConsulta(payloadMin)
+      if (r2?.error) {
+        console.error("crearConsulta falló (payload completo y mínimo):", res.error, r2.error)
+        return false
+      }
     }
     return true
   }
 
+  // Actualizaciones (consulta 2 y 3)
+  const comunes = {
+    tvus: datos.tvus ?? null,
+    hcg_valor: numOrNull(datos.hcgValor),
+    hcg_anterior: numOrNull(datos.hcgAnterior),
+    variacion_hcg: datos.variacionHcg ?? null,
+    resultado: typeof datos.resultado === "number" ? datos.resultado : datos.resultado === null ? null : null,
+  }
+
   if (numeroConsulta === 2) {
-    const patch = {
+    const patchCompleto = {
+      ...comunes,
       consulta_numero: 2 as const,
-
-      tvus: datos.tvus ?? null,
-      hcg_valor: numOrNull(datos.hcgValor),
-      hcg_anterior: numOrNull(datos.hcgAnterior),
-      variacion_hcg: datos.variacionHcg ?? null,
-      resultado: typeof datos.resultado === "number" ? datos.resultado : datos.resultado === null ? null : null,
-
       consulta2_tvus: datos.tvus ?? null,
       consulta2_hcg_valor: numOrNull(datos.hcgValor),
       consulta2_variacion_hcg: datos.variacionHcg ?? null,
@@ -227,24 +267,23 @@ async function guardarEnDB_porConsulta(
       consulta2_fecha: fechaISO,
       consulta2_usuario: datos.usuarioActual || null,
     }
-    const res = await actualizarConsulta(id, patch)
-    if (res?.error) {
-      console.error("actualizarConsulta (consulta 2) ->", res.error)
-      return false
+    const r = await actualizarConsulta(id, patchCompleto)
+    if (r?.error) {
+      // Fallback mínimo
+      const patchMin = { ...comunes, consulta_numero: 2 as const }
+      const r2 = await actualizarConsulta(id, patchMin)
+      if (r2?.error) {
+        console.error("actualizarConsulta (consulta2) falló:", r.error, r2.error)
+        return false
+      }
     }
     return true
   }
 
   // consulta 3
-  const patch = {
+  const patchCompleto = {
+    ...comunes,
     consulta_numero: 3 as const,
-
-    tvus: datos.tvus ?? null,
-    hcg_valor: numOrNull(datos.hcgValor),
-    hcg_anterior: numOrNull(datos.hcgAnterior),
-    variacion_hcg: datos.variacionHcg ?? null,
-    resultado: typeof datos.resultado === "number" ? datos.resultado : datos.resultado === null ? null : null,
-
     consulta3_tvus: datos.tvus ?? null,
     consulta3_hcg_valor: numOrNull(datos.hcgValor),
     consulta3_variacion_hcg: datos.variacionHcg ?? null,
@@ -252,34 +291,28 @@ async function guardarEnDB_porConsulta(
     consulta3_fecha: fechaISO,
     consulta3_usuario: datos.usuarioActual || null,
   }
-  const res = await actualizarConsulta(id, patch)
-  if (res?.error) {
-    console.error("actualizarConsulta (consulta 3) ->", res.error)
-    return false
+  const r = await actualizarConsulta(id, patchCompleto)
+  if (r?.error) {
+    const patchMin = { ...comunes, consulta_numero: 3 as const }
+    const r2 = await actualizarConsulta(id, patchMin)
+    if (r2?.error) {
+      console.error("actualizarConsulta (consulta3) falló:", r.error, r2.error)
+      return false
+    }
   }
   return true
 }
 
-// Determina odds/probabilidad post-test
+// Bayes
 function calcularProbabilidad(pretestProb: number, LRs: number[]) {
   let odds = pretestProb / (1 - pretestProb)
   for (const LR of LRs) odds *= LR
   return +(odds / (1 + odds)).toFixed(4)
 }
 
-// ==================== MAPAS DEL ALGORITMO (según Tabla 1) ====================
-const probabilidadesSinFactores = {
-  asintomatica: 0.017,
-  sangrado: 0.03,
-  dolor: 0.13,
-  dolor_sangrado: 0.15,
-}
-const probabilidadesConFactores = {
-  asintomatica: 0.05,
-  sangrado: 0.08,
-  dolor: 0.4,
-  dolor_sangrado: 0.46,
-}
+// ==================== MAPAS (Tabla 1) ====================
+const probabilidadesSinFactores = { asintomatica: 0.017, sangrado: 0.03, dolor: 0.13, dolor_sangrado: 0.15 }
+const probabilidadesConFactores = { asintomatica: 0.05, sangrado: 0.08, dolor: 0.4, dolor_sangrado: 0.46 }
 const tvusMap = { normal: 0.07, libre: 2.4, masa: 38, masa_libre: 47 }
 const hcgMap = {
   normal: { bajo: 1, alto: 1 },
@@ -302,7 +335,6 @@ const factoresRiesgo = [
   { id: "enfermedad_pelvica", label: "Enfermedad inflamatoria pélvica previa" },
   { id: "cirugia_tubarica", label: "Cirugía tubárica previa" },
 ]
-
 const sintomasList = [
   { id: "sangrado", label: "Sangrado vaginal" },
   { id: "dolor", label: "Dolor pélvico/abdominal" },
@@ -368,7 +400,7 @@ export default function CalculadoraEctopico() {
   const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
   const [consultaCargada, setConsultaCargada] = useState<any>(null)
 
-  // ==================== UTILES UI ====================
+  // ==================== UI Helpers ====================
   const ProgressBar = () => {
     const steps = [
       { id: 1, name: "Expediente Clínico", icon: User },
@@ -533,7 +565,7 @@ export default function CalculadoraEctopico() {
     setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
     setSintomasSeleccionados(consultaCargada.sintomas_seleccionados || [])
     setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
-    setTvus("") // <- NO preseleccionar TVUS; el médico debe elegirlo nuevamente
+    setTvus("") // NO preseleccionar TVUS
     setHcgAnterior(consultaCargada.hcg_valor?.toString() || "")
     setHcgValor("")
     setEsConsultaSeguimiento(true)
@@ -554,7 +586,6 @@ export default function CalculadoraEctopico() {
 
     let encontrada: any = null
 
-    // localStorage
     const local = localStorage.getItem(`ectopico_${id}`)
     if (local) {
       try {
@@ -582,20 +613,20 @@ export default function CalculadoraEctopico() {
     }
   }
 
-  // ==================== VALIDACIONES (con registro temprano en BD) ====================
+  // ==================== VALIDACIONES (con registro temprano) ====================
   async function registrarCorteTemprano(resultadoInferido: number | null, motivo: string) {
     try {
-      if (!idSeguimiento) {
-        const nuevoId = generarIdConsulta()
-        setIdSeguimiento(nuevoId)
-      }
       const id = idSeguimiento || generarIdConsulta()
+      if (!idSeguimiento) setIdSeguimiento(id)
 
-      let numero: 1 | 2 | 3 = 1
+      // 1/2/3: si hay ya consulta2_fecha => 3, si no => 2 cuando es seguimiento
+      let numero: 1 | 2 | 3 = esConsultaSeguimiento ? 2 : 1
       if (esConsultaSeguimiento) {
         const fila = await leerDatosDesdeBackend(id)
         numero = fila?.consulta2_fecha ? 3 : 2
       }
+
+      await asegurarFilaEnBD(id, usuarioActual, nombrePaciente, edadPaciente)
 
       const ok = await guardarEnDB_porConsulta(id, numero, {
         usuarioActual,
@@ -603,7 +634,7 @@ export default function CalculadoraEctopico() {
         hcgValor,
         hcgAnterior,
         variacionHcg,
-        resultado: resultadoInferido, // null si no aplica
+        resultado: resultadoInferido,
         nombrePaciente,
         edadPaciente,
         frecuenciaCardiaca,
@@ -690,10 +721,9 @@ export default function CalculadoraEctopico() {
       return false
     }
     if (resultadoPruebaEmbarazo === "negativa") {
-      // En el protocolo, embarazo ectópico descartado
       setMensajeFinal("Prueba de embarazo negativa. Ectópico descartado.")
       setProtocoloFinalizado(true)
-      registrarCorteTemprano(0, "prueba_negativa") // resultado 0 = descarta
+      registrarCorteTemprano(0, "prueba_negativa")
       return false
     }
     return true
@@ -710,13 +740,13 @@ export default function CalculadoraEctopico() {
     if (tieneEcoTransabdominal === "si" && confirmatorias.includes(resultadoEcoTransabdominal)) {
       setMensajeFinal("Hallazgos compatibles con embarazo intrauterino.")
       setProtocoloFinalizado(true)
-      registrarCorteTemprano(0, "evidencia_intrauterina") // excluye ectópico
+      registrarCorteTemprano(0, "evidencia_intrauterina")
       return false
     }
     return true
   }
 
-  // ==================== CÁLCULO (Bayes) + GUARDADO ====================
+  // ==================== CÁLCULO + GUARDADO ====================
   const calcular = async () => {
     if (!tvus || !hcgValor || sintomasSeleccionados.length === 0) {
       alert("Por favor complete: síntomas, TVUS y β-hCG.")
@@ -726,14 +756,13 @@ export default function CalculadoraEctopico() {
     // Pretest
     const tieneFactores = factoresSeleccionados.length > 0
     const sintomasParaCalculo = sintomasSeleccionados.filter((s) => s !== "sincope")
-    let claveSintoma: "asintomatica" | "sangrado" | "dolor" | "dolor_sangrado" = "asintomatica"
+    let clave: "asintomatica" | "sangrado" | "dolor" | "dolor_sangrado" = "asintomatica"
     if (sintomasParaCalculo.includes("dolor_sangrado") || (sintomasParaCalculo.includes("sangrado") && sintomasParaCalculo.includes("dolor")))
-      claveSintoma = "dolor_sangrado"
-    else if (sintomasParaCalculo.includes("sangrado")) claveSintoma = "sangrado"
-    else if (sintomasParaCalculo.includes("dolor")) claveSintoma = "dolor"
-
+      clave = "dolor_sangrado"
+    else if (sintomasParaCalculo.includes("sangrado")) clave = "sangrado"
+    else if (sintomasParaCalculo.includes("dolor")) clave = "dolor"
     const tabla = tieneFactores ? probabilidadesConFactores : probabilidadesSinFactores
-    const probPre = tabla[claveSintoma]
+    const probPre = tabla[clave]
 
     // LRs
     const LRs: number[] = []
@@ -768,7 +797,7 @@ export default function CalculadoraEctopico() {
     const probPost = calcularProbabilidad(probPre, LRs)
     setResultado(probPost)
 
-    // Guardado local + DB (1/2/3)
+    // Local
     const fechaActual = new Date().toISOString()
     const paqueteLocal = {
       id: idSeguimiento,
@@ -796,6 +825,7 @@ export default function CalculadoraEctopico() {
     }
     localStorage.setItem(`ectopico_${idSeguimiento}`, JSON.stringify(paqueteLocal))
 
+    // 1/2/3
     let numeroConsulta: 1 | 2 | 3 = 1
     if (!esConsultaSeguimiento) numeroConsulta = 1
     else {
@@ -804,32 +834,11 @@ export default function CalculadoraEctopico() {
     }
 
     try {
-      // si no existe fila y estamos en 2/3, primero creamos como 1 con datos base mínimos
-      const existente = await leerDatosDesdeBackend(idSeguimiento)
-      if (!existente && numeroConsulta !== 1) {
-        await guardarEnDB_porConsulta(idSeguimiento, 1, {
-          usuarioActual,
-          tvus,
-          hcgValor,
-          hcgAnterior,
-          variacionHcg: variacionCalculada,
-          resultado: probPost,
-          nombrePaciente,
-          edadPaciente,
-          frecuenciaCardiaca,
-          presionSistolica,
-          presionDiastolica,
-          estadoConciencia,
-          pruebaEmbarazoRealizada,
-          resultadoPruebaEmbarazo,
-          hallazgosExploracion,
-          tieneEcoTransabdominal,
-          resultadoEcoTransabdominal,
-          sintomasSeleccionados,
-          factoresSeleccionados,
-        })
-      }
+      // Asegurar fila
+      const okFila = await asegurarFilaEnBD(idSeguimiento, usuarioActual, nombrePaciente, edadPaciente)
+      if (!okFila) throw new Error("No se pudo asegurar la fila en BD")
 
+      // Guardar
       const ok = await guardarEnDB_porConsulta(idSeguimiento, numeroConsulta, {
         usuarioActual,
         tvus,
@@ -857,7 +866,7 @@ export default function CalculadoraEctopico() {
       alert("Advertencia: guardado local OK, pero falló la sincronización con la base de datos.")
     }
 
-    // Mensaje final / seguimiento
+    // Mensajes
     if (probPost >= 0.95) {
       setMensajeFinal("Embarazo ectópico confirmado (≥95%). Proceder con manejo.")
       setProtocoloFinalizado(true)
@@ -1157,7 +1166,7 @@ CMG Health Solutions
           </Card>
         </div>
       ) : mostrarResumenConsulta && consultaCargada ? (
-        // -------- Resumen "estilo anterior" --------
+        // -------- Resumen anterior --------
         <div className="max-w-4xl mx-auto p-6">
           <Card className="shadow-lg">
             <CardContent className="p-8">
@@ -1173,36 +1182,16 @@ CMG Health Solutions
                   <h3 className="text-lg font-semibold text-blue-900 mb-4">Resumen de la consulta previa</h3>
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p>
-                        <strong>ID:</strong> {consultaCargada.id}
-                      </p>
-                      <p>
-                        <strong>Paciente:</strong> {consultaCargada.nombre_paciente || "No especificado"}
-                      </p>
-                      <p>
-                        <strong>Edad:</strong> {consultaCargada.edad_paciente || "No especificado"} años
-                      </p>
-                      <p>
-                        <strong>β-hCG anterior:</strong> {consultaCargada.hcg_valor || "No especificado"} mUI/mL
-                      </p>
+                      <p><strong>ID:</strong> {consultaCargada.id}</p>
+                      <p><strong>Paciente:</strong> {consultaCargada.nombre_paciente || "No especificado"}</p>
+                      <p><strong>Edad:</strong> {consultaCargada.edad_paciente || "No especificado"} años</p>
+                      <p><strong>β-hCG anterior:</strong> {consultaCargada.hcg_valor || "No especificado"} mUI/mL</p>
                     </div>
                     <div>
-                      <p>
-                        <strong>TVUS:</strong> {obtenerNombreTVUS(consultaCargada.tvus)}
-                      </p>
-                      <p>
-                        <strong>Resultado previo:</strong>{" "}
-                        {consultaCargada.resultado ? `${(consultaCargada.resultado * 100).toFixed(1)}%` : "No calculado"}
-                      </p>
-                      <p>
-                        <strong>Fecha:</strong>{" "}
-                        {consultaCargada.fecha_creacion
-                          ? new Date(consultaCargada.fecha_creacion).toLocaleDateString()
-                          : "No disponible"}
-                      </p>
-                      <p>
-                        <strong>Frecuencia Cardíaca:</strong> {consultaCargada.frecuencia_cardiaca || "N/A"} lpm
-                      </p>
+                      <p><strong>TVUS:</strong> {obtenerNombreTVUS(consultaCargada.tvus)}</p>
+                      <p><strong>Resultado previo:</strong> {consultaCargada.resultado ? `${(consultaCargada.resultado * 100).toFixed(1)}%` : "No calculado"}</p>
+                      <p><strong>Fecha:</strong> {consultaCargada.fecha_creacion ? new Date(consultaCargada.fecha_creacion).toLocaleDateString() : "No disponible"}</p>
+                      <p><strong>Frecuencia Cardíaca:</strong> {consultaCargada.frecuencia_cardiaca || "N/A"} lpm</p>
                     </div>
                   </div>
 
@@ -1210,9 +1199,7 @@ CMG Health Solutions
                     <div className="mt-4">
                       <p className="font-medium">Síntomas:</p>
                       <ul className="list-disc list-inside text-sm text-blue-800">
-                        {consultaCargada.sintomas_seleccionados.map((s: string) => (
-                          <li key={s}>{obtenerNombreSintoma(s)}</li>
-                        ))}
+                        {consultaCargada.sintomas_seleccionados.map((s: string) => <li key={s}>{obtenerNombreSintoma(s)}</li>)}
                       </ul>
                     </div>
                   )}
@@ -1221,9 +1208,7 @@ CMG Health Solutions
                     <div className="mt-4">
                       <p className="font-medium">Factores de riesgo:</p>
                       <ul className="list-disc list-inside text-sm text-blue-800">
-                        {consultaCargada.factores_seleccionados.map((f: string) => (
-                          <li key={f}>{obtenerNombreFactor(f)}</li>
-                        ))}
+                        {consultaCargada.factores_seleccionados.map((f: string) => <li key={f}>{obtenerNombreFactor(f)}</li>)}
                       </ul>
                     </div>
                   )}
@@ -1292,7 +1277,7 @@ CMG Health Solutions
           </Card>
         </div>
       ) : mostrarResultados && resultado !== null ? (
-        // -------- Pantalla resultados intermedios + instrucciones de seguimiento --------
+        // -------- Intermedio + seguimiento --------
         <div className="max-w-4xl mx-auto p-6">
           <Card className="shadow-lg">
             <CardContent className="p-8 space-y-6">
@@ -1353,7 +1338,7 @@ CMG Health Solutions
           </Card>
         </div>
       ) : (
-        // -------- Flujo principal por secciones --------
+        // -------- Flujo principal --------
         <div>
           <ProgressBar />
           <div className="max-w-4xl mx-auto p-6">
@@ -1371,7 +1356,7 @@ CMG Health Solutions
                         <Label className="text-base font-medium text-slate-700">Nombre del paciente</Label>
                         <input
                           type="text"
-                          placeholder="Ej. Ana Pérez"
+                          placeholder="Nombre del paciente"
                           value={nombrePaciente}
                           onChange={(e) => setNombrePaciente(e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1"

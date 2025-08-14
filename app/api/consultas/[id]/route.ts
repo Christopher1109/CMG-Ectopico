@@ -1,6 +1,6 @@
 // app/api/consultas/[id]/route.ts
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase } from '../../../../lib/supabaseClient'
 
 type Params = { params: { id: string } }
 
@@ -16,37 +16,47 @@ export async function GET(_req: Request, { params }: Params) {
   return NextResponse.json({ data })
 }
 
-/**
- * PATCH /api/consultas/:id
- * Actualiza la Consulta 2 o 3 según body.visita_no (2|3)
- * Solo mapeamos columnas que SÍ existen en la tabla.
- */
+// PATCH /api/consultas/:id?visita=2|3
 export async function PATCH(req: Request, { params }: Params) {
+  const url = new URL(req.url)
+  const visitaParam = url.searchParams.get('visita')
+  const visita = visitaParam ? Number(visitaParam) : 1
+
   const body = await req.json()
-  const visita_no = Number(body.visita_no ?? 2) // por defecto, 2
 
-  // Campos base que opcionalmente podrías permitir actualizar
-  const basePatch: Record<string, any> = {}
-  if (Array.isArray(body.sintomas_seleccionados)) basePatch.sintomas_seleccionados = body.sintomas_seleccionados
-  if (Array.isArray(body.factores_seleccionados)) basePatch.factores_seleccionados = body.factores_seleccionados
+  // Nunca permitimos cambiar la PK
+  delete (body as any).id
 
-  // Campos de la visita (2 o 3) -> mapeo a *_2 o *_3
-  const suf = visita_no === 3 ? '_3' : '_2'
-  const patchVisita: Record<string, any> = {
-    [`tvus${suf}`]: body.tvus ?? null,
-    [`hcg_valor${suf}`]: body.hcg_valor != null ? Number(body.hcg_valor) : null,
-    [`hcg_anterior${suf}`]: body.hcg_anterior != null ? Number(body.hcg_anterior) : null,
-    [`variacion_hcg${suf}`]: body.variacion_hcg ?? null,
-    [`resultado${suf}`]: body.resultado != null ? Number(body.resultado) : null,
-    [`usuario_consulta${suf}`]: body.usuario_editor ?? body.usuario_creador ?? 'anon',
-    [`fecha_consulta${suf}`]: new Date().toISOString(),
+  let mapped: Record<string, any> = {}
+
+  if (visita === 2 || visita === 3) {
+    // mapear a *_2 o *_3
+    const suf = `_${visita}` // "_2" o "_3"
+
+    // Sólo adjuntamos lo que venga en el body:
+    if ('sintomas_seleccionados' in body) mapped[`sintomas_seleccionados${suf}`] = body.sintomas_seleccionados
+    if ('factores_seleccionados' in body) mapped[`factores_seleccionados${suf}`] = body.factores_seleccionados
+    if ('tvus' in body) mapped[`tvus${suf}`] = body.tvus
+    if ('hcg_valor' in body) mapped[`hcg_valor${suf}`] = body.hcg_valor
+    if ('hcg_anterior' in body) mapped[`hcg_anterior${suf}`] = body.hcg_anterior
+    if ('variacion_hcg' in body) mapped[`variacion_hcg${suf}`] = body.variacion_hcg
+    if ('resultado' in body) mapped[`resultado${suf}`] = body.resultado
+    if ('usuario_editor' in body) mapped[`usuario_editor${suf}`] = body.usuario_editor
+    if (visita === 2) mapped['fecha_consulta_2'] = new Date().toISOString()
+    if (visita === 3) mapped['fecha_consulta_3'] = new Date().toISOString()
+  } else {
+    // (no lo usamos para visita 1; la visita 1 se crea con POST)
+    mapped = { ...body }
   }
 
-  const patch = { ...basePatch, ...patchVisita }
+  // Si no llegó nada mapeable, devolvemos 400
+  if (!Object.keys(mapped).length) {
+    return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 })
+  }
 
   const { data, error } = await supabase
     .from('consultas')
-    .update(patch)
+    .update(mapped)
     .eq('id', params.id)
     .select()
     .single()
@@ -55,9 +65,10 @@ export async function PATCH(req: Request, { params }: Params) {
   return NextResponse.json({ data })
 }
 
-// DELETE opcional
-export async function DELETE(_req: Request, { params }: Params) {
+// DELETE /api/consultas/:id  (opcional)
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const { error } = await supabase.from('consultas').delete().eq('id', params.id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
+

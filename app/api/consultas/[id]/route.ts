@@ -1,63 +1,56 @@
-// app/api/consultas/[id]/route.ts
-import { NextResponse } from 'next/server'
-import { supabase } from '../../../../lib/supabaseClient'
+import { NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!, // Service role en el servidor
+  { auth: { persistSession: false, autoRefreshToken: false } }
+)
 
 type Params = { params: { id: string } }
 
 // GET /api/consultas/:id
 export async function GET(_req: Request, { params }: Params) {
-  const { data, error } = await supabase
-    .from('consultas')
-    .select('*')
-    .eq('id', params.id)
-    .single()
-
+  const { data, error } = await supabase.from("consultas").select("*").eq("id", params.id).single()
   if (error) return NextResponse.json({ error: error.message }, { status: 404 })
   return NextResponse.json({ data })
 }
 
-// PATCH /api/consultas/:id?visita=2|3
+// PATCH /api/consultas/:id?visita=2|3   (Consultas 2 y 3)
 export async function PATCH(req: Request, { params }: Params) {
   const url = new URL(req.url)
-  const visitaParam = url.searchParams.get('visita')
-  const visita = visitaParam ? Number(visitaParam) : 1
-
+  const visita = Number(url.searchParams.get("visita"))
   const body = await req.json()
 
-  // Nunca permitimos cambiar la PK
-  delete (body as any).id
-
-  let mapped: Record<string, any> = {}
-
-  if (visita === 2 || visita === 3) {
-    // mapear a *_2 o *_3
-    const suf = `_${visita}` // "_2" o "_3"
-
-    // Sólo adjuntamos lo que venga en el body:
-    if ('sintomas_seleccionados' in body) mapped[`sintomas_seleccionados${suf}`] = body.sintomas_seleccionados
-    if ('factores_seleccionados' in body) mapped[`factores_seleccionados${suf}`] = body.factores_seleccionados
-    if ('tvus' in body) mapped[`tvus${suf}`] = body.tvus
-    if ('hcg_valor' in body) mapped[`hcg_valor${suf}`] = body.hcg_valor
-    if ('hcg_anterior' in body) mapped[`hcg_anterior${suf}`] = body.hcg_anterior
-    if ('variacion_hcg' in body) mapped[`variacion_hcg${suf}`] = body.variacion_hcg
-    if ('resultado' in body) mapped[`resultado${suf}`] = body.resultado
-    if ('usuario_editor' in body) mapped[`usuario_editor${suf}`] = body.usuario_editor
-    if (visita === 2) mapped['fecha_consulta_2'] = new Date().toISOString()
-    if (visita === 3) mapped['fecha_consulta_3'] = new Date().toISOString()
-  } else {
-    // (no lo usamos para visita 1; la visita 1 se crea con POST)
-    mapped = { ...body }
+  if (![2, 3].includes(visita)) {
+    return NextResponse.json({ error: "Parámetro 'visita' debe ser 2 o 3" }, { status: 400 })
   }
 
-  // Si no llegó nada mapeable, devolvemos 400
-  if (!Object.keys(mapped).length) {
-    return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 })
+  // Mapea campos genéricos -> columnas *_2 o *_3
+  const suffix = `_${visita}`
+
+  const patch: Record<string, any> = {
+    // campos comunes que también podrías actualizar
+    nombre_paciente: body.nombre_paciente ?? null,
+    edad_paciente: body.edad_paciente != null ? Number(body.edad_paciente) : null,
+
+    // campos de la visita n
+    [`sintomas_seleccionados${suffix}`]: body.sintomas_seleccionados ?? [],
+    [`factores_seleccionados${suffix}`]: body.factores_seleccionados ?? [],
+    [`tvus${suffix}`]: body.tvus ?? null,
+    [`hcg_valor${suffix}`]: body.hcg_valor != null ? Number(body.hcg_valor) : null,
+    [`hcg_anterior${suffix}`]: body.hcg_anterior != null ? Number(body.hcg_anterior) : null,
+    [`variacion_hcg${suffix}`]: body.variacion_hcg ?? null,
+    [`resultado${suffix}`]: body.resultado != null ? Number(body.resultado) : null,
+
+    // opcional meta
+    usuario_editor: body.usuario_editor ?? "anon",
   }
 
   const { data, error } = await supabase
-    .from('consultas')
-    .update(mapped)
-    .eq('id', params.id)
+    .from("consultas")
+    .update(patch)
+    .eq("id", params.id)
     .select()
     .single()
 
@@ -67,7 +60,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
 // DELETE /api/consultas/:id  (opcional)
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
-  const { error } = await supabase.from('consultas').delete().eq('id', params.id)
+  const { error } = await supabase.from("consultas").delete().eq("id", params.id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }

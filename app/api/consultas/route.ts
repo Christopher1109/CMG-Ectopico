@@ -1,39 +1,39 @@
 // app/api/consultas/route.ts
-import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { NextResponse } from "next/server"
+import { supabaseAdmin } from "@/lib/supabaseAdmin"
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const limit = Number(searchParams.get('limit') ?? 20);
+    const { searchParams } = new URL(req.url)
+    const limit = Number(searchParams.get("limit") ?? 20)
 
     const { data, error } = await supabaseAdmin
-      .from('consultas')
-      .select('*')
-      .order('fecha_creacion', { ascending: false })
-      .limit(limit);
+      .from("consultas")
+      .select("*")
+      .order("fecha_creacion", { ascending: false })
+      .limit(limit)
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ data });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ data })
   } catch (e: any) {
-    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 });
+    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body = await req.json()
 
     // ID corto si no llega
-    const genId = 'ID-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+    const genId = "ID-" + Math.random().toString(36).slice(2, 7).toUpperCase()
 
     // Aseguramos tipos y nombres (snake_case) como en la tabla
     const payload = {
       id: (body.id ?? genId).slice(0, 20),
       consulta_num: Number.isFinite(+body.consulta_num) ? +body.consulta_num : 1,
 
-      usuario_creador: body.usuario_creador ?? 'anon',
-      nombre_paciente: body.nombre_paciente ?? 'N/A',
+      usuario_creador: body.usuario_creador ?? "anon",
+      nombre_paciente: body.nombre_paciente ?? "N/A",
       edad_paciente: body.edad_paciente != null ? Number(body.edad_paciente) : null,
 
       frecuencia_cardiaca: body.frecuencia_cardiaca != null ? Number(body.frecuencia_cardiaca) : null,
@@ -55,17 +55,13 @@ export async function POST(req: Request) {
       hcg_anterior: body.hcg_anterior != null ? Number(body.hcg_anterior) : null,
 
       resultado: body.resultado != null ? Number(body.resultado) : null,
-    };
+    }
 
-    const { data, error } = await supabaseAdmin
-      .from('consultas')
-      .insert(payload)
-      .select()
-      .single();
+    const { data, error } = await supabaseAdmin.from("consultas").insert(payload).select().single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ data }, { status: 201 });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ data }, { status: 201 })
   } catch (e: any) {
-    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 });
+    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
 }

@@ -1,34 +1,41 @@
-export type ConsultaPatch = Record<string, any>
-
-export async function listarConsultas(limit = 20) {
-  const r = await fetch(`/api/consultas?limit=${limit}`, { cache: "no-store" })
-  return r.json() // { data } | { error }
-}
-
-export async function crearConsulta(payload: Record<string, any>) {
-  const r = await fetch("/api/consultas", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+// lib/api/consultas.ts
+export async function crearConsulta(payload: any) {
+  const res = await fetch('/api/consultas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
-  return r.json() // { data } | { error }
+  try {
+    const json = await res.json()
+    if (!res.ok) return { error: json?.error || 'Error en POST /api/consultas' }
+    return { data: json.data }
+  } catch {
+    return { error: 'Error parseando respuesta de POST /api/consultas' }
+  }
+}
+
+export async function actualizarConsulta(id: string, visita_no: 2 | 3, patch: any) {
+  const res = await fetch(`/api/consultas/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ visita_no, ...patch }),
+  })
+  try {
+    const json = await res.json()
+    if (!res.ok) return { error: json?.error || 'Error en PATCH /api/consultas/:id' }
+    return { data: json.data }
+  } catch {
+    return { error: 'Error parseando respuesta de PATCH /api/consultas/:id' }
+  }
 }
 
 export async function obtenerConsulta(id: string) {
-  const r = await fetch(`/api/consultas/${id}`, { cache: "no-store" })
-  return r.json()
-}
-
-export async function actualizarConsulta(id: string, patch: ConsultaPatch) {
-  const r = await fetch(`/api/consultas/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(patch),
-  })
-  return r.json()
-}
-
-export async function borrarConsulta(id: string) {
-  const r = await fetch(`/api/consultas/${id}`, { method: "DELETE" })
-  return r.json()
+  const res = await fetch(`/api/consultas/${encodeURIComponent(id)}`)
+  try {
+    const json = await res.json()
+    if (!res.ok) return { error: json?.error || 'No encontrada' }
+    return { data: json.data }
+  } catch {
+    return { error: 'Error parseando respuesta de GET /api/consultas/:id' }
+  }
 }

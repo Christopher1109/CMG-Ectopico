@@ -1,4 +1,3 @@
-
 // lib/api/consultas.ts
 export async function crearConsulta(payload: any) {
   const res = await fetch('/api/consultas', {

@@ -1,41 +1,33 @@
-// app/api/consultas/route.ts
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // <-- Service Role (server)
-
-const supabase = createClient(supabaseUrl, serviceKey, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+import { NextResponse } from "next/server"
+import { supabase } from "../../../lib/supabaseClient"
 
 // GET /api/consultas?limit=20
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const limit = Number(searchParams.get("limit") ?? 20);
+    const { searchParams } = new URL(req.url)
+    const limit = Number(searchParams.get("limit") ?? 20)
 
     const { data, error } = await supabase
       .from("consultas")
       .select("*")
       .order("fecha_creacion", { ascending: false })
-      .limit(limit);
+      .limit(limit)
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ data }, { status: 200 });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ data }, { status: 200 })
   } catch (e: any) {
-    return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });
+    return NextResponse.json({ error: String(e?.message || e) }, { status: 500 })
   }
 }
 
 // POST /api/consultas  (Crea la Consulta 1)
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body = await req.json()
 
     // ✅ No generamos "CONS-...". Respetamos el ID que manda el frontend (ID-00001, etc.)
     if (!body?.id || typeof body.id !== "string") {
-      return NextResponse.json({ error: "Falta 'id' (ID-00001...)" }, { status: 400 });
+      return NextResponse.json({ error: "Falta 'id' (ID-00001...)" }, { status: 400 })
     }
 
     const payload = {
@@ -70,17 +62,13 @@ export async function POST(req: Request) {
       // Si desde el front mandas cierres tempranos:
       es_finalizado: body.es_finalizado ?? false,
       motivo_finalizacion: body.motivo_finalizacion ?? null,
-    };
+    }
 
-    const { data, error } = await supabase
-      .from("consultas")
-      .insert([payload])
-      .select()
-      .single();
+    const { data, error } = await supabase.from("consultas").insert([payload]).select().single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ data }, { status: 200 });
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    return NextResponse.json({ data }, { status: 200 })
   } catch (e: any) {
-    return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });
+    return NextResponse.json({ error: String(e?.message || e) }, { status: 500 })
   }
 }

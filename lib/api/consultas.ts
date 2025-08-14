@@ -1,3 +1,4 @@
+
 // lib/api/consultas.ts
 export async function crearConsulta(payload: any) {
   const res = await fetch('/api/consultas', {
@@ -5,37 +6,20 @@ export async function crearConsulta(payload: any) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
-  try {
-    const json = await res.json()
-    if (!res.ok) return { error: json?.error || 'Error en POST /api/consultas' }
-    return { data: json.data }
-  } catch {
-    return { error: 'Error parseando respuesta de POST /api/consultas' }
-  }
+  return res.json()
 }
 
-export async function actualizarConsulta(id: string, visita_no: 2 | 3, patch: any) {
-  const res = await fetch(`/api/consultas/${encodeURIComponent(id)}`, {
+export async function actualizarConsulta(id: string, visitaNo: 2 | 3, patch: any) {
+  // IMPORTANTE: pasamos la visita por query (?visita=2|3)
+  const res = await fetch(`/api/consultas/${encodeURIComponent(id)}?visita=${visitaNo}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ visita_no, ...patch }),
+    body: JSON.stringify(patch),
   })
-  try {
-    const json = await res.json()
-    if (!res.ok) return { error: json?.error || 'Error en PATCH /api/consultas/:id' }
-    return { data: json.data }
-  } catch {
-    return { error: 'Error parseando respuesta de PATCH /api/consultas/:id' }
-  }
+  return res.json()
 }
 
 export async function obtenerConsulta(id: string) {
   const res = await fetch(`/api/consultas/${encodeURIComponent(id)}`)
-  try {
-    const json = await res.json()
-    if (!res.ok) return { error: json?.error || 'No encontrada' }
-    return { data: json.data }
-  } catch {
-    return { error: 'Error parseando respuesta de GET /api/consultas/:id' }
-  }
+  return res.json()
 }

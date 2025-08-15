@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     // ID corto si no llega
     const genId = "ID-" + Math.random().toString(36).slice(2, 7).toUpperCase()
 
-    // Payload simplificado para tu tabla
+    // Payload SIN consulta_num para evitar el error
     const payload = {
       id: (body.id ?? genId).slice(0, 20),
       usuario_creador: body.usuario_creador ?? "anon",
@@ -46,14 +46,22 @@ export async function POST(req: Request) {
       tvus: body.tvus ?? null,
       hcg_valor: body.hcg_valor != null ? Number(body.hcg_valor) : null,
       resultado: body.resultado != null ? Number(body.resultado) : null,
-      consulta_num: 1, // Siempre 1 para consulta inicial
+      // Removemos consulta_num temporalmente
     }
+
+    console.log("Enviando payload:", payload) // Para debug
 
     const { data, error } = await supabaseAdmin.from("consultas").insert(payload).select().single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error("Error de Supabase:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    console.log("Consulta creada exitosamente:", data)
     return NextResponse.json({ data }, { status: 201 })
   } catch (e: any) {
+    console.error("Error en POST:", e)
     return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
 }

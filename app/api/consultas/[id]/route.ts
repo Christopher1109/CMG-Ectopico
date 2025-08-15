@@ -21,70 +21,80 @@ export async function PATCH(req: Request, { params }: Params) {
     const { searchParams } = new URL(req.url)
     const visita = searchParams.get("visita") // 2 o 3
 
-    const patch: Record<string, any> = { ...body }
-    delete patch.id // no cambiar PK
+    console.log("PATCH recibido:", { id: params.id, visita, body }) // Para debug
 
-    // Si es consulta de seguimiento (visita 2 o 3), mapear campos
+    // Preparar el objeto de actualización
+    const updateData: Record<string, any> = {
+      fecha_ultima_actualizacion: new Date().toISOString(),
+    }
+
+    // Si es consulta de seguimiento (visita 2 o 3), mapear campos con sufijo
     if (visita === "2" || visita === "3") {
       const suffix = `_${visita}`
 
-      // Mapear campos de seguimiento
-      if (patch.sintomas_seleccionados !== undefined) {
-        patch[`sintomas_seleccionados${suffix}`] = Array.isArray(patch.sintomas_seleccionados)
-          ? patch.sintomas_seleccionados
+      // Mapear cada campo con su sufijo correspondiente
+      if (body.sintomas_seleccionados !== undefined) {
+        updateData[`sintomas_seleccionados${suffix}`] = Array.isArray(body.sintomas_seleccionados)
+          ? body.sintomas_seleccionados
           : []
-        delete patch.sintomas_seleccionados
       }
 
-      if (patch.factores_seleccionados !== undefined) {
-        patch[`factores_seleccionados${suffix}`] = Array.isArray(patch.factores_seleccionados)
-          ? patch.factores_seleccionados
+      if (body.factores_seleccionados !== undefined) {
+        updateData[`factores_seleccionados${suffix}`] = Array.isArray(body.factores_seleccionados)
+          ? body.factores_seleccionados
           : []
-        delete patch.factores_seleccionados
       }
 
-      if (patch.tvus !== undefined) {
-        patch[`tvus${suffix}`] = patch.tvus
-        delete patch.tvus
+      if (body.tvus !== undefined) {
+        updateData[`tvus${suffix}`] = body.tvus
       }
 
-      if (patch.hcg_valor !== undefined) {
-        patch[`hcg_valor${suffix}`] = patch.hcg_valor != null ? Number(patch.hcg_valor) : null
-        delete patch.hcg_valor
+      if (body.hcg_valor !== undefined) {
+        updateData[`hcg_valor${suffix}`] = body.hcg_valor != null ? Number(body.hcg_valor) : null
       }
 
-      if (patch.hcg_anterior !== undefined) {
-        patch[`hcg_anterior${suffix}`] = patch.hcg_anterior != null ? Number(patch.hcg_anterior) : null
-        delete patch.hcg_anterior
+      if (body.hcg_anterior !== undefined) {
+        updateData[`hcg_anterior${suffix}`] = body.hcg_anterior != null ? Number(body.hcg_anterior) : null
       }
 
-      if (patch.variacion_hcg !== undefined) {
-        patch[`variacion_hcg${suffix}`] = patch.variacion_hcg
-        delete patch.variacion_hcg
+      if (body.variacion_hcg !== undefined) {
+        updateData[`variacion_hcg${suffix}`] = body.variacion_hcg
       }
 
-      if (patch.resultado !== undefined) {
-        patch[`resultado${suffix}`] = patch.resultado != null ? Number(patch.resultado) : null
-        delete patch.resultado
+      if (body.resultado !== undefined) {
+        updateData[`resultado${suffix}`] = body.resultado != null ? Number(body.resultado) : null
+      }
+
+      if (body.usuario_editor !== undefined) {
+        updateData.usuario_creador = body.usuario_editor
       }
     } else {
-      // Normaliza arrays para jsonb en consulta inicial
-      if (patch.sintomas_seleccionados && !Array.isArray(patch.sintomas_seleccionados)) {
-        patch.sintomas_seleccionados = []
-      }
-      if (patch.factores_seleccionados && !Array.isArray(patch.factores_seleccionados)) {
-        patch.factores_seleccionados = []
-      }
+      // Para consulta inicial, actualizar campos normales
+      Object.keys(body).forEach((key) => {
+        if (key !== "id") {
+          updateData[key] = body[key]
+        }
+      })
     }
 
-    // Actualizar fecha de última actualización
-    patch.fecha_ultima_actualizacion = new Date().toISOString()
+    console.log("Datos a actualizar:", updateData) // Para debug
 
-    const { data, error } = await supabaseAdmin.from("consultas").update(patch).eq("id", params.id).select().single()
+    const { data, error } = await supabaseAdmin
+      .from("consultas")
+      .update(updateData)
+      .eq("id", params.id)
+      .select()
+      .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error("Error de Supabase:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    console.log("Actualización exitosa:", data) // Para debug
     return NextResponse.json({ data })
   } catch (e: any) {
+    console.error("Error en PATCH:", e)
     return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
 }

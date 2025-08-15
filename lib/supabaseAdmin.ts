@@ -1,19 +1,18 @@
-import { createClient } from "@supabase/supabase-js"
+// lib/supabaseAdmin.ts
+import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const url =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  process.env.SUPABASE_URL
 
-if (!supabaseUrl) {
-  throw new Error("Missing env variable NEXT_PUBLIC_SUPABASE_URL")
+// Preferimos la service role key para evitar políticas RLS en el backend.
+// Si no existe, caemos al anon (requiere tu política permisiva).
+const key =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!url || !key) {
+  throw new Error('Faltan variables de entorno de Supabase (URL o KEY).')
 }
 
-if (!supabaseKey) {
-  throw new Error("Missing env variable SUPABASE_SERVICE_ROLE_KEY")
-}
-
-export const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-})
+export const sb = createClient(url, key, { auth: { persistSession: false } })

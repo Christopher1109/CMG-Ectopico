@@ -25,7 +25,8 @@ export async function PATCH(req: Request, { params }: Params) {
 
     // Preparar el objeto de actualización
     const updateData: Record<string, any> = {
-      fecha_ultima_actualizacion: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      fecha_ultima_actualizacion: new Date().toISOString(), // Agregar ambos campos
     }
 
     // Si es consulta de seguimiento (visita 2 o 3), mapear campos con sufijo
@@ -66,8 +67,11 @@ export async function PATCH(req: Request, { params }: Params) {
       }
 
       if (body.usuario_editor !== undefined) {
-        updateData.usuario_creador = body.usuario_editor
+        updateData[`usuario_visita${suffix}`] = body.usuario_editor
       }
+
+      // Agregar fecha de visita
+      updateData[`fecha_visita${suffix}`] = new Date().toISOString()
     } else {
       // Para consulta inicial, actualizar campos normales
       Object.keys(body).forEach((key) => {

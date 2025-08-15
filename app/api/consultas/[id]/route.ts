@@ -1,110 +1,103 @@
 // app/api/consultas/[id]/route.ts
-import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabaseAdmin"
+import { NextResponse } from 'next/server'
+import { sb } from '@/lib/supabaseAdmin'
 
-type Params = { params: { id: string } }
-
-export async function GET(_req: Request, { params }: Params) {
-  try {
-    const { data, error } = await supabaseAdmin.from("consultas").select("*").eq("id", params.id).single()
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 404 })
-    return NextResponse.json({ data })
-  } catch (e: any) {
-    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
+// Normalizadores
+const toNum = (v: any) => {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+const toJsonArray = (v: any) => {
+  if (Array.isArray(v)) return v
+  if (v == null || v === '') return []
+  if (typeof v === 'string') {
+    try { const p = JSON.parse(v); return Array.isArray(p) ? p : [] } catch { return [] }
   }
+  return []
 }
 
-export async function PATCH(req: Request, { params }: Params) {
+// GET /api/consultas/:id
+export async function GET(_req: Request, { params }: { params: { id: string } }) {
+  const { data, error } = await sb.from('consultas').select('*').eq('id', params.id).single()
+  if (error) return NextResponse.json({ error: error.message }, { status: 404 })
+  return NextResponse.json({ data })
+}
+
+// PATCH /api/consultas/:id
+// Acepta tanto columnas en snake_case como camelCase y decide qué actualizar
+// según el visit=1|2|3 (también acepta consulta/consulta_num/visit en el body).
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   try {
-    const body = await req.json()
-    const { searchParams } = new URL(req.url)
-    const visita = searchParams.get("visita") // 2 o 3
+    const b = await req.json()
 
-    console.log("PATCH recibido:", { id: params.id, visita, body }) // Para debug
-
-    // Preparar el objeto de actualización
-    const updateData: Record<string, any> = {
-      fecha_ultima_actualizacion: new Date().toISOString(),
+    // Deducción de visita
+    let visit =
+      Number(b.visit ?? b.consulta ?? b.consulta_num ?? b.consulta_numero) || 0
+    if (![1, 2, 3].includes(visit)) {
+      // Si no llega visit, inferimos por las claves
+      if ('tvus_3' in b || 'hcg_valor_3' in b || 'variacion_hcg_3' in b || 'resultado_3' in b) visit = 3
+      else if ('tvus_2' in b || 'hcg_valor_2' in b || 'variacion_hcg_2' in b || 'resultado_2' in b) visit = 2
+      else visit = 1
     }
 
-    // Si es consulta de seguimiento (visita 2 o 3), mapear campos con sufijo
-    if (visita === "2" || visita === "3") {
-      const suffix = `_${visita}`
+    const patch: Record<string, any> = {}
 
-      // Mapear cada campo con su sufijo correspondiente
-      if (body.sintomas_seleccionados !== undefined) {
-        updateData[`sintomas_seleccionados${suffix}`] = Array.isArray(body.sintomas_seleccionados)
-          ? body.sintomas_seleccionados
-          : []
-      }
-
-      if (body.factores_seleccionados !== undefined) {
-        updateData[`factores_seleccionados${suffix}`] = Array.isArray(body.factores_seleccionados)
-          ? body.factores_seleccionados
-          : []
-      }
-
-      if (body.tvus !== undefined) {
-        updateData[`tvus${suffix}`] = body.tvus
-      }
-
-      if (body.hcg_valor !== undefined) {
-        updateData[`hcg_valor${suffix}`] = body.hcg_valor != null ? Number(body.hcg_valor) : null
-      }
-
-      if (body.hcg_anterior !== undefined) {
-        updateData[`hcg_anterior${suffix}`] = body.hcg_anterior != null ? Number(body.hcg_anterior) : null
-      }
-
-      if (body.variacion_hcg !== undefined) {
-        updateData[`variacion_hcg${suffix}`] = body.variacion_hcg
-      }
-
-      if (body.resultado !== undefined) {
-        updateData[`resultado${suffix}`] = body.resultado != null ? Number(body.resultado) : null
-      }
-
-      if (body.usuario_editor !== undefined) {
-        updateData.usuario_creador = body.usuario_editor
-      }
-    } else {
-      // Para consulta inicial, actualizar campos normales
-      Object.keys(body).forEach((key) => {
-        if (key !== "id") {
-          updateData[key] = body[key]
-        }
-      })
+    if (visit === 1) {
+      // Solo campos permitidos de C1
+      patch.usuario_creador              = b.usuario_creador ?? undefined
+      patch.nombre_paciente              = b.nombre_paciente ?? undefined
+      patch.edad_paciente                = toNum(b.edad_paciente)
+      patch.frecuencia_cardiaca          = toNum(b.frecuencia_cardiaca)
+      patch.presion_sistolica            = toNum(b.presion_sistolica)
+      patch.presion_diastolica           = toNum(b.presion_diastolica)
+      patch.estado_conciencia            = b.estado_conciencia ?? undefined
+      patch.prueba_embarazo_realizada    = b.prueba_embarazo_realizada ?? undefined
+      patch.resultado_prueba_embarazo    = b.resultado_prueba_embarazo ?? undefined
+      patch.hallazgos_exploracion        = b.hallazgos_exploracion ?? undefined
+      patch.tiene_eco_transabdominal     = b.tiene_eco_transabdominal ?? undefined
+      patch.resultado_eco_transabdominal = b.resultado_eco_transabdominal ?? undefined
+      patch.sintomas_seleccionados       = toJsonArray(b.sintomas_seleccionados)
+      patch.factores_seleccionados       = toJsonArray(b.factores_seleccionados)
+      patch.tvus                         = b.tvus ?? undefined
+      patch.hcg_valor                    = toNum(b.hcg_valor)
+      // NOTA: No guardamos "resultado" de C1 porque no está en tu lista actual.
     }
 
-    console.log("Datos a actualizar:", updateData) // Para debug
+    if (visit === 2) {
+      patch.tvus_2           = b.tvus_2 ?? b.tvus2 ?? undefined
+      patch.hcg_valor_2      = toNum(b.hcg_valor_2 ?? b.hcg2 ?? b.hcg_valor2)
+      patch.variacion_hcg_2  = b.variacion_hcg_2 ?? b.variacion2 ?? undefined
+      patch.resultado_2      = toNum(b.resultado_2 ?? b.resultado2)
+      patch.usuario_visita_2 = b.usuario_visita_2 ?? b.usuario2 ?? b.usuario_creador ?? undefined
+      patch.fecha_visita_2   = b.fecha_visita_2 ?? new Date().toISOString()
+    }
 
-    const { data, error } = await supabaseAdmin
-      .from("consultas")
-      .update(updateData)
-      .eq("id", params.id)
+    if (visit === 3) {
+      patch.tvus_3           = b.tvus_3 ?? b.tvus3 ?? undefined
+      patch.hcg_valor_3      = toNum(b.hcg_valor_3 ?? b.hcg3 ?? b.hcg_valor3)
+      patch.variacion_hcg_3  = b.variacion_hcg_3 ?? b.variacion3 ?? undefined
+      patch.resultado_3      = toNum(b.resultado_3 ?? b.resultado3)
+      patch.usuario_visita_3 = b.usuario_visita_3 ?? b.usuario3 ?? b.usuario_creador ?? undefined
+      patch.fecha_visita_3   = b.fecha_visita_3 ?? new Date().toISOString()
+    }
+
+    // Elimina claves undefined (no actualizan)
+    Object.keys(patch).forEach(k => patch[k] === undefined && delete patch[k])
+
+    if (Object.keys(patch).length === 0) {
+      return NextResponse.json({ error: 'Nada para actualizar' }, { status: 400 })
+    }
+
+    const { data, error } = await sb
+      .from('consultas')
+      .update(patch)
+      .eq('id', params.id)
       .select()
       .single()
 
-    if (error) {
-      console.error("Error de Supabase:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    console.log("Actualización exitosa:", data) // Para debug
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ data })
   } catch (e: any) {
-    console.error("Error en PATCH:", e)
-    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
-  }
-}
-
-export async function DELETE(_req: Request, { params }: Params) {
-  try {
-    const { error } = await supabaseAdmin.from("consultas").delete().eq("id", params.id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ ok: true })
-  } catch (e: any) {
-    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
+    return NextResponse.json({ error: e?.message ?? 'Error inesperado' }, { status: 500 })
   }
 }

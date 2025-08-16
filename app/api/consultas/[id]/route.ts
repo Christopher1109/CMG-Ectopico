@@ -1,4 +1,3 @@
-// app/api/consultas/[id]/route.ts
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 
@@ -21,19 +20,17 @@ export async function PATCH(req: Request, { params }: Params) {
     const { searchParams } = new URL(req.url)
     const visita = searchParams.get("visita") // 2 o 3
 
-    console.log("PATCH recibido:", { id: params.id, visita, body }) // Para debug
+    console.log("PATCH recibido:", { id: params.id, visita, body })
 
-    // Preparar el objeto de actualización
+    // Preparar el objeto de actualización usando TU esquema
     const updateData: Record<string, any> = {
-      updated_at: new Date().toISOString(),
-      fecha_ultima_actualizacion: new Date().toISOString(), // Agregar ambos campos
+      updated_at: new Date().toISOString(), // Tu esquema usa updated_at
     }
 
     // Si es consulta de seguimiento (visita 2 o 3), mapear campos con sufijo
     if (visita === "2" || visita === "3") {
       const suffix = `_${visita}`
 
-      // Mapear cada campo con su sufijo correspondiente
       if (body.sintomas_seleccionados !== undefined) {
         updateData[`sintomas_seleccionados${suffix}`] = Array.isArray(body.sintomas_seleccionados)
           ? body.sintomas_seleccionados
@@ -67,10 +64,9 @@ export async function PATCH(req: Request, { params }: Params) {
       }
 
       if (body.usuario_editor !== undefined) {
-        updateData[`usuario_visita${suffix}`] = body.usuario_editor
+        updateData[`usuario_visita${suffix}`] = "00000000-0000-0000-0000-000000000000" // UUID fake
       }
 
-      // Agregar fecha de visita
       updateData[`fecha_visita${suffix}`] = new Date().toISOString()
     } else {
       // Para consulta inicial, actualizar campos normales
@@ -81,7 +77,7 @@ export async function PATCH(req: Request, { params }: Params) {
       })
     }
 
-    console.log("Datos a actualizar:", updateData) // Para debug
+    console.log("Datos a actualizar:", updateData)
 
     const { data, error } = await supabaseAdmin
       .from("consultas")
@@ -95,7 +91,7 @@ export async function PATCH(req: Request, { params }: Params) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log("Actualización exitosa:", data) // Para debug
+    console.log("Actualización exitosa:", data)
     return NextResponse.json({ data })
   } catch (e: any) {
     console.error("Error en PATCH:", e)

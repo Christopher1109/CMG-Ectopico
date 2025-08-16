@@ -23,13 +23,12 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    // ID corto si no llega
-    const genId = "ID-" + Math.random().toString(36).slice(2, 7).toUpperCase()
+    // Generar UUID simple para created_by (ya que tu esquema lo requiere)
+    const fakeUUID = "00000000-0000-0000-0000-000000000000"
 
-    // Payload SIN consulta_num para evitar el error
     const payload = {
-      id: (body.id ?? genId).slice(0, 20),
-      usuario_creador: body.usuario_creador ?? "anon",
+      id: (body.id ?? "ID-" + Math.random().toString(36).slice(2, 7).toUpperCase()).slice(0, 20),
+      created_by: fakeUUID, // Tu esquema requiere UUID
       nombre_paciente: body.nombre_paciente ?? "N/A",
       edad_paciente: body.edad_paciente != null ? Number(body.edad_paciente) : null,
       frecuencia_cardiaca: body.frecuencia_cardiaca != null ? Number(body.frecuencia_cardiaca) : null,
@@ -45,11 +44,12 @@ export async function POST(req: Request) {
       factores_seleccionados: Array.isArray(body.factores_seleccionados) ? body.factores_seleccionados : [],
       tvus: body.tvus ?? null,
       hcg_valor: body.hcg_valor != null ? Number(body.hcg_valor) : null,
+      variacion_hcg: body.variacion_hcg ?? null,
+      hcg_anterior: body.hcg_anterior != null ? Number(body.hcg_anterior) : null,
       resultado: body.resultado != null ? Number(body.resultado) : null,
-      // Removemos consulta_num temporalmente
     }
 
-    console.log("Enviando payload:", payload) // Para debug
+    console.log("Enviando payload adaptado:", payload)
 
     const { data, error } = await supabaseAdmin.from("consultas").insert(payload).select().single()
 

@@ -242,7 +242,7 @@ export default function CalculadoraEctopico() {
   const variacionHcgMap = {
     reduccion_1_35: 16.6,
     reduccion_35_50: 0.8,
-    reduccion_mayor_50: 0,
+    reduccion_mayor_50: 0.01, // Cambiar de 0 a 0.01 para evitar probabilidad 0
     aumento: 3.3,
     no_disponible: 1,
   }
@@ -338,8 +338,11 @@ export default function CalculadoraEctopico() {
     // NO preseleccionar TVUS en la consulta 2/3:
     setTvus("")
 
-    // β-hCG anterior: usa el último disponible (si ya hubo C2, usa hcg_valor_2)
-    const ultimoHcg = consultaCargada.hcg_valor_3 ?? consultaCargada.hcg_valor_2 ?? consultaCargada.hcg_valor
+    // β-hCG anterior: usa el último disponible (prioridad: C3 > C2 > C1)
+    let ultimoHcg = consultaCargada.hcg_valor
+    if (consultaCargada.hcg_valor_2) ultimoHcg = consultaCargada.hcg_valor_2
+    if (consultaCargada.hcg_valor_3) ultimoHcg = consultaCargada.hcg_valor_3
+
     setHcgAnterior(ultimoHcg?.toString() || "")
     setHcgValor("")
     setEsConsultaSeguimiento(true)
@@ -386,6 +389,7 @@ export default function CalculadoraEctopico() {
     }
 
     if (consultaEncontrada) {
+      console.log("Consulta encontrada:", consultaEncontrada) // DEBUG
       setConsultaCargada(consultaEncontrada)
       setMostrarResumenConsulta(true)
       setModoCargarConsulta(false)
@@ -668,13 +672,22 @@ export default function CalculadoraEctopico() {
       if (!esConsultaSeguimiento) {
         ok = await enviarDatosAlBackend(datosCompletos)
       } else {
-        const yaTieneC2 =
+        // Determinar si es consulta 2 o 3
+        const tieneC2 =
           consultaCargada &&
-          (consultaCargada.tvus_2 != null || consultaCargada.hcg_valor_2 != null || consultaCargada.resultado_2 != null)
-        const yaTieneC3 =
+          (consultaCargada.tvus_2 ||
+            consultaCargada.hcg_valor_2 ||
+            consultaCargada.resultado_2 ||
+            consultaCargada.sintomas_seleccionados_2?.length > 0)
+        const tieneC3 =
           consultaCargada &&
-          (consultaCargada.tvus_3 != null || consultaCargada.hcg_valor_3 != null || consultaCargada.resultado_3 != null)
-        const visitaNo: 2 | 3 = yaTieneC3 ? 3 : yaTieneC2 ? 3 : 2
+          (consultaCargada.tvus_3 ||
+            consultaCargada.hcg_valor_3 ||
+            consultaCargada.resultado_3 ||
+            consultaCargada.sintomas_seleccionados_3?.length > 0)
+
+        const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
+        console.log(`Guardando como consulta ${visitaNo}, tieneC2=${tieneC2}, tieneC3=${tieneC3}`)
         ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
       }
 
@@ -1200,7 +1213,11 @@ Sistema CMG Health Solutions
                   </div>
 
                   {/* CONSULTA 2 */}
-                  {(consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2) && (
+                  {(consultaCargada.tvus_2 ||
+                    consultaCargada.hcg_valor_2 ||
+                    consultaCargada.resultado_2 ||
+                    consultaCargada.sintomas_seleccionados_2 ||
+                    consultaCargada.factores_seleccionados_2) && (
                     <div className="bg-white p-4 rounded-lg border border-green-300">
                       <h4 className="text-lg font-semibold text-green-900 mb-3 border-b border-green-200 pb-2">
                         📋 CONSULTA 2 (Seguimiento)
@@ -1250,7 +1267,11 @@ Sistema CMG Health Solutions
                   )}
 
                   {/* CONSULTA 3 */}
-                  {(consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3) && (
+                  {(consultaCargada.tvus_3 ||
+                    consultaCargada.hcg_valor_3 ||
+                    consultaCargada.resultado_3 ||
+                    consultaCargada.sintomas_seleccionados_3 ||
+                    consultaCargada.factores_seleccionados_3) && (
                     <div className="bg-white p-4 rounded-lg border border-purple-300">
                       <h4 className="text-lg font-semibold text-purple-900 mb-3 border-b border-purple-200 pb-2">
                         📋 CONSULTA 3 (Seguimiento Final)

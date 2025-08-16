@@ -1,4 +1,4 @@
-// lib/api/consultas.ts
+// lib/api/consultas.ts - Adaptado a tu esquema
 export async function crearConsulta(payload: any) {
   const res = await fetch("/api/consultas", {
     method: "POST",
@@ -10,9 +10,8 @@ export async function crearConsulta(payload: any) {
 
 export async function actualizarConsulta(id: string, visitaNo: 2 | 3, patch: any) {
   try {
-    // IMPORTANTE: pasamos la visita por query (?visita=2|3)
     const url = `/api/consultas/${encodeURIComponent(id)}?visita=${visitaNo}`
-    console.log("Actualizando consulta:", { url, patch }) // Para debug
+    console.log("Actualizando consulta:", { url, patch })
 
     const res = await fetch(url, {
       method: "PATCH",
@@ -21,7 +20,7 @@ export async function actualizarConsulta(id: string, visitaNo: 2 | 3, patch: any
     })
 
     const result = await res.json()
-    console.log("Respuesta del servidor:", result) // Para debug
+    console.log("Respuesta del servidor:", result)
 
     if (!res.ok) {
       throw new Error(result.error || `HTTP ${res.status}`)

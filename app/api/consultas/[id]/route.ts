@@ -22,9 +22,11 @@ export async function PATCH(req: Request, { params }: Params) {
 
     console.log("PATCH recibido:", { id: params.id, visita, body })
 
+    const testUUID = "550e8400-e29b-41d4-a716-446655440000"
+
     // Preparar el objeto de actualización usando TU esquema
     const updateData: Record<string, any> = {
-      updated_at: new Date().toISOString(), // Tu esquema usa updated_at
+      updated_at: new Date().toISOString(), // Tu trigger se encarga de esto
     }
 
     // Si es consulta de seguimiento (visita 2 o 3), mapear campos con sufijo
@@ -64,14 +66,14 @@ export async function PATCH(req: Request, { params }: Params) {
       }
 
       if (body.usuario_editor !== undefined) {
-        updateData[`usuario_visita${suffix}`] = "00000000-0000-0000-0000-000000000000" // UUID fake
+        updateData[`usuario_visita${suffix}`] = testUUID // UUID para tu esquema
       }
 
       updateData[`fecha_visita${suffix}`] = new Date().toISOString()
     } else {
       // Para consulta inicial, actualizar campos normales
       Object.keys(body).forEach((key) => {
-        if (key !== "id") {
+        if (key !== "id" && key !== "created_by") {
           updateData[key] = body[key]
         }
       })

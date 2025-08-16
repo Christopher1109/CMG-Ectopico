@@ -23,12 +23,14 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    // Generar UUID simple para created_by (ya que tu esquema lo requiere)
-    const fakeUUID = "00000000-0000-0000-0000-000000000000"
+    // IMPORTANTE: Usar un UUID real o generar uno válido
+    // Para pruebas, usamos un UUID fijo. En producción deberías usar auth.uid()
+    const testUUID = "550e8400-e29b-41d4-a716-446655440000"
 
     const payload = {
       id: (body.id ?? "ID-" + Math.random().toString(36).slice(2, 7).toUpperCase()).slice(0, 20),
-      created_by: fakeUUID, // Tu esquema requiere UUID
+      created_by: testUUID, // Tu esquema requiere UUID real
+      medico_nombre: body.usuarioCreador || body.medico_nombre || "Dr. Sistema", // Nuevo campo
       nombre_paciente: body.nombre_paciente ?? "N/A",
       edad_paciente: body.edad_paciente != null ? Number(body.edad_paciente) : null,
       frecuencia_cardiaca: body.frecuencia_cardiaca != null ? Number(body.frecuencia_cardiaca) : null,
@@ -49,7 +51,7 @@ export async function POST(req: Request) {
       resultado: body.resultado != null ? Number(body.resultado) : null,
     }
 
-    console.log("Enviando payload adaptado:", payload)
+    console.log("Enviando payload adaptado a tu esquema:", payload)
 
     const { data, error } = await supabaseAdmin.from("consultas").insert(payload).select().single()
 

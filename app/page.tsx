@@ -215,9 +215,24 @@ export default function CalculadoraEctopico() {
   const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
 
   // Datos del algoritmo
-  const probabilidadesSinFactores = { asintomatica: 0.017, sangrado: 0.03, dolor: 0.13, dolor_sangrado: 0.15 }
-  const probabilidadesConFactores = { asintomatica: 0.05, sangrado: 0.08, dolor: 0.4, dolor_sangrado: 0.46 }
-  const tvusMap = { normal: 0.07, libre: 2.4, masa: 38, masa_libre: 47 }
+  const probabilidadesSinFactores = {
+    asintomatica: 0.017,
+    sangrado: 0.03,
+    dolor: 0.13,
+    dolor_sangrado: 0.15,
+  }
+  const probabilidadesConFactores = {
+    asintomatica: 0.05,
+    sangrado: 0.08,
+    dolor: 0.4,
+    dolor_sangrado: 0.46,
+  }
+  const tvusMap = {
+    normal: 0.07,
+    libre: 2.4,
+    masa: 38,
+    masa_libre: 47,
+  }
   const hcgMap = {
     normal: { bajo: 1, alto: 1 },
     libre: { bajo: 1.8, alto: 2.1 },
@@ -315,8 +330,10 @@ export default function CalculadoraEctopico() {
     setHallazgosExploracion(consultaCargada.hallazgos_exploracion || "")
     setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
     setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
-    setSintomasSeleccionados(consultaCargada.sintomas_seleccionados || [])
-    setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
+
+    // IMPORTANTE: DESELECCIONAR síntomas y factores para nueva evaluación
+    setSintomasSeleccionados([]) // Deseleccionar para nueva consulta
+    setFactoresSeleccionados(consultaCargada.factores_seleccionados || []) // Mantener factores de riesgo
 
     // NO preseleccionar TVUS en la consulta 2/3:
     setTvus("")
@@ -525,9 +542,7 @@ export default function CalculadoraEctopico() {
 
   const validarPruebaEmbarazo = () => {
     if (pruebaEmbarazoRealizada === "no") {
-      setMensajeFinal(
-        "Se necesita realizar una prueba de embarazo cualitativa antes de continuar con la evaluación."
-      )
+      setMensajeFinal("Se necesita realizar una prueba de embarazo cualitativa antes de continuar con la evaluación.")
       setProtocoloFinalizado(true)
       return false
     }
@@ -562,39 +577,63 @@ export default function CalculadoraEctopico() {
       return
     }
 
-    // 1) Pretest
+    // 1) PROBABILIDAD PRETEST según Tabla 1
     const tieneFactoresRiesgo = factoresSeleccionados.length > 0
     const sintomasParaCalculo = sintomasSeleccionados.filter((s) => s !== "sincope")
-    let claveSintoma = "asintomatica" as "asintomatica" | "sangrado" | "dolor" | "dolor_sangrado"
-    if (sintomasParaCalculo.includes("dolor_sangrado")) claveSintoma = "dolor_sangrado"
-    else if (sintomasParaCalculo.includes("sangrado") && sintomasParaCalculo.includes("dolor")) claveSintoma = "dolor_sangrado"
-    else if (sintomasParaCalculo.includes("sangrado")) claveSintoma = "sangrado"
-    else if (sintomasParaCalculo.includes("dolor")) claveSintoma = "dolor"
-    const tablaProb = tieneFactoresRiesgo ? probabilidadesConFactores : probabilidadesSinFactores
-    const probPre = tablaProb[claveSintoma]
 
-    // 2) LRs
+    let claveSintoma = "asintomatica" as "asintomatica" | "sangrado" | "dolor" | "dolor_sangrado"
+
+    // Determinar síntomas según la lógica exacta del paper
+    if (sintomasParaCalculo.includes("dolor_sangrado")) {
+      claveSintoma = "dolor_sangrado"
+    } else if (sintomasParaCalculo.includes("sangrado") && sintomasParaCalculo.includes("dolor")) {
+      claveSintoma = "dolor_sangrado"
+    } else if (sintomasParaCalculo.includes("sangrado")) {
+      claveSintoma = "sangrado"
+    } else if (sintomasParaCalculo.includes("dolor")) {
+      claveSintoma = "dolor"
+    }
+
+    const tablaProb = tieneFactoresRiesgo ? probabilidadesConFactores : probabilidadesSinFactores
+    let probPre = tablaProb[claveSintoma]
+
+    // 2) PROBABILIDAD AJUSTADA para consultas de seguimiento (según fórmula del paper)
+    if (esConsultaSeguimiento && consultaCargada?.resultado) {
+      // Fórmula: Adjusted pretest probability = [(1-v1b) × (v2a)] + v1b
+      const v1b = consultaCargada.resultado // Probabilidad de consulta anterior
+      const v2a = probPre // Probabilidad actual basada en síntomas
+      probPre = (1 - v1b) * v2a + v1b
+      console.log(`Probabilidad ajustada: v1b=${v1b}, v2a=${v2a}, ajustada=${probPre}`)
+    }
+
+    // 3) CALCULAR LIKELIHOOD RATIOS
     const lrs: number[] = []
+
+    // LR de TVUS
     const lrTvus = tvusMap[tvus as keyof typeof tvusMap]
     if (lrTvus) lrs.push(lrTvus)
 
+    // LR de hCG según nivel discriminatorio (2000 mUI/mL)
     const hcgNumerico = Number.parseFloat(hcgValor)
     const nivelHcg = hcgNumerico >= 2000 ? "alto" : "bajo"
     const lrHcg = hcgMap[tvus as keyof typeof hcgMap]?.[nivelHcg as "alto" | "bajo"]
     if (lrHcg) lrs.push(lrHcg)
 
+    // LR de variación de hCG (solo en consultas de seguimiento)
     let variacionCalculada = "no_disponible"
-    if (hcgAnterior && hcgValor) {
+    if (hcgAnterior && hcgValor && esConsultaSeguimiento) {
       variacionCalculada = calcularVariacionHcgAutomatica(hcgAnterior, hcgValor)
       const lrVariacion = variacionHcgMap[variacionCalculada as keyof typeof variacionHcgMap]
-      if (lrVariacion) lrs.push(lrVariacion)
+      if (lrVariacion !== undefined) lrs.push(lrVariacion)
+      console.log(`Variación hCG: ${variacionCalculada}, LR: ${lrVariacion}`)
     }
 
-    // 3) Bayes
+    // 4) APLICAR TEOREMA DE BAYES
+    console.log(`Cálculo Bayes: ProbPre=${probPre}, LRs=${lrs}`)
     const probPost = calcularProbabilidad(probPre, lrs)
     setResultado(probPost)
 
-    // 4) Guardado: local + backend
+    // 5) GUARDAR DATOS (resto del código igual)
     const fechaActual = new Date().toISOString()
     const datosCompletos = {
       id: idSeguimiento,
@@ -623,19 +662,17 @@ export default function CalculadoraEctopico() {
 
     localStorage.setItem(`ectopico_${idSeguimiento}`, JSON.stringify(datosCompletos))
 
+    // Guardar en backend (código existente)
     try {
       let ok = false
       if (!esConsultaSeguimiento) {
-        ok = await enviarDatosAlBackend(datosCompletos) // POST -> C1
+        ok = await enviarDatosAlBackend(datosCompletos)
       } else {
-        // Si ya hay C2 guardada, esta será C3
         const yaTieneC2 =
           consultaCargada &&
-          (consultaCargada.tvus_2 != null ||
-            consultaCargada.hcg_valor_2 != null ||
-            consultaCargada.resultado_2 != null)
+          (consultaCargada.tvus_2 != null || consultaCargada.hcg_valor_2 != null || consultaCargada.resultado_2 != null)
         const visitaNo: 2 | 3 = yaTieneC2 ? 3 : 2
-        ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos) // PATCH ?visita=2|3
+        ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
       }
 
       if (!ok) {
@@ -648,7 +685,7 @@ export default function CalculadoraEctopico() {
       alert("Advertencia: Guardado local OK, pero falló la sincronización con la base de datos.")
     }
 
-    // 5) Mostrar resultados
+    // 6) MOSTRAR RESULTADOS según umbrales del paper (≥95% confirma, <1% descarta)
     if (probPost >= 0.95) {
       setMensajeFinal("Embarazo ectópico confirmado (probabilidad ≥95%). Proceder con tratamiento inmediato.")
       setProtocoloFinalizado(true)
@@ -732,7 +769,7 @@ Sistema CMG Health Solutions
       return
     }
     const usuarioEncontrado = USUARIOS_AUTORIZADOS.find(
-      (u) => u.usuario.toLowerCase() === usuario.toLowerCase() && u.contraseña === contraseña
+      (u) => u.usuario.toLowerCase() === usuario.toLowerCase() && u.contraseña === contraseña,
     )
     if (usuarioEncontrado) {
       setEstaAutenticado(true)
@@ -840,7 +877,9 @@ Sistema CMG Health Solutions
               <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 mb-6">
                 <div className="flex items-center space-x-2 mb-2">
                   <AlertTriangle className="h-5 w-5 text-amber-600" />
-                  <span className="font-medium text-amber-900 text-sm">Acceso Solo para Personal Médico Autorizado</span>
+                  <span className="font-medium text-amber-900 text-sm">
+                    Acceso Solo para Personal Médico Autorizado
+                  </span>
                 </div>
                 <p className="text-amber-800 text-xs">
                   Este sistema está destinado exclusivamente para uso de profesionales médicos autorizados. El acceso no
@@ -882,7 +921,11 @@ Sistema CMG Health Solutions
                       onClick={() => setMostrarContraseña(!mostrarContraseña)}
                       disabled={intentosLogin >= 5}
                     >
-                      {mostrarContraseña ? <EyeOff className="h-4 w-4 text-slate-500" /> : <Eye className="h-4 w-4 text-slate-500" />}
+                      {mostrarContraseña ? (
+                        <EyeOff className="h-4 w-4 text-slate-500" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-slate-500" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -944,7 +987,12 @@ Sistema CMG Health Solutions
               {idSeguimiento && (
                 <div className="bg-white/20 px-4 py-2 rounded-full flex items-center space-x-2">
                   <span className="text-sm font-mono">ID: {idSeguimiento}</span>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-white hover:bg-white/20" onClick={copiarId}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                    onClick={copiarId}
+                  >
                     <Copy className="h-3 w-3" />
                   </Button>
                 </div>
@@ -977,7 +1025,9 @@ Sistema CMG Health Solutions
                   </div>
                   <h2 className="text-3xl font-bold text-slate-800">Bienvenido al Sistema</h2>
                 </div>
-                <p className="text-lg text-slate-600 mb-8">Seleccione una opción para continuar con la evaluación diagnóstica</p>
+                <p className="text-lg text-slate-600 mb-8">
+                  Seleccione una opción para continuar con la evaluación diagnóstica
+                </p>
                 <div className="grid md:grid-cols-2 gap-6">
                   <Button
                     onClick={iniciarNuevaEvaluacion}
@@ -1024,7 +1074,8 @@ Sistema CMG Health Solutions
                     <span className="font-medium text-blue-900">Información Importante</span>
                   </div>
                   <p className="text-blue-800 text-sm">
-                    Las consultas de seguimiento deben realizarse entre 48-72 horas después de la consulta inicial. Ingrese el ID de seguimiento.
+                    Las consultas de seguimiento deben realizarse entre 48-72 horas después de la consulta inicial.
+                    Ingrese el ID de seguimiento.
                   </p>
                 </div>
                 <div className="space-y-4">
@@ -1080,13 +1131,24 @@ Sistema CMG Health Solutions
                   <h3 className="text-lg font-semibold text-blue-900 mb-4">Resumen de la Consulta Previa</h3>
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p><strong>ID:</strong> {consultaCargada.id}</p>
-                      <p><strong>Paciente:</strong> {consultaCargada.nombre_paciente || "No especificado"}</p>
-                      <p><strong>Edad:</strong> {consultaCargada.edad_paciente || "No especificado"} años</p>
-                      <p><strong>β-hCG anterior:</strong> {(consultaCargada.hcg_valor_2 ?? consultaCargada.hcg_valor) || "No especificado"} mUI/mL</p>
+                      <p>
+                        <strong>ID:</strong> {consultaCargada.id}
+                      </p>
+                      <p>
+                        <strong>Paciente:</strong> {consultaCargada.nombre_paciente || "No especificado"}
+                      </p>
+                      <p>
+                        <strong>Edad:</strong> {consultaCargada.edad_paciente || "No especificado"} años
+                      </p>
+                      <p>
+                        <strong>β-hCG anterior:</strong>{" "}
+                        {(consultaCargada.hcg_valor_2 ?? consultaCargada.hcg_valor) || "No especificado"} mUI/mL
+                      </p>
                     </div>
                     <div>
-                      <p><strong>TVUS:</strong> {obtenerNombreTVUS(consultaCargada.tvus)}</p>
+                      <p>
+                        <strong>TVUS:</strong> {obtenerNombreTVUS(consultaCargada.tvus)}
+                      </p>
                       <p>
                         <strong>Resultado anterior:</strong>{" "}
                         {consultaCargada.resultado
@@ -1096,16 +1158,23 @@ Sistema CMG Health Solutions
                       <p>
                         <strong>Fecha:</strong>{" "}
                         {consultaCargada.fechaCreacion || consultaCargada.fecha_creacion
-                          ? new Date(consultaCargada.fechaCreacion || consultaCargada.fecha_creacion).toLocaleDateString()
+                          ? new Date(
+                              consultaCargada.fechaCreacion || consultaCargada.fecha_creacion,
+                            ).toLocaleDateString()
                           : "No disponible"}
                       </p>
-                      <p><strong>Frecuencia Cardíaca:</strong> {consultaCargada.frecuencia_cardiaca || "No especificado"} lpm</p>
+                      <p>
+                        <strong>Frecuencia Cardíaca:</strong> {consultaCargada.frecuencia_cardiaca || "No especificado"}{" "}
+                        lpm
+                      </p>
                     </div>
                   </div>
 
                   {consultaCargada.sintomas_seleccionados && consultaCargada.sintomas_seleccionados.length > 0 && (
                     <div className="mt-4">
-                      <p><strong>Síntomas:</strong></p>
+                      <p>
+                        <strong>Síntomas:</strong>
+                      </p>
                       <ul className="list-disc list-inside text-sm text-blue-800">
                         {consultaCargada.sintomas_seleccionados.map((sintoma: string) => (
                           <li key={sintoma}>{obtenerNombreSintoma(sintoma)}</li>
@@ -1116,7 +1185,9 @@ Sistema CMG Health Solutions
 
                   {consultaCargada.factores_seleccionados && consultaCargada.factores_seleccionados.length > 0 && (
                     <div className="mt-4">
-                      <p><strong>Factores de Riesgo:</strong></p>
+                      <p>
+                        <strong>Factores de Riesgo:</strong>
+                      </p>
                       <ul className="list-disc list-inside text-sm text-blue-800">
                         {consultaCargada.factores_seleccionados.map((factor: string) => (
                           <li key={factor}>{obtenerNombreFactorRiesgo(factor)}</li>
@@ -1132,12 +1203,16 @@ Sistema CMG Health Solutions
                     <span className="font-medium text-yellow-900">Consulta de Seguimiento</span>
                   </div>
                   <p className="text-yellow-800 text-sm">
-                    Al continuar, se cargará automáticamente la información de la consulta previa. Ingrese nuevamente TVUS y el nuevo valor de β-hCG.
+                    Al continuar, se cargará automáticamente la información de la consulta previa. Ingrese nuevamente
+                    TVUS y el nuevo valor de β-hCG.
                   </p>
                 </div>
 
                 <div className="flex space-x-4">
-                  <Button onClick={continuarConsultaCargada} className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6">
+                  <Button
+                    onClick={continuarConsultaCargada}
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6"
+                  >
                     <ArrowRight className="h-4 w-4 mr-2" />
                     Continuar Consulta
                   </Button>
@@ -1189,7 +1264,11 @@ Sistema CMG Health Solutions
                 )}
 
                 <div className="flex space-x-4">
-                  <Button onClick={generarInformePDF} variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent">
+                  <Button
+                    onClick={generarInformePDF}
+                    variant="outline"
+                    className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent"
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Generar Informe
                   </Button>
@@ -1246,7 +1325,10 @@ Sistema CMG Health Solutions
                         <ul className="text-yellow-800 text-sm space-y-1">
                           <li>• Regrese en 48-72 horas para continuar con la evaluación</li>
                           <li>• Mantenga vigilancia de los síntomas durante este tiempo</li>
-                          <li>• Acuda inmediatamente si presenta empeoramiento del dolor, sangrado abundante o síntomas de shock</li>
+                          <li>
+                            • Acuda inmediatamente si presenta empeoramiento del dolor, sangrado abundante o síntomas de
+                            shock
+                          </li>
                         </ul>
                       </div>
                     </div>
@@ -1254,7 +1336,11 @@ Sistema CMG Health Solutions
                 )}
 
                 <div className="flex space-x-4">
-                  <Button onClick={generarInformePDF} variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent">
+                  <Button
+                    onClick={generarInformePDF}
+                    variant="outline"
+                    className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent"
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Generar Informe
                   </Button>
@@ -1303,7 +1389,10 @@ Sistema CMG Health Solutions
                       </div>
                     </div>
                     <div className="flex justify-end">
-                      <Button onClick={() => completarSeccion(1)} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6">
+                      <Button
+                        onClick={() => completarSeccion(1)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
+                      >
                         Continuar
                       </Button>
                     </div>
@@ -1376,7 +1465,11 @@ Sistema CMG Health Solutions
                       </div>
                     </div>
                     <div className="flex justify-between">
-                      <Button onClick={() => setSeccionActual(1)} variant="outline" className="border-gray-300 text-gray-600 hover:bg-gray-50">
+                      <Button
+                        onClick={() => setSeccionActual(1)}
+                        variant="outline"
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
                         Anterior
                       </Button>
                       <Button
@@ -1399,7 +1492,9 @@ Sistema CMG Health Solutions
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">¿Se realizó la prueba de embarazo?</Label>
+                        <Label className="text-base font-medium text-slate-700">
+                          ¿Se realizó la prueba de embarazo?
+                        </Label>
                         <select
                           value={pruebaEmbarazoRealizada}
                           onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
@@ -1412,7 +1507,9 @@ Sistema CMG Health Solutions
                       </div>
                       {pruebaEmbarazoRealizada === "si" && (
                         <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">Resultado de la prueba de embarazo:</Label>
+                          <Label className="text-base font-medium text-slate-700">
+                            Resultado de la prueba de embarazo:
+                          </Label>
                           <select
                             value={resultadoPruebaEmbarazo}
                             onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
@@ -1426,7 +1523,11 @@ Sistema CMG Health Solutions
                       )}
                     </div>
                     <div className="flex justify-between">
-                      <Button onClick={() => setSeccionActual(2)} variant="outline" className="border-gray-300 text-gray-600 hover:bg-gray-50">
+                      <Button
+                        onClick={() => setSeccionActual(2)}
+                        variant="outline"
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
                         Anterior
                       </Button>
                       <Button
@@ -1449,7 +1550,9 @@ Sistema CMG Health Solutions
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">Hallazgos en la exploración física:</Label>
+                        <Label className="text-base font-medium text-slate-700">
+                          Hallazgos en la exploración física:
+                        </Label>
                         <textarea
                           placeholder="Notas clínicas relevantes"
                           value={hallazgosExploracion}
@@ -1458,7 +1561,9 @@ Sistema CMG Health Solutions
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">¿Se realizó ecografía transabdominal?</Label>
+                        <Label className="text-base font-medium text-slate-700">
+                          ¿Se realizó ecografía transabdominal?
+                        </Label>
                         <select
                           value={tieneEcoTransabdominal}
                           onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
@@ -1471,7 +1576,9 @@ Sistema CMG Health Solutions
                       </div>
                       {tieneEcoTransabdominal === "si" && (
                         <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">Resultado de la ecografía transabdominal:</Label>
+                          <Label className="text-base font-medium text-slate-700">
+                            Resultado de la ecografía transabdominal:
+                          </Label>
                           <select
                             value={resultadoEcoTransabdominal}
                             onChange={(e) => setResultadoEcoTransabdominal(e.target.value)}
@@ -1489,7 +1596,11 @@ Sistema CMG Health Solutions
                       )}
                     </div>
                     <div className="flex justify-between">
-                      <Button onClick={() => setSeccionActual(3)} variant="outline" className="border-gray-300 text-gray-600 hover:bg-gray-50">
+                      <Button
+                        onClick={() => setSeccionActual(3)}
+                        variant="outline"
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
                         Anterior
                       </Button>
                       <Button
@@ -1522,7 +1633,7 @@ Sistema CMG Health Solutions
                                 checked={sintomasSeleccionados.includes(sintoma.id)}
                                 onChange={(e) =>
                                   setSintomasSeleccionados((prev) =>
-                                    e.target.checked ? [...prev, sintoma.id] : prev.filter((id) => id !== sintoma.id)
+                                    e.target.checked ? [...prev, sintoma.id] : prev.filter((id) => id !== sintoma.id),
                                   )
                                 }
                                 className="h-5 w-5 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
@@ -1543,7 +1654,7 @@ Sistema CMG Health Solutions
                                 checked={factoresSeleccionados.includes(factor.id)}
                                 onChange={(e) =>
                                   setFactoresSeleccionados((prev) =>
-                                    e.target.checked ? [...prev, factor.id] : prev.filter((id) => id !== factor.id)
+                                    e.target.checked ? [...prev, factor.id] : prev.filter((id) => id !== factor.id),
                                   )
                                 }
                                 className="h-5 w-5 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
@@ -1585,16 +1696,25 @@ Sistema CMG Health Solutions
                           <p className="text-sm text-blue-800">
                             <strong>β-hCG de consulta anterior:</strong> {hcgAnterior} mUI/mL
                           </p>
-                          <p className="text-xs text-blue-600 mt-1">Se calculará automáticamente la variación con el valor actual</p>
+                          <p className="text-xs text-blue-600 mt-1">
+                            Se calculará automáticamente la variación con el valor actual
+                          </p>
                         </div>
                       )}
                     </div>
 
                     <div className="flex justify-between">
-                      <Button onClick={() => setSeccionActual(4)} variant="outline" className="border-gray-300 text-gray-600 hover:bg-gray-50">
+                      <Button
+                        onClick={() => setSeccionActual(4)}
+                        variant="outline"
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
                         Anterior
                       </Button>
-                      <Button onClick={calcular} className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6">
+                      <Button
+                        onClick={calcular}
+                        className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6"
+                      >
                         Calcular
                       </Button>
                     </div>

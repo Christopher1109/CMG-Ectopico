@@ -339,7 +339,7 @@ export default function CalculadoraEctopico() {
     setTvus("")
 
     // β-hCG anterior: usa el último disponible (si ya hubo C2, usa hcg_valor_2)
-    const ultimoHcg = consultaCargada.hcg_valor_2 ?? consultaCargada.hcg_valor
+    const ultimoHcg = consultaCargada.hcg_valor_3 ?? consultaCargada.hcg_valor_2 ?? consultaCargada.hcg_valor
     setHcgAnterior(ultimoHcg?.toString() || "")
     setHcgValor("")
     setEsConsultaSeguimiento(true)
@@ -572,8 +572,8 @@ export default function CalculadoraEctopico() {
 
   // Corregido: cálculo + guardado (POST para C1, PATCH ?visita=2|3 para seguimiento)
   const calcular = async () => {
-    if (!tvus || !hcgValor || sintomasSeleccionados.length === 0) {
-      alert("Por favor complete todos los campos requeridos: síntomas, TVUS y β-hCG")
+    if (!tvus || !hcgValor) {
+      alert("Por favor complete todos los campos requeridos: TVUS y β-hCG")
       return
     }
 
@@ -671,7 +671,10 @@ export default function CalculadoraEctopico() {
         const yaTieneC2 =
           consultaCargada &&
           (consultaCargada.tvus_2 != null || consultaCargada.hcg_valor_2 != null || consultaCargada.resultado_2 != null)
-        const visitaNo: 2 | 3 = yaTieneC2 ? 3 : 2
+        const yaTieneC3 =
+          consultaCargada &&
+          (consultaCargada.tvus_3 != null || consultaCargada.hcg_valor_3 != null || consultaCargada.resultado_3 != null)
+        const visitaNo: 2 | 3 = yaTieneC3 ? 3 : yaTieneC2 ? 3 : 2
         ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
       }
 
@@ -1127,72 +1130,172 @@ Sistema CMG Health Solutions
                   <h2 className="text-2xl font-bold text-slate-800">Consulta Encontrada</h2>
                 </div>
 
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-4">Resumen de la Consulta Previa</h3>
-                  <div className="grid md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p>
-                        <strong>ID:</strong> {consultaCargada.id}
-                      </p>
-                      <p>
-                        <strong>Paciente:</strong> {consultaCargada.nombre_paciente || "No especificado"}
-                      </p>
-                      <p>
-                        <strong>Edad:</strong> {consultaCargada.edad_paciente || "No especificado"} años
-                      </p>
-                      <p>
-                        <strong>β-hCG anterior:</strong>{" "}
-                        {(consultaCargada.hcg_valor_2 ?? consultaCargada.hcg_valor) || "No especificado"} mUI/mL
-                      </p>
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 space-y-6">
+                  {/* CONSULTA 1 */}
+                  <div className="bg-white p-4 rounded-lg border border-blue-300">
+                    <h4 className="text-lg font-semibold text-blue-900 mb-3 border-b border-blue-200 pb-2">
+                      📋 CONSULTA 1 (Inicial)
+                    </h4>
+                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p>
+                          <strong>ID:</strong> {consultaCargada.id}
+                        </p>
+                        <p>
+                          <strong>Paciente:</strong> {consultaCargada.nombre_paciente || "No especificado"}
+                        </p>
+                        <p>
+                          <strong>Edad:</strong> {consultaCargada.edad_paciente || "No especificado"} años
+                        </p>
+                        <p>
+                          <strong>β-hCG:</strong> {consultaCargada.hcg_valor || "No especificado"} mUI/mL
+                        </p>
+                      </div>
+                      <div>
+                        <p>
+                          <strong>TVUS:</strong> {obtenerNombreTVUS(consultaCargada.tvus)}
+                        </p>
+                        <p>
+                          <strong>Resultado:</strong>{" "}
+                          {consultaCargada.resultado
+                            ? `${(consultaCargada.resultado * 100).toFixed(1)}%`
+                            : "No calculado"}
+                        </p>
+                        <p>
+                          <strong>Fecha:</strong>{" "}
+                          {consultaCargada.fechaCreacion || consultaCargada.fecha_creacion
+                            ? new Date(
+                                consultaCargada.fechaCreacion || consultaCargada.fecha_creacion,
+                              ).toLocaleDateString()
+                            : "No disponible"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p>
-                        <strong>TVUS:</strong> {obtenerNombreTVUS(consultaCargada.tvus)}
-                      </p>
-                      <p>
-                        <strong>Resultado anterior:</strong>{" "}
-                        {consultaCargada.resultado
-                          ? `${(consultaCargada.resultado * 100).toFixed(1)}%`
-                          : "No calculado"}
-                      </p>
-                      <p>
-                        <strong>Fecha:</strong>{" "}
-                        {consultaCargada.fechaCreacion || consultaCargada.fecha_creacion
-                          ? new Date(
-                              consultaCargada.fechaCreacion || consultaCargada.fecha_creacion,
-                            ).toLocaleDateString()
-                          : "No disponible"}
-                      </p>
-                      <p>
-                        <strong>Frecuencia Cardíaca:</strong> {consultaCargada.frecuencia_cardiaca || "No especificado"}{" "}
-                        lpm
-                      </p>
-                    </div>
+
+                    {consultaCargada.sintomas_seleccionados && consultaCargada.sintomas_seleccionados.length > 0 && (
+                      <div className="mt-3">
+                        <p>
+                          <strong>Síntomas:</strong>
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-blue-800">
+                          {consultaCargada.sintomas_seleccionados.map((sintoma: string) => (
+                            <li key={sintoma}>{obtenerNombreSintoma(sintoma)}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {consultaCargada.factores_seleccionados && consultaCargada.factores_seleccionados.length > 0 && (
+                      <div className="mt-3">
+                        <p>
+                          <strong>Factores de Riesgo:</strong>
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-blue-800">
+                          {consultaCargada.factores_seleccionados.map((factor: string) => (
+                            <li key={factor}>{obtenerNombreFactorRiesgo(factor)}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
 
-                  {consultaCargada.sintomas_seleccionados && consultaCargada.sintomas_seleccionados.length > 0 && (
-                    <div className="mt-4">
-                      <p>
-                        <strong>Síntomas:</strong>
-                      </p>
-                      <ul className="list-disc list-inside text-sm text-blue-800">
-                        {consultaCargada.sintomas_seleccionados.map((sintoma: string) => (
-                          <li key={sintoma}>{obtenerNombreSintoma(sintoma)}</li>
-                        ))}
-                      </ul>
+                  {/* CONSULTA 2 */}
+                  {(consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2) && (
+                    <div className="bg-white p-4 rounded-lg border border-green-300">
+                      <h4 className="text-lg font-semibold text-green-900 mb-3 border-b border-green-200 pb-2">
+                        📋 CONSULTA 2 (Seguimiento)
+                      </h4>
+                      <div className="grid md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p>
+                            <strong>β-hCG:</strong> {consultaCargada.hcg_valor_2 || "No especificado"} mUI/mL
+                          </p>
+                          <p>
+                            <strong>TVUS:</strong> {obtenerNombreTVUS(consultaCargada.tvus_2)}
+                          </p>
+                          <p>
+                            <strong>Variación hCG:</strong> {consultaCargada.variacion_hcg_2 || "No calculada"}
+                          </p>
+                        </div>
+                        <div>
+                          <p>
+                            <strong>Resultado:</strong>{" "}
+                            {consultaCargada.resultado_2
+                              ? `${(consultaCargada.resultado_2 * 100).toFixed(1)}%`
+                              : "No calculado"}
+                          </p>
+                          <p>
+                            <strong>Fecha:</strong>{" "}
+                            {consultaCargada.fecha_visita_2
+                              ? new Date(consultaCargada.fecha_visita_2).toLocaleDateString()
+                              : "No disponible"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {consultaCargada.sintomas_seleccionados_2 &&
+                        consultaCargada.sintomas_seleccionados_2.length > 0 && (
+                          <div className="mt-3">
+                            <p>
+                              <strong>Síntomas:</strong>
+                            </p>
+                            <ul className="list-disc list-inside text-sm text-green-800">
+                              {consultaCargada.sintomas_seleccionados_2.map((sintoma: string) => (
+                                <li key={sintoma}>{obtenerNombreSintoma(sintoma)}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                     </div>
                   )}
 
-                  {consultaCargada.factores_seleccionados && consultaCargada.factores_seleccionados.length > 0 && (
-                    <div className="mt-4">
-                      <p>
-                        <strong>Factores de Riesgo:</strong>
-                      </p>
-                      <ul className="list-disc list-inside text-sm text-blue-800">
-                        {consultaCargada.factores_seleccionados.map((factor: string) => (
-                          <li key={factor}>{obtenerNombreFactorRiesgo(factor)}</li>
-                        ))}
-                      </ul>
+                  {/* CONSULTA 3 */}
+                  {(consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3) && (
+                    <div className="bg-white p-4 rounded-lg border border-purple-300">
+                      <h4 className="text-lg font-semibold text-purple-900 mb-3 border-b border-purple-200 pb-2">
+                        📋 CONSULTA 3 (Seguimiento Final)
+                      </h4>
+                      <div className="grid md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p>
+                            <strong>β-hCG:</strong> {consultaCargada.hcg_valor_3 || "No especificado"} mUI/mL
+                          </p>
+                          <p>
+                            <strong>TVUS:</strong> {obtenerNombreTVUS(consultaCargada.tvus_3)}
+                          </p>
+                          <p>
+                            <strong>Variación hCG:</strong> {consultaCargada.variacion_hcg_3 || "No calculada"}
+                          </p>
+                        </div>
+                        <div>
+                          <p>
+                            <strong>Resultado:</strong>{" "}
+                            {consultaCargada.resultado_3
+                              ? `${(consultaCargada.resultado_3 * 100).toFixed(1)}%`
+                              : "No calculado"}
+                          </p>
+                          <p>
+                            <strong>Fecha:</strong>{" "}
+                            {consultaCargada.fecha_visita_3
+                              ? new Date(consultaCargada.fecha_visita_3).toLocaleDateString()
+                              : "No disponible"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {consultaCargada.sintomas_seleccionados_3 &&
+                        consultaCargada.sintomas_seleccionados_3.length > 0 && (
+                          <div className="mt-3">
+                            <p>
+                              <strong>Síntomas:</strong>
+                            </p>
+                            <ul className="list-disc list-inside text-sm text-purple-800">
+                              {consultaCargada.sintomas_seleccionados_3.map((sintoma: string) => (
+                                <li key={sintoma}>{obtenerNombreSintoma(sintoma)}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                     </div>
                   )}
                 </div>

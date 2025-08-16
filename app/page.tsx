@@ -33,8 +33,8 @@ const USUARIOS_AUTORIZADOS = [
   { usuario: "dr.martinez", contraseña: "CMG2024Med!", nombre: "Dr. Martínez" },
   { usuario: "dra.rodriguez", contraseña: "Ectopico2024#", nombre: "Dra. Rodríguez" },
   { usuario: "dr.garcia", contraseña: "MedCMG2024$", nombre: "Dr. García" },
-  { usuario: "dra.lopez", contraseña: "DocAuth2024!", nombre: "Dra. López" },
-  { usuario: "admin", contraseña: "CMGAdmin2024#", nombre: "Administrador" },
+  { usuario: "Dra.Alma", contraseña: "Nuevoleon", nombre: "Secretaria de Salud NL" },
+  { usuario: "Dr.Francisco", contraseña: "Francisco", nombre: "Dr.Francisco" },
   { usuario: "Christopher", contraseña: "Matutito22", nombre: "Christopher" },
 ]
 

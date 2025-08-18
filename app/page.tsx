@@ -1274,7 +1274,7 @@ Sistema CMG Health Solutions
                         <span className="text-white text-lg font-bold">1</span>
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-green-900">Primera Consulta</h3>
+                        <h3 className="text-xl font-bold text-green-900">Última Consulta</h3>
                         <p className="text-green-700 text-sm">Evaluación inicial</p>
                       </div>
                     </div>
@@ -1350,7 +1350,7 @@ Sistema CMG Health Solutions
                         <span className="text-white text-lg font-bold">2</span>
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-orange-900">Segunda Consulta</h3>
+                        <h3 className="text-xl font-bold text-orange-900">Última Consulta</h3>
                         <p className="text-orange-700 text-sm">Primera consulta de seguimiento</p>
                       </div>
                     </div>
@@ -1440,7 +1440,7 @@ Sistema CMG Health Solutions
                         <span className="text-white text-lg font-bold">3</span>
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-purple-900">Tercera Consulta</h3>
+                        <h3 className="text-xl font-bold text-purple-900">Última Consulta</h3>
                         <p className="text-purple-700 text-sm">Segunda consulta de seguimiento</p>
                       </div>
                     </div>

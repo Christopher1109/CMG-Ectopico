@@ -1270,12 +1270,8 @@ Sistema CMG Health Solutions
                 {(consultaCargada.tvus || consultaCargada.hcg_valor || consultaCargada.resultado) && (
                   <div className="bg-green-50 p-6 rounded-xl border border-green-200 shadow-sm">
                     <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center shadow-lg">
-                        <span className="text-white text-lg font-bold">1</span>
-                      </div>
                       <div>
-                        <h3 className="text-xl font-bold text-green-900">Última Consulta</h3>
-                        <p className="text-green-700 text-sm">Evaluación inicial</p>
+                        <h3 className="text-xl font-bold text-green-900">Evaluación inicial</h3>
                       </div>
                     </div>
 
@@ -1346,12 +1342,8 @@ Sistema CMG Health Solutions
                 {(consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2) && (
                   <div className="bg-orange-50 p-6 rounded-xl border border-orange-200 shadow-sm">
                     <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center shadow-lg">
-                        <span className="text-white text-lg font-bold">2</span>
-                      </div>
                       <div>
-                        <h3 className="text-xl font-bold text-orange-900">Última Consulta</h3>
-                        <p className="text-orange-700 text-sm">Primera consulta de seguimiento</p>
+                        <h3 className="text-xl font-bold text-orange-900">Evaluación inicial</h3>
                       </div>
                     </div>
 
@@ -1436,12 +1428,8 @@ Sistema CMG Health Solutions
                 {(consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3) && (
                   <div className="bg-purple-50 p-6 rounded-xl border border-purple-200 shadow-sm">
                     <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
-                        <span className="text-white text-lg font-bold">3</span>
-                      </div>
                       <div>
-                        <h3 className="text-xl font-bold text-purple-900">Última Consulta</h3>
-                        <p className="text-purple-700 text-sm">Segunda consulta de seguimiento</p>
+                        <h3 className="text-xl font-bold text-purple-900">Evaluación inicial</h3>
                       </div>
                     </div>
 

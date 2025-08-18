@@ -80,7 +80,7 @@ async function actualizarDatosEnBackend(id: string, visitaNo: 2 | 3, datos: any)
     const patch = {
       nombre_paciente: datos.nombrePaciente || null,
       edad_paciente: Number.isFinite(+datos.edadPaciente) ? +datos.edadPaciente : null,
-      sintomas_seleccionados: Array.isArray(datos.sintomasSeleccionados) ? datos.sintomasSeleccionados : [],
+      sintomas_seleccionados: Array.isArray(datos.sintomasSeleccionados) ? datos.factoresSeleccionados : [],
       factores_seleccionados: Array.isArray(datos.factoresSeleccionados) ? datos.factoresSeleccionados : [],
       tvus: datos.tvus || null,
       hcg_valor: Number.isFinite(+datos.hcgValor) ? +datos.hcgValor : null,
@@ -1266,127 +1266,261 @@ Sistema CMG Health Solutions
                   </div>
                 </div>
 
-                {/* CONSULTA 1 - SIEMPRE EXISTE */}
+                {/* PRIMERA CONSULTA - BLOQUE VERDE INDEPENDIENTE */}
                 {(consultaCargada.tvus || consultaCargada.hcg_valor || consultaCargada.resultado) && (
-                  <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                    <h3 className="text-lg font-bold text-green-900 mb-4">📋 Primera Consulta Realizada</h3>
-                    <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-green-50 p-6 rounded-xl border border-green-200 shadow-sm">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-white text-lg font-bold">1</span>
+                      </div>
                       <div>
-                        <div className="text-sm font-medium text-green-900 mb-1">Síntomas</div>
-                        <div className="text-green-800">
-                          {consultaCargada.sintomas_seleccionados?.map(obtenerNombreSintoma).join(", ") || "Ninguno"}
+                        <h3 className="text-xl font-bold text-green-900">Primera Consulta</h3>
+                        <p className="text-green-700 text-sm">Evaluación inicial</p>
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="bg-white p-4 rounded-lg border border-green-200">
+                          <span className="font-semibold text-green-700 block mb-2">Síntomas</span>
+                          {consultaCargada.sintomas_seleccionados &&
+                          consultaCargada.sintomas_seleccionados.length > 0 ? (
+                            <div className="space-y-1">
+                              {consultaCargada.sintomas_seleccionados.map((sintoma: string) => (
+                                <div key={sintoma} className="text-green-800 text-sm flex items-center space-x-2">
+                                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                  <span>{obtenerNombreSintoma(sintoma)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-green-800 text-sm">Asintomática</div>
+                          )}
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg border border-green-200">
+                          <span className="font-semibold text-green-700 block mb-2">TVUS</span>
+                          <div className="text-green-800 font-medium">{obtenerNombreTVUS(consultaCargada.tvus)}</div>
                         </div>
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-green-900 mb-1">Factores de Riesgo</div>
-                        <div className="text-green-800">
-                          {consultaCargada.factores_seleccionados?.map(obtenerNombreFactorRiesgo).join(", ") ||
-                            "Ninguno"}
+
+                      <div className="space-y-4">
+                        <div className="bg-white p-4 rounded-lg border border-green-200">
+                          <span className="font-semibold text-green-700 block mb-2">Factores de Riesgo</span>
+                          {consultaCargada.factores_seleccionados &&
+                          consultaCargada.factores_seleccionados.length > 0 ? (
+                            <div className="space-y-1">
+                              {consultaCargada.factores_seleccionados.map((factor: string) => (
+                                <div key={factor} className="text-green-800 text-sm flex items-center space-x-2">
+                                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                  <span>{obtenerNombreFactorRiesgo(factor)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-green-800 text-sm">Sin factores de riesgo</div>
+                          )}
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg border border-green-200">
+                          <span className="font-semibold text-green-700 block mb-2">β-hCG</span>
+                          <div className="text-green-800 font-bold text-lg">
+                            {consultaCargada.hcg_valor || "No especificado"} mUI/mL
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-green-900 mb-1">TVUS</div>
-                        <div className="text-green-800">{obtenerNombreTVUS(consultaCargada.tvus)}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-green-900 mb-1">β-hCG</div>
-                        <div className="text-green-800">{consultaCargada.hcg_valor} mUI/mL</div>
-                      </div>
-                      <div className="md:col-span-2">
-                        <div className="text-sm font-medium text-green-900 mb-1">Resultado del Algoritmo</div>
-                        <div className="text-green-800 font-bold text-lg">
-                          {consultaCargada.resultado
-                            ? `${(consultaCargada.resultado * 100).toFixed(1)}% probabilidad de embarazo ectópico`
-                            : "No disponible"}
-                        </div>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-green-200 bg-green-100 p-4 rounded-lg">
+                      <span className="font-semibold text-green-700 block mb-2">Resultado del Algoritmo</span>
+                      <div className="text-2xl font-bold text-green-900">
+                        {consultaCargada.resultado
+                          ? `${(consultaCargada.resultado * 100).toFixed(1)}% probabilidad de embarazo ectópico`
+                          : "No calculado"}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* CONSULTA 2 - SI EXISTE */}
+                {/* SEGUNDA CONSULTA - BLOQUE NARANJA INDEPENDIENTE */}
                 {(consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2) && (
-                  <div className="bg-orange-50 p-6 rounded-lg border border-orange-200">
-                    <h3 className="text-lg font-bold text-orange-900 mb-4">📋 Segunda Consulta Realizada</h3>
-                    <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-orange-50 p-6 rounded-xl border border-orange-200 shadow-sm">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-white text-lg font-bold">2</span>
+                      </div>
                       <div>
-                        <div className="text-sm font-medium text-orange-900 mb-1">Síntomas</div>
-                        <div className="text-orange-800">
-                          {consultaCargada.sintomas_seleccionados_2?.map(obtenerNombreSintoma).join(", ") || "Ninguno"}
+                        <h3 className="text-xl font-bold text-orange-900">Segunda Consulta</h3>
+                        <p className="text-orange-700 text-sm">Primera consulta de seguimiento</p>
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="bg-white p-4 rounded-lg border border-orange-200">
+                          <span className="font-semibold text-orange-700 block mb-2">Síntomas</span>
+                          {consultaCargada.sintomas_seleccionados_2 &&
+                          consultaCargada.sintomas_seleccionados_2.length > 0 ? (
+                            <div className="space-y-1">
+                              {consultaCargada.sintomas_seleccionados_2.map((sintoma: string) => (
+                                <div key={sintoma} className="text-orange-800 text-sm flex items-center space-x-2">
+                                  <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                                  <span>{obtenerNombreSintoma(sintoma)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-orange-800 text-sm">Asintomática</div>
+                          )}
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg border border-orange-200">
+                          <span className="font-semibold text-orange-700 block mb-2">TVUS</span>
+                          <div className="text-orange-800 font-medium">{obtenerNombreTVUS(consultaCargada.tvus_2)}</div>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg border border-orange-200">
+                          <span className="font-semibold text-orange-700 block mb-2">Variación β-hCG</span>
+                          <div className="text-orange-800 font-medium capitalize">
+                            {consultaCargada.variacion_hcg_2?.replace(/_/g, " ") || "No calculada"}
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-orange-900 mb-1">Factores de Riesgo</div>
-                        <div className="text-orange-800">
-                          {consultaCargada.factores_seleccionados_2?.map(obtenerNombreFactorRiesgo).join(", ") ||
-                            "Ninguno"}
+
+                      <div className="space-y-4">
+                        <div className="bg-white p-4 rounded-lg border border-orange-200">
+                          <span className="font-semibold text-orange-700 block mb-2">Factores de Riesgo</span>
+                          {consultaCargada.factores_seleccionados_2 &&
+                          consultaCargada.factores_seleccionados_2.length > 0 ? (
+                            <div className="space-y-1">
+                              {consultaCargada.factores_seleccionados_2.map((factor: string) => (
+                                <div key={factor} className="text-orange-800 text-sm flex items-center space-x-2">
+                                  <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                                  <span>{obtenerNombreFactorRiesgo(factor)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-orange-800 text-sm">Sin factores de riesgo</div>
+                          )}
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg border border-orange-200">
+                          <span className="font-semibold text-orange-700 block mb-2">β-hCG Actual</span>
+                          <div className="text-orange-800 font-bold text-lg">
+                            {consultaCargada.hcg_valor_2 || "No especificado"} mUI/mL
+                          </div>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg border border-orange-200">
+                          <span className="font-semibold text-orange-700 block mb-2">β-hCG Anterior</span>
+                          <div className="text-orange-800 font-medium">
+                            {consultaCargada.hcg_anterior_2 || consultaCargada.hcg_valor || "No especificado"} mUI/mL
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-orange-900 mb-1">TVUS</div>
-                        <div className="text-orange-800">{obtenerNombreTVUS(consultaCargada.tvus_2)}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-orange-900 mb-1">β-hCG</div>
-                        <div className="text-orange-800">{consultaCargada.hcg_valor_2} mUI/mL</div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-orange-900 mb-1">Variación β-hCG</div>
-                        <div className="text-orange-800">
-                          {consultaCargada.variacion_hcg_2?.replace(/_/g, " ") || "No calculada"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-orange-900 mb-1">Resultado del Algoritmo</div>
-                        <div className="text-orange-800 font-bold text-lg">
-                          {consultaCargada.resultado_2
-                            ? `${(consultaCargada.resultado_2 * 100).toFixed(1)}% probabilidad de embarazo ectópico`
-                            : "No disponible"}
-                        </div>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-orange-200 bg-orange-100 p-4 rounded-lg">
+                      <span className="font-semibold text-orange-700 block mb-2">Resultado del Algoritmo</span>
+                      <div className="text-2xl font-bold text-orange-900">
+                        {consultaCargada.resultado_2
+                          ? `${(consultaCargada.resultado_2 * 100).toFixed(1)}% probabilidad de embarazo ectópico`
+                          : "No calculado"}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* CONSULTA 3 - SI EXISTE */}
+                {/* TERCERA CONSULTA - BLOQUE PÚRPURA INDEPENDIENTE */}
                 {(consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3) && (
-                  <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
-                    <h3 className="text-lg font-bold text-purple-900 mb-4">📋 Tercera Consulta Realizada</h3>
-                    <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-purple-50 p-6 rounded-xl border border-purple-200 shadow-sm">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-white text-lg font-bold">3</span>
+                      </div>
                       <div>
-                        <div className="text-sm font-medium text-purple-900 mb-1">Síntomas</div>
-                        <div className="text-purple-800">
-                          {consultaCargada.sintomas_seleccionados_3?.map(obtenerNombreSintoma).join(", ") || "Ninguno"}
+                        <h3 className="text-xl font-bold text-purple-900">Tercera Consulta</h3>
+                        <p className="text-purple-700 text-sm">Segunda consulta de seguimiento</p>
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="bg-white p-4 rounded-lg border border-purple-200">
+                          <span className="font-semibold text-purple-700 block mb-2">Síntomas</span>
+                          {consultaCargada.sintomas_seleccionados_3 &&
+                          consultaCargada.sintomas_seleccionados_3.length > 0 ? (
+                            <div className="space-y-1">
+                              {consultaCargada.sintomas_seleccionados_3.map((sintoma: string) => (
+                                <div key={sintoma} className="text-purple-800 text-sm flex items-center space-x-2">
+                                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                                  <span>{obtenerNombreSintoma(sintoma)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-purple-800 text-sm">Asintomática</div>
+                          )}
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg border border-purple-200">
+                          <span className="font-semibold text-purple-700 block mb-2">TVUS</span>
+                          <div className="text-purple-800 font-medium">{obtenerNombreTVUS(consultaCargada.tvus_3)}</div>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg border border-purple-200">
+                          <span className="font-semibold text-purple-700 block mb-2">Variación β-hCG</span>
+                          <div className="text-purple-800 font-medium capitalize">
+                            {consultaCargada.variacion_hcg_3?.replace(/_/g, " ") || "No calculada"}
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-purple-900 mb-1">Factores de Riesgo</div>
-                        <div className="text-purple-800">
-                          {consultaCargada.factores_seleccionados_3?.map(obtenerNombreFactorRiesgo).join(", ") ||
-                            "Ninguno"}
+
+                      <div className="space-y-4">
+                        <div className="bg-white p-4 rounded-lg border border-purple-200">
+                          <span className="font-semibold text-purple-700 block mb-2">Factores de Riesgo</span>
+                          {consultaCargada.factores_seleccionados_3 &&
+                          consultaCargada.factores_seleccionados_3.length > 0 ? (
+                            <div className="space-y-1">
+                              {consultaCargada.factores_seleccionados_3.map((factor: string) => (
+                                <div key={factor} className="text-purple-800 text-sm flex items-center space-x-2">
+                                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                                  <span>{obtenerNombreFactorRiesgo(factor)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-purple-800 text-sm">Sin factores de riesgo</div>
+                          )}
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg border border-purple-200">
+                          <span className="font-semibold text-purple-700 block mb-2">β-hCG Actual</span>
+                          <div className="text-purple-800 font-bold text-lg">
+                            {consultaCargada.hcg_valor_3 || "No especificado"} mUI/mL
+                          </div>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg border border-purple-200">
+                          <span className="font-semibold text-purple-700 block mb-2">β-hCG Anterior</span>
+                          <div className="text-purple-800 font-medium">
+                            {consultaCargada.hcg_anterior_3 ||
+                              consultaCargada.hcg_valor_2 ||
+                              consultaCargada.hcg_valor ||
+                              "No especificado"}{" "}
+                            mUI/mL
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-purple-900 mb-1">TVUS</div>
-                        <div className="text-purple-800">{obtenerNombreTVUS(consultaCargada.tvus_3)}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-purple-900 mb-1">β-hCG</div>
-                        <div className="text-purple-800">{consultaCargada.hcg_valor_3} mUI/mL</div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-purple-900 mb-1">Variación β-hCG</div>
-                        <div className="text-purple-800">
-                          {consultaCargada.variacion_hcg_3?.replace(/_/g, " ") || "No calculada"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-purple-900 mb-1">Resultado del Algoritmo</div>
-                        <div className="text-purple-800 font-bold text-lg">
-                          {consultaCargada.resultado_3
-                            ? `${(consultaCargada.resultado_3 * 100).toFixed(1)}% probabilidad de embarazo ectópico`
-                            : "No disponible"}
-                        </div>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-purple-200 bg-purple-100 p-4 rounded-lg">
+                      <span className="font-semibold text-purple-700 block mb-2">Resultado del Algoritmo</span>
+                      <div className="text-2xl font-bold text-purple-900">
+                        {consultaCargada.resultado_3
+                          ? `${(consultaCargada.resultado_3 * 100).toFixed(1)}% probabilidad de embarazo ectópico`
+                          : "No calculado"}
                       </div>
                     </div>
                   </div>

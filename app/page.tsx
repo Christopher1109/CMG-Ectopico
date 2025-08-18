@@ -288,6 +288,7 @@ export default function CalculadoraEctopico() {
 
   const continuarConsultaCargada = async () => {
     setIdSeguimiento(consultaCargada.id)
+    // NO reemplazar datos del paciente, mantener los originales
     setNombrePaciente(consultaCargada.nombre_paciente || "")
     setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
     setFrecuenciaCardiaca(consultaCargada.frecuencia_cardiaca?.toString() || "")
@@ -300,8 +301,9 @@ export default function CalculadoraEctopico() {
     setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
     setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
 
+    // LIMPIAR campos para nueva consulta (NO usar datos previos)
     setSintomasSeleccionados([])
-    setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
+    setFactoresSeleccionados([]) // NO usar factores previos
     setTvus("")
 
     let ultimoHcg = consultaCargada.hcg_valor
@@ -317,11 +319,13 @@ export default function CalculadoraEctopico() {
     const tieneC3 = consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3
 
     if (tieneC3) {
-      setNumeroConsultaActual(3)
+      setNumeroConsultaActual(3) // Ya tiene 3 consultas, no puede continuar
+      alert("Esta consulta ya tiene 3 evaluaciones completadas.")
+      return
     } else if (tieneC2) {
-      setNumeroConsultaActual(3)
+      setNumeroConsultaActual(3) // Hacer la tercera consulta
     } else {
-      setNumeroConsultaActual(2)
+      setNumeroConsultaActual(2) // Hacer la segunda consulta
     }
 
     setSeccionesCompletadas([1, 2, 3, 4])
@@ -1566,46 +1570,70 @@ Sistema CMG Health Solutions
         </div>
       ) : mostrarResultados && resultado !== null ? (
         <div className="max-w-4xl mx-auto p-6">
-          <Card className="shadow-lg">
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
             <CardContent className="p-8">
               <div className="space-y-6">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-slate-800">Resultado de la Evaluación</h2>
-                </div>
-
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 text-center">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-4">Probabilidad de Embarazo Ectópico</h3>
-                  <div className="text-4xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
-                  <p className="text-blue-800 text-sm">
-                    {resultado >= 0.95
-                      ? "Alta probabilidad - Confirmar diagnóstico"
-                      : resultado < 0.01
-                        ? "Baja probabilidad - Descartar diagnóstico"
-                        : "Probabilidad intermedia - Seguimiento requerido"}
-                  </p>
-                </div>
-
-                {/* ID de seguimiento */}
-                {mostrarIdSeguimiento && idSeguimiento && resultado < 0.95 && resultado > 0.01 && (
-                  <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <AlertTriangle className="h-5 w-5 text-blue-600" />
-                      <h3 className="text-lg font-semibold text-blue-900">Seguimiento Requerido</h3>
+                {/* Header con diseño mejorado */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-lg">
+                      <CheckCircle className="h-8 w-8 text-white" />
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-blue-800">⚪ Guarde este ID:</span>
-                        <span className="font-mono bg-white px-2 py-1 rounded border">{idSeguimiento}</span>
-                        <Button onClick={copiarId} variant="outline" size="sm" className="h-8 w-8 p-0 bg-transparent">
-                          <Copy className="h-3 w-3" />
-                        </Button>
+                    <div>
+                      <h2 className="text-3xl font-bold text-slate-800">Resultado de la Evaluación</h2>
+                      <p className="text-slate-600">Análisis completado exitosamente</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Resultado principal con diseño mejorado */}
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-blue-100">
+                  <div className="text-center">
+                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg mb-4">
+                      <span className="text-2xl font-bold text-white">%</span>
+                    </div>
+                    <h3 className="text-xl font-semibold text-slate-800 mb-2">Probabilidad de Embarazo Ectópico</h3>
+                    <div className="text-5xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
+                    <p className="text-slate-600 text-lg">
+                      {resultado >= 0.95
+                        ? "Alta probabilidad - Confirmar diagnóstico"
+                        : resultado < 0.01
+                          ? "Baja probabilidad - Descartar diagnóstico"
+                          : "Probabilidad intermedia - Seguimiento requerido"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* ID de seguimiento con diseño mejorado */}
+                {mostrarIdSeguimiento && idSeguimiento && resultado < 0.95 && resultado > 0.01 && (
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg">
+                        <AlertTriangle className="h-6 w-6 text-white" />
                       </div>
-                      <div className="bg-white p-4 rounded border border-blue-300">
-                        <h4 className="font-medium text-blue-900 mb-2">Instrucciones de Seguimiento</h4>
-                        <ul className="text-blue-800 text-sm space-y-1">
+                      <h3 className="text-xl font-semibold text-slate-800">Seguimiento Requerido</h3>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-slate-700 font-medium">⚪ Guarde este ID:</span>
+                        <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-lg border border-blue-200">
+                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
+                            <span className="text-white text-xs font-bold">ID</span>
+                          </div>
+                          <span className="font-mono text-blue-700 font-bold text-lg">{idSeguimiento}</span>
+                          <Button
+                            onClick={copiarId}
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0 bg-white border-blue-300 hover:bg-blue-50"
+                          >
+                            <Copy className="h-3 w-3 text-blue-600" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+                        <h4 className="font-semibold text-slate-800 mb-2">Instrucciones de Seguimiento</h4>
+                        <ul className="text-slate-700 text-sm space-y-1">
                           <li>• Regrese en 48-72 horas para continuar con la evaluación</li>
                           <li>• Mantenga vigilancia de los síntomas durante este tiempo</li>
                           <li>
@@ -1618,67 +1646,79 @@ Sistema CMG Health Solutions
                   </div>
                 )}
 
-                {/* Resumen de la consulta actual */}
-                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 Resumen de la Consulta</h3>
+                {/* Resumen de la consulta con diseño mejorado */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2 bg-gradient-to-br from-slate-500 to-slate-600 rounded-full shadow-lg">
+                      <FileText className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-slate-800">📊 Resumen de la Consulta</h3>
+                  </div>
                   <div className="grid md:grid-cols-2 gap-6 text-sm">
-                    <div className="space-y-2">
-                      <div>
-                        <span className="font-medium text-gray-700">Paciente:</span>
-                        <div className="text-gray-600">
+                    <div className="space-y-3">
+                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                        <span className="font-semibold text-slate-700 block mb-1">Paciente:</span>
+                        <div className="text-slate-600">
                           {nombrePaciente}, {edadPaciente} años
                         </div>
                       </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Síntomas:</span>
-                        <div className="text-gray-600">
+                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                        <span className="font-semibold text-slate-700 block mb-1">Síntomas:</span>
+                        <div className="text-slate-600">
                           {sintomasSeleccionados.length > 0
                             ? sintomasSeleccionados.map((s) => obtenerNombreSintoma(s)).join(", ")
                             : "Asintomática"}
                         </div>
                       </div>
-                      <div>
-                        <span className="font-medium text-gray-700">TVUS:</span>
-                        <div className="text-gray-600">{obtenerNombreTVUS(tvus)}</div>
+                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                        <span className="font-semibold text-slate-700 block mb-1">TVUS:</span>
+                        <div className="text-slate-600">{obtenerNombreTVUS(tvus)}</div>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <div>
-                        <span className="font-medium text-gray-700">Factores de Riesgo:</span>
-                        <div className="text-gray-600">
+                    <div className="space-y-3">
+                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                        <span className="font-semibold text-slate-700 block mb-1">Factores de Riesgo:</span>
+                        <div className="text-slate-600">
                           {factoresSeleccionados.length > 0
                             ? factoresSeleccionados.map((f) => obtenerNombreFactorRiesgo(f)).join(", ")
                             : "Sin factores de riesgo"}
                         </div>
                       </div>
-                      <div>
-                        <span className="font-medium text-gray-700">β-hCG:</span>
-                        <div className="text-gray-600">{hcgValor} mUI/mL</div>
+                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                        <span className="font-semibold text-slate-700 block mb-1">β-hCG:</span>
+                        <div className="text-slate-600">{hcgValor} mUI/mL</div>
                       </div>
                       {esConsultaSeguimiento && hcgAnterior && (
-                        <div>
-                          <span className="font-medium text-gray-700">β-hCG Anterior:</span>
-                          <div className="text-gray-600">{hcgAnterior} mUI/mL</div>
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold text-slate-700 block mb-1">β-hCG Anterior:</span>
+                          <div className="text-slate-600">{hcgAnterior} mUI/mL</div>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex space-x-4">
-                  <Button
-                    onClick={generarInformePDF}
-                    variant="outline"
-                    className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Generar Informe
-                  </Button>
-                  <Button onClick={volverAInicio} className="bg-green-600 hover:bg-green-700 text-white">
-                    <User className="h-4 w-4 mr-2" />
-                    Nueva Evaluación
-                  </Button>
+                {/* Botones con diseño mejorado */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+                  <div className="flex space-x-4 justify-center">
+                    <Button
+                      onClick={generarInformePDF}
+                      variant="outline"
+                      className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-white shadow-sm"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Generar Informe
+                    </Button>
+                    <Button
+                      onClick={volverAInicio}
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-sm"
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Nueva Evaluación
+                    </Button>
+                  </div>
                 </div>
+
                 <CMGFooter />
               </div>
             </CardContent>

@@ -1339,82 +1339,73 @@ Sistema CMG Health Solutions
             <CardContent className="p-8">
               <div className="space-y-6">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <FileText className="h-6 w-6 text-blue-600" />
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <CheckCircle className="h-6 w-6 text-green-600" />
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-800">📋 Historial Clínico Completo</h2>
+                  <h2 className="text-2xl font-bold text-slate-800">Resultado de la Evaluación</h2>
                 </div>
 
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <User className="h-5 w-5 text-blue-600" />
-                    <h3 className="text-lg font-semibold text-blue-900">Información del Paciente</h3>
-                  </div>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 text-center">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-4">Probabilidad de Embarazo Ectópico</h3>
+                  <div className="text-4xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
+                  <p className="text-blue-800 text-sm">
+                    {resultado >= 0.95
+                      ? "Alta probabilidad - Confirmar diagnóstico"
+                      : resultado < 0.01
+                        ? "Baja probabilidad - Descartar diagnóstico"
+                        : "Probabilidad intermedia - Seguimiento requerido"}
+                  </p>
+                </div>
 
-                  <div className="grid md:grid-cols-3 gap-6 text-sm">
-                    <div className="space-y-2">
-                      <div>
-                        <span className="font-medium text-blue-700">ID de Seguimiento</span>
-                        <div className="font-mono text-blue-600 font-bold">{idSeguimiento}</div>
-                      </div>
-                      <div>
-                        <span className="font-medium text-blue-700">Última Actualización</span>
-                        <div className="text-gray-600">{new Date().toLocaleString()}</div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div>
-                        <span className="font-medium text-blue-700">Paciente</span>
-                        <div className="font-semibold text-blue-900">
-                          {nombrePaciente || "No especificado"}, {edadPaciente || "N/A"} años
+                {/* Recomendaciones clínicas */}
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">📋 Recomendaciones Clínicas</h3>
+                  <div className="space-y-3">
+                    {resultado >= 0.95 ? (
+                      <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <span className="font-medium text-red-900">Alta Probabilidad (≥95%)</span>
                         </div>
+                        <ul className="text-red-800 text-sm space-y-1">
+                          <li>• Confirmar diagnóstico de embarazo ectópico</li>
+                          <li>• Proceder con tratamiento inmediato</li>
+                          <li>• Considerar manejo médico o quirúrgico según protocolo</li>
+                          <li>• Monitoreo estrecho de signos vitales</li>
+                        </ul>
                       </div>
-                      <div>
-                        <span className="font-medium text-blue-700">Signos Vitales</span>
-                        <div className="text-gray-600">
-                          FC: {frecuenciaCardiaca || "N/A"} lpm | PA: {presionSistolica || "N/A"}/
-                          {presionDiastolica || "N/A"} mmHg
+                    ) : resultado < 0.01 ? (
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <span className="font-medium text-green-900">Baja Probabilidad (&lt;1%)</span>
                         </div>
+                        <ul className="text-green-800 text-sm space-y-1">
+                          <li>• Embarazo ectópico descartado</li>
+                          <li>• Considerar otras causas de los síntomas</li>
+                          <li>• Seguimiento rutinario del embarazo</li>
+                          <li>• Educación sobre signos de alarma</li>
+                        </ul>
                       </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div>
-                        <span className="font-medium text-blue-700">Fecha de Creación</span>
-                        <div className="text-gray-600">{new Date().toLocaleDateString()}</div>
+                    ) : (
+                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                          <span className="font-medium text-yellow-900">Probabilidad Intermedia (1-95%)</span>
+                        </div>
+                        <ul className="text-yellow-800 text-sm space-y-1">
+                          <li>• Se requiere seguimiento en 48-72 horas</li>
+                          <li>• Repetir β-hCG y evaluación clínica</li>
+                          <li>• Vigilancia estrecha de síntomas</li>
+                          <li>• Educación sobre signos de alarma</li>
+                        </ul>
                       </div>
-                      <div>
-                        <span className="font-medium text-blue-700">Estado de Conciencia</span>
-                        <div className="text-gray-600 capitalize">{estadoConciencia || "No especificado"}</div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Mostrar SOLO el bloque de la consulta actual */}
-                {renderBloqueConsultaIndividual()}
-
-                {/* Diagnóstico de Seguimiento */}
-                {resultado && resultado < 0.95 && resultado > 0.01 && (
-                  <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                      <h3 className="text-lg font-semibold text-yellow-900">🎯 Diagnóstico de Seguimiento</h3>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 bg-blue-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs">📊</span>
-                      </div>
-                      <span className="text-yellow-800">
-                        Aproximación: se debe realizar {numeroConsultaActual === 1 ? "la segunda" : "la tercera"}{" "}
-                        consulta.
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {mostrarIdSeguimiento && idSeguimiento && (
+                {/* ID de seguimiento */}
+                {mostrarIdSeguimiento && idSeguimiento && resultado < 0.95 && resultado > 0.01 && (
                   <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
                     <div className="flex items-center space-x-2 mb-4">
                       <AlertTriangle className="h-5 w-5 text-blue-600" />
@@ -1442,6 +1433,53 @@ Sistema CMG Health Solutions
                     </div>
                   </div>
                 )}
+
+                {/* Resumen de la consulta actual */}
+                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 Resumen de la Consulta</h3>
+                  <div className="grid md:grid-cols-2 gap-6 text-sm">
+                    <div className="space-y-2">
+                      <div>
+                        <span className="font-medium text-gray-700">Paciente:</span>
+                        <div className="text-gray-600">
+                          {nombrePaciente}, {edadPaciente} años
+                        </div>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Síntomas:</span>
+                        <div className="text-gray-600">
+                          {sintomasSeleccionados.length > 0
+                            ? sintomasSeleccionados.map((s) => obtenerNombreSintoma(s)).join(", ")
+                            : "Asintomática"}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">TVUS:</span>
+                        <div className="text-gray-600">{obtenerNombreTVUS(tvus)}</div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <span className="font-medium text-gray-700">Factores de Riesgo:</span>
+                        <div className="text-gray-600">
+                          {factoresSeleccionados.length > 0
+                            ? factoresSeleccionados.map((f) => obtenerNombreFactorRiesgo(f)).join(", ")
+                            : "Sin factores de riesgo"}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">β-hCG:</span>
+                        <div className="text-gray-600">{hcgValor} mUI/mL</div>
+                      </div>
+                      {esConsultaSeguimiento && hcgAnterior && (
+                        <div>
+                          <span className="font-medium text-gray-700">β-hCG Anterior:</span>
+                          <div className="text-gray-600">{hcgAnterior} mUI/mL</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
                 <div className="flex space-x-4">
                   <Button

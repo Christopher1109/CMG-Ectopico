@@ -23,7 +23,7 @@ import type React from "react"
 import { createClient } from "@supabase/supabase-js"
 import { crearConsulta, actualizarConsulta, obtenerConsulta } from "@/lib/api/consultas"
 
-// ===================== SUPABASE CLIENT (solo lectura directa si se necesita) =====================
+// ===================== SUPABASE CLIENT =====================
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
@@ -63,7 +63,7 @@ async function enviarDatosAlBackend(datos: any): Promise<boolean> {
       hcg_anterior: Number.isFinite(+datos.hcgAnterior) ? +datos.hcgAnterior : null,
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
     }
-    const res = await crearConsulta(payload) // POST /api/consultas
+    const res = await crearConsulta(payload)
     if (res?.error) {
       console.error("API /api/consultas error:", res.error)
       return false
@@ -78,7 +78,6 @@ async function enviarDatosAlBackend(datos: any): Promise<boolean> {
 async function actualizarDatosEnBackend(id: string, visitaNo: 2 | 3, datos: any): Promise<boolean> {
   try {
     const patch = {
-      // El backend mapeará estos campos a *_2 o *_3 según ?visita=
       nombre_paciente: datos.nombrePaciente || null,
       edad_paciente: Number.isFinite(+datos.edadPaciente) ? +datos.edadPaciente : null,
       sintomas_seleccionados: Array.isArray(datos.sintomasSeleccionados) ? datos.sintomasSeleccionados : [],
@@ -90,7 +89,7 @@ async function actualizarDatosEnBackend(id: string, visitaNo: 2 | 3, datos: any)
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
       usuario_editor: datos.usuarioCreador || "anon",
     }
-    const res = await actualizarConsulta(id, visitaNo, patch) // PATCH /api/consultas/:id?visita=2|3
+    const res = await actualizarConsulta(id, visitaNo, patch)
     if (res?.error) {
       console.error("API PATCH /api/consultas error:", res.error)
       return false
@@ -104,31 +103,13 @@ async function actualizarDatosEnBackend(id: string, visitaNo: 2 | 3, datos: any)
 
 async function leerDatosDesdeBackend(id: string): Promise<any | null> {
   try {
-    const res = await obtenerConsulta(id) // GET /api/consultas/:id
+    const res = await obtenerConsulta(id)
     if (res?.error) return null
     return res?.data ?? null
   } catch (e) {
     console.error("Error llamando GET /api/consultas/:id:", e)
     return null
   }
-}
-
-async function buscarDatosPaciente(id: string): Promise<any | null> {
-  const datosLocal = localStorage.getItem(`ectopico_${id}`)
-  let datosLocalParsed = null
-  if (datosLocal) {
-    try {
-      datosLocalParsed = JSON.parse(datosLocal)
-    } catch (error) {
-      console.warn("Error al parsear datos de localStorage:", error)
-    }
-  }
-  const datosBackend = await leerDatosDesdeBackend(id)
-  if (datosBackend) {
-    localStorage.setItem(`ectopico_${id}`, JSON.stringify(datosBackend))
-    return datosBackend
-  }
-  return datosLocalParsed
 }
 
 // ==================== FUNCIONES DE CÁLCULO ====================
@@ -140,38 +121,29 @@ function calcularProbabilidad(pretestProb: number, LRs: number[]) {
   return +(odds / (1 + odds)).toFixed(4)
 }
 
-// Normalizador (unifica camel/snake a snake_case)
 function normalizarDesdeLocal(d: any) {
   return {
     id: d.id,
     fecha_creacion: d.fechaCreacion ?? d.fecha_creacion ?? null,
     fecha_ultima_actualizacion: d.fechaUltimaActualizacion ?? d.fecha_ultima_actualizacion ?? null,
     usuario_creador: d.usuarioCreador ?? d.usuario_creador ?? null,
-
     nombre_paciente: d.nombrePaciente ?? d.nombre_paciente ?? null,
     edad_paciente: d.edadPaciente ?? d.edad_paciente ?? null,
-
     frecuencia_cardiaca: d.frecuenciaCardiaca ?? d.frecuencia_cardiaca ?? null,
     presion_sistolica: d.presionSistolica ?? d.presion_sistolica ?? null,
     presion_diastolica: d.presionDiastolica ?? d.presion_diastolica ?? null,
     estado_conciencia: d.estadoConciencia ?? d.estado_conciencia ?? null,
-
     prueba_embarazo_realizada: d.pruebaEmbarazoRealizada ?? d.prueba_embarazo_realizada ?? null,
     resultado_prueba_embarazo: d.resultadoPruebaEmbarazo ?? d.resultado_prueba_embarazo ?? null,
-
     hallazgos_exploracion: d.hallazgosExploracion ?? d.hallazgos_exploracion ?? null,
     tiene_eco_transabdominal: d.tieneEcoTransabdominal ?? d.tiene_eco_transabdominal ?? null,
     resultado_eco_transabdominal: d.resultadoEcoTransabdominal ?? d.resultado_eco_transabdominal ?? null,
-
     sintomas_seleccionados: d.sintomasSeleccionados ?? d.sintomas_seleccionados ?? [],
     factores_seleccionados: d.factoresSeleccionados ?? d.factores_seleccionados ?? [],
-
     tvus: d.tvus ?? null,
     hcg_valor: d.hcgValor ?? d.hcg_valor ?? null,
     variacion_hcg: d.variacionHcg ?? d.variacion_hcg ?? null,
     hcg_anterior: d.hcgAnterior ?? d.hcg_anterior ?? null,
-
-    // campos de seguimiento si existen
     sintomas_seleccionados_2: d.sintomas_seleccionados_2 ?? null,
     factores_seleccionados_2: d.factores_seleccionados_2 ?? null,
     tvus_2: d.tvus_2 ?? null,
@@ -179,7 +151,6 @@ function normalizarDesdeLocal(d: any) {
     hcg_anterior_2: d.hcg_anterior_2 ?? null,
     variacion_hcg_2: d.variacion_hcg_2 ?? null,
     resultado_2: d.resultado_2 ?? null,
-
     sintomas_seleccionados_3: d.sintomas_seleccionados_3 ?? null,
     factores_seleccionados_3: d.factores_seleccionados_3 ?? null,
     tvus_3: d.tvus_3 ?? null,
@@ -187,12 +158,10 @@ function normalizarDesdeLocal(d: any) {
     hcg_anterior_3: d.hcg_anterior_3 ?? null,
     variacion_hcg_3: d.variacion_hcg_3 ?? null,
     resultado_3: d.resultado_3 ?? null,
-
     resultado: d.resultado ?? null,
   }
 }
 
-// ID secuencial local: ID-00001
 function generarIdConsulta(): string {
   const idsExistentes: number[] = []
   for (let i = 0; i < localStorage.length; i++) {
@@ -207,7 +176,7 @@ function generarIdConsulta(): string {
   return `ID-${siguienteNumero.toString().padStart(5, "0")}`
 }
 
-// ==================== COMPONENTE ====================
+// ==================== COMPONENTE PRINCIPAL ====================
 export default function CalculadoraEctopico() {
   const [idBusqueda, setIdBusqueda] = useState("")
   const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
@@ -242,7 +211,7 @@ export default function CalculadoraEctopico() {
   const variacionHcgMap = {
     reduccion_1_35: 16.6,
     reduccion_35_50: 0.8,
-    reduccion_mayor_50: 0.01, // Cambiar de 0 a 0.01 para evitar probabilidad 0
+    reduccion_mayor_50: 0.01,
     aumento: 3.3,
     no_disponible: 1,
   }
@@ -292,7 +261,7 @@ export default function CalculadoraEctopico() {
   const [idSeguimiento, setIdSeguimiento] = useState("")
   const [mostrarIdSeguimiento, setMostrarIdSeguimiento] = useState(false)
   const [esConsultaSeguimiento, setEsConsultaSeguimiento] = useState(false)
-  const [consultaActualMostrar, setConsultaActualMostrar] = useState<1 | 2 | 3>(1) // NUEVO ESTADO
+  const [numeroConsultaActual, setNumeroConsultaActual] = useState<1 | 2 | 3>(1)
 
   // Secciones
   const [seccionActual, setSeccionActual] = useState(1)
@@ -307,22 +276,20 @@ export default function CalculadoraEctopico() {
   const [variacionHcg, setVariacionHcg] = useState("")
   const [hcgAnterior, setHcgAnterior] = useState("")
 
-  // ====== Acciones ======
+  // ====== FUNCIONES PRINCIPALES ======
   const iniciarNuevaEvaluacion = async () => {
     const nuevoId = generarIdConsulta()
     resetCalculadora()
     setIdSeguimiento(nuevoId)
     setMostrarPantallaBienvenida(false)
     setEsConsultaSeguimiento(false)
-    setConsultaActualMostrar(1) // Empezar con consulta 1
+    setNumeroConsultaActual(1)
   }
 
   const continuarConsultaCargada = async () => {
-    // Cargar datos base de la consulta encontrada (1ª consulta)
     setIdSeguimiento(consultaCargada.id)
     setNombrePaciente(consultaCargada.nombre_paciente || "")
     setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
-
     setFrecuenciaCardiaca(consultaCargada.frecuencia_cardiaca?.toString() || "")
     setPresionSistolica(consultaCargada.presion_sistolica?.toString() || "")
     setPresionDiastolica(consultaCargada.presion_diastolica?.toString() || "")
@@ -333,14 +300,10 @@ export default function CalculadoraEctopico() {
     setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
     setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
 
-    // IMPORTANTE: DESELECCIONAR síntomas y factores para nueva evaluación
-    setSintomasSeleccionados([]) // Deseleccionar para nueva consulta
-    setFactoresSeleccionados(consultaCargada.factores_seleccionados || []) // Mantener factores de riesgo
-
-    // NO preseleccionar TVUS en la consulta 2/3:
+    setSintomasSeleccionados([])
+    setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
     setTvus("")
 
-    // β-hCG anterior: usa el último disponible (prioridad: C3 > C2 > C1)
     let ultimoHcg = consultaCargada.hcg_valor
     if (consultaCargada.hcg_valor_2) ultimoHcg = consultaCargada.hcg_valor_2
     if (consultaCargada.hcg_valor_3) ultimoHcg = consultaCargada.hcg_valor_3
@@ -349,16 +312,16 @@ export default function CalculadoraEctopico() {
     setHcgValor("")
     setEsConsultaSeguimiento(true)
 
-    // Determinar qué consulta mostrar
+    // Determinar número de consulta
     const tieneC2 = consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2
     const tieneC3 = consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3
 
     if (tieneC3) {
-      setConsultaActualMostrar(3) // Próxima sería la 4ta (no existe), así que seguimiento
+      setNumeroConsultaActual(3)
     } else if (tieneC2) {
-      setConsultaActualMostrar(3) // Próxima sería la 3ra
+      setNumeroConsultaActual(3)
     } else {
-      setConsultaActualMostrar(2) // Próxima sería la 2da
+      setNumeroConsultaActual(2)
     }
 
     setSeccionesCompletadas([1, 2, 3, 4])
@@ -377,7 +340,6 @@ export default function CalculadoraEctopico() {
 
     let consultaEncontrada: any = null
 
-    // LocalStorage primero
     const datosLocal = localStorage.getItem(`ectopico_${id}`)
     if (datosLocal) {
       try {
@@ -387,7 +349,6 @@ export default function CalculadoraEctopico() {
       }
     }
 
-    // Supabase si no está local
     if (!consultaEncontrada) {
       try {
         const { data, error } = await supabase.from("consultas").select("*").eq("id", id).single()
@@ -403,7 +364,6 @@ export default function CalculadoraEctopico() {
     }
 
     if (consultaEncontrada) {
-      console.log("Consulta encontrada:", consultaEncontrada) // DEBUG
       setConsultaCargada(consultaEncontrada)
       setMostrarResumenConsulta(true)
       setModoCargarConsulta(false)
@@ -484,7 +444,7 @@ export default function CalculadoraEctopico() {
     setMostrarAlerta(false)
     setMensajeAlerta("")
     setEsConsultaSeguimiento(false)
-    setConsultaActualMostrar(1)
+    setNumeroConsultaActual(1)
   }
 
   const copiarId = () => {
@@ -589,20 +549,17 @@ export default function CalculadoraEctopico() {
     return true
   }
 
-  // Corregido: cálculo + guardado (POST para C1, PATCH ?visita=2|3 para seguimiento)
   const calcular = async () => {
     if (!tvus || !hcgValor) {
       alert("Por favor complete todos los campos requeridos: TVUS y β-hCG")
       return
     }
 
-    // 1) PROBABILIDAD PRETEST según Tabla 1
     const tieneFactoresRiesgo = factoresSeleccionados.length > 0
     const sintomasParaCalculo = sintomasSeleccionados.filter((s) => s !== "sincope")
 
     let claveSintoma = "asintomatica" as "asintomatica" | "sangrado" | "dolor" | "dolor_sangrado"
 
-    // Determinar síntomas según la lógica exacta del paper
     if (sintomasParaCalculo.includes("dolor_sangrado")) {
       claveSintoma = "dolor_sangrado"
     } else if (sintomasParaCalculo.includes("sangrado") && sintomasParaCalculo.includes("dolor")) {
@@ -616,43 +573,32 @@ export default function CalculadoraEctopico() {
     const tablaProb = tieneFactoresRiesgo ? probabilidadesConFactores : probabilidadesSinFactores
     let probPre = tablaProb[claveSintoma]
 
-    // 2) PROBABILIDAD AJUSTADA para consultas de seguimiento (según fórmula del paper)
     if (esConsultaSeguimiento && consultaCargada?.resultado) {
-      // Fórmula: Adjusted pretest probability = [(1-v1b) × (v2a)] + v1b
-      const v1b = consultaCargada.resultado // Probabilidad de consulta anterior
-      const v2a = probPre // Probabilidad actual basada en síntomas
+      const v1b = consultaCargada.resultado
+      const v2a = probPre
       probPre = (1 - v1b) * v2a + v1b
-      console.log(`Probabilidad ajustada: v1b=${v1b}, v2a=${v2a}, ajustada=${probPre}`)
     }
 
-    // 3) CALCULAR LIKELIHOOD RATIOS
     const lrs: number[] = []
 
-    // LR de TVUS
     const lrTvus = tvusMap[tvus as keyof typeof tvusMap]
     if (lrTvus) lrs.push(lrTvus)
 
-    // LR de hCG según nivel discriminatorio (2000 mUI/mL)
     const hcgNumerico = Number.parseFloat(hcgValor)
     const nivelHcg = hcgNumerico >= 2000 ? "alto" : "bajo"
     const lrHcg = hcgMap[tvus as keyof typeof hcgMap]?.[nivelHcg as "alto" | "bajo"]
     if (lrHcg) lrs.push(lrHcg)
 
-    // LR de variación de hCG (solo en consultas de seguimiento)
     let variacionCalculada = "no_disponible"
     if (hcgAnterior && hcgValor && esConsultaSeguimiento) {
       variacionCalculada = calcularVariacionHcgAutomatica(hcgAnterior, hcgValor)
       const lrVariacion = variacionHcgMap[variacionCalculada as keyof typeof variacionHcgMap]
       if (lrVariacion !== undefined) lrs.push(lrVariacion)
-      console.log(`Variación hCG: ${variacionCalculada}, LR: ${lrVariacion}`)
     }
 
-    // 4) APLICAR TEOREMA DE BAYES
-    console.log(`Cálculo Bayes: ProbPre=${probPre}, LRs=${lrs}`)
     const probPost = calcularProbabilidad(probPre, lrs)
     setResultado(probPost)
 
-    // 5) GUARDAR DATOS (resto del código igual)
     const fechaActual = new Date().toISOString()
     const datosCompletos = {
       id: idSeguimiento,
@@ -681,13 +627,11 @@ export default function CalculadoraEctopico() {
 
     localStorage.setItem(`ectopico_${idSeguimiento}`, JSON.stringify(datosCompletos))
 
-    // Guardar en backend (código existente)
     try {
       let ok = false
       if (!esConsultaSeguimiento) {
         ok = await enviarDatosAlBackend(datosCompletos)
       } else {
-        // Determinar si es consulta 2 o 3
         const tieneC2 =
           consultaCargada &&
           (consultaCargada.tvus_2 ||
@@ -702,21 +646,17 @@ export default function CalculadoraEctopico() {
             consultaCargada.sintomas_seleccionados_3?.length > 0)
 
         const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
-        console.log(`Guardando como consulta ${visitaNo}, tieneC2=${tieneC2}, tieneC3=${tieneC3}`)
         ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
       }
 
       if (!ok) {
         alert("Advertencia: Guardado local OK, pero falló la sincronización con la base de datos.")
-      } else {
-        console.log("Sincronización OK")
       }
     } catch (e) {
       console.error("Error al sincronizar con el backend:", e)
       alert("Advertencia: Guardado local OK, pero falló la sincronización con la base de datos.")
     }
 
-    // 6) MOSTRAR RESULTADOS según umbrales del paper (≥95% confirma, <1% descarta)
     if (probPost >= 0.95) {
       setMensajeFinal("Embarazo ectópico confirmado (probabilidad ≥95%). Proceder con tratamiento inmediato.")
       setProtocoloFinalizado(true)
@@ -724,13 +664,11 @@ export default function CalculadoraEctopico() {
       setMensajeFinal("Embarazo ectópico descartado (probabilidad <1%).")
       setProtocoloFinalizado(true)
     } else {
-      // MOSTRAR EL BLOQUE DE LA CONSULTA ACTUAL
       setMostrarResultados(true)
       setMostrarIdSeguimiento(true)
     }
   }
 
-  // PDF (txt)
   const generarInformePDF = () => {
     try {
       const contenidoInforme = `
@@ -890,35 +828,27 @@ Sistema CMG Health Solutions
   }
 
   // FUNCIÓN PARA RENDERIZAR BLOQUE DE CONSULTA INDIVIDUAL
-  const renderBloqueConsulta = (numeroConsulta: 1 | 2 | 3, datos: any) => {
+  const renderBloqueConsultaIndividual = () => {
     const colores = {
       1: { bg: "bg-green-50", border: "border-green-200", text: "text-green-900", icon: "text-green-600" },
       2: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-900", icon: "text-orange-600" },
       3: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-900", icon: "text-purple-600" },
     }
 
-    const color = colores[numeroConsulta]
-    const sufijo = numeroConsulta === 1 ? "" : `_${numeroConsulta}`
-
-    const sintomasKey = `sintomas_seleccionados${sufijo}`
-    const factoresKey = `factores_seleccionados${sufijo}`
-    const tvusKey = `tvus${sufijo}`
-    const hcgKey = `hcg_valor${sufijo}`
-    const resultadoKey = `resultado${sufijo}`
-    const variacionKey = `variacion_hcg${sufijo}`
+    const color = colores[numeroConsultaActual]
 
     return (
       <div className={`${color.bg} p-6 rounded-lg ${color.border} border`}>
         <div className="flex items-center space-x-2 mb-4">
           <div
-            className={`w-6 h-6 ${color.icon} rounded text-white flex items-center justify-center text-sm font-bold`}
+            className={`w-6 h-6 bg-${color.icon.split("-")[1]}-600 rounded text-white flex items-center justify-center text-sm font-bold`}
           >
             📋
           </div>
           <h3 className={`text-lg font-semibold ${color.text}`}>
-            {numeroConsulta === 1
+            {numeroConsultaActual === 1
               ? "Primera Consulta Realizada"
-              : numeroConsulta === 2
+              : numeroConsultaActual === 2
                 ? "Segunda Consulta Realizada"
                 : "Tercera Consulta Realizada"}
           </h3>
@@ -928,8 +858,8 @@ Sistema CMG Health Solutions
           <div className="space-y-3">
             <div>
               <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>Síntomas</span>
-              {datos[sintomasKey] && datos[sintomasKey].length > 0 ? (
-                datos[sintomasKey].map((sintoma: string) => (
+              {sintomasSeleccionados && sintomasSeleccionados.length > 0 ? (
+                sintomasSeleccionados.map((sintoma: string) => (
                   <div key={sintoma} className={color.text.replace("900", "800")}>
                     {obtenerNombreSintoma(sintoma)}
                   </div>
@@ -941,14 +871,14 @@ Sistema CMG Health Solutions
 
             <div>
               <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>TVUS</span>
-              <div className={color.text.replace("900", "800")}>{obtenerNombreTVUS(datos[tvusKey])}</div>
+              <div className={color.text.replace("900", "800")}>{obtenerNombreTVUS(tvus)}</div>
             </div>
 
-            {numeroConsulta > 1 && datos[variacionKey] && (
+            {numeroConsultaActual > 1 && variacionHcg && (
               <div>
                 <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>Variación β-hCG</span>
                 <div className={`${color.text.replace("900", "800")} capitalize`}>
-                  {datos[variacionKey]?.replace(/_/g, " ") || "No calculada"}
+                  {variacionHcg?.replace(/_/g, " ") || "No calculada"}
                 </div>
               </div>
             )}
@@ -957,14 +887,8 @@ Sistema CMG Health Solutions
           <div className="space-y-3">
             <div>
               <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>Factores de Riesgo</span>
-              {datos[factoresKey] && datos[factoresKey].length > 0 ? (
-                datos[factoresKey].map((factor: string) => (
-                  <div key={factor} className={color.text.replace("900", "800")}>
-                    {obtenerNombreFactorRiesgo(factor)}
-                  </div>
-                ))
-              ) : datos.factores_seleccionados && datos.factores_seleccionados.length > 0 ? (
-                datos.factores_seleccionados.map((factor: string) => (
+              {factoresSeleccionados && factoresSeleccionados.length > 0 ? (
+                factoresSeleccionados.map((factor: string) => (
                   <div key={factor} className={color.text.replace("900", "800")}>
                     {obtenerNombreFactorRiesgo(factor)}
                   </div>
@@ -976,7 +900,7 @@ Sistema CMG Health Solutions
 
             <div>
               <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>β-hCG</span>
-              <div className={color.text.replace("900", "800")}>{datos[hcgKey] || "No especificado"} mUI/mL</div>
+              <div className={color.text.replace("900", "800")}>{hcgValor || "No especificado"} mUI/mL</div>
             </div>
           </div>
         </div>
@@ -984,9 +908,7 @@ Sistema CMG Health Solutions
         <div className={`mt-4 pt-4 border-t ${color.border}`}>
           <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>Resultado del Algoritmo</span>
           <div className={`text-lg font-bold ${color.text}`}>
-            {datos[resultadoKey]
-              ? `${(datos[resultadoKey] * 100).toFixed(1)}% probabilidad de embarazo ectópico`
-              : "No calculado"}
+            {resultado ? `${(resultado * 100).toFixed(1)}% probabilidad de embarazo ectópico` : "No calculado"}
           </div>
         </div>
       </div>
@@ -1256,7 +1178,6 @@ Sistema CMG Health Solutions
           <Card className="shadow-lg">
             <CardContent className="p-8">
               <div className="space-y-6">
-                {/* Header del Historial */}
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
                     <FileText className="h-6 w-6 text-blue-600" />
@@ -1264,7 +1185,6 @@ Sistema CMG Health Solutions
                   <h2 className="text-2xl font-bold text-slate-800">📋 Historial Clínico Completo</h2>
                 </div>
 
-                {/* Información del Paciente */}
                 <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
                   <div className="flex items-center space-x-2 mb-4">
                     <User className="h-5 w-5 text-blue-600" />
@@ -1327,57 +1247,6 @@ Sistema CMG Health Solutions
                     </div>
                   </div>
                 </div>
-
-                {/* Mostrar todas las consultas existentes */}
-                <div className="space-y-4">
-                  {/* Primera Consulta - SIEMPRE SE MUESTRA */}
-                  {renderBloqueConsulta(1, consultaCargada)}
-
-                  {/* Segunda Consulta - SOLO SI EXISTE */}
-                  {(consultaCargada.tvus_2 ||
-                    consultaCargada.hcg_valor_2 ||
-                    consultaCargada.resultado_2 ||
-                    (consultaCargada.sintomas_seleccionados_2 &&
-                      consultaCargada.sintomas_seleccionados_2.length > 0)) &&
-                    renderBloqueConsulta(2, consultaCargada)}
-
-                  {/* Tercera Consulta - SOLO SI EXISTE */}
-                  {(consultaCargada.tvus_3 ||
-                    consultaCargada.hcg_valor_3 ||
-                    consultaCargada.resultado_3 ||
-                    (consultaCargada.sintomas_seleccionados_3 &&
-                      consultaCargada.sintomas_seleccionados_3.length > 0)) &&
-                    renderBloqueConsulta(3, consultaCargada)}
-                </div>
-
-                {/* Diagnóstico de Seguimiento */}
-                {(!consultaCargada.resultado_3 && !consultaCargada.resultado_2) ||
-                (consultaCargada.resultado_2 &&
-                  consultaCargada.resultado_2 < 0.95 &&
-                  consultaCargada.resultado_2 > 0.01 &&
-                  !consultaCargada.resultado_3) ||
-                (consultaCargada.resultado_3 &&
-                  consultaCargada.resultado_3 < 0.95 &&
-                  consultaCargada.resultado_3 > 0.01) ? (
-                  <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                      <h3 className="text-lg font-semibold text-yellow-900">🎯 Diagnóstico de Seguimiento</h3>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 bg-blue-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs">📊</span>
-                      </div>
-                      <span className="text-yellow-800">
-                        {!consultaCargada.resultado_2
-                          ? "Aproximación: se debe realizar la segunda consulta."
-                          : !consultaCargada.resultado_3
-                            ? "Aproximación: se debe realizar la tercera consulta."
-                            : "Seguimiento completado. Evaluar resultados finales."}
-                      </span>
-                    </div>
-                  </div>
-                ) : null}
 
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                   <div className="flex items-center space-x-2 mb-2">
@@ -1469,7 +1338,6 @@ Sistema CMG Health Solutions
           <Card className="shadow-lg">
             <CardContent className="p-8">
               <div className="space-y-6">
-                {/* Header del Historial */}
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
                     <FileText className="h-6 w-6 text-blue-600" />
@@ -1477,7 +1345,6 @@ Sistema CMG Health Solutions
                   <h2 className="text-2xl font-bold text-slate-800">📋 Historial Clínico Completo</h2>
                 </div>
 
-                {/* Información del Paciente */}
                 <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
                   <div className="flex items-center space-x-2 mb-4">
                     <User className="h-5 w-5 text-blue-600" />
@@ -1526,23 +1393,7 @@ Sistema CMG Health Solutions
                 </div>
 
                 {/* Mostrar SOLO el bloque de la consulta actual */}
-                {renderBloqueConsulta(consultaActualMostrar, {
-                  sintomas_seleccionados: consultaActualMostrar === 1 ? sintomasSeleccionados : [],
-                  sintomas_seleccionados_2: consultaActualMostrar === 2 ? sintomasSeleccionados : [],
-                  sintomas_seleccionados_3: consultaActualMostrar === 3 ? sintomasSeleccionados : [],
-                  factores_seleccionados: factoresSeleccionados,
-                  tvus: consultaActualMostrar === 1 ? tvus : null,
-                  tvus_2: consultaActualMostrar === 2 ? tvus : null,
-                  tvus_3: consultaActualMostrar === 3 ? tvus : null,
-                  hcg_valor: consultaActualMostrar === 1 ? hcgValor : null,
-                  hcg_valor_2: consultaActualMostrar === 2 ? hcgValor : null,
-                  hcg_valor_3: consultaActualMostrar === 3 ? hcgValor : null,
-                  resultado: consultaActualMostrar === 1 ? resultado : null,
-                  resultado_2: consultaActualMostrar === 2 ? resultado : null,
-                  resultado_3: consultaActualMostrar === 3 ? resultado : null,
-                  variacion_hcg_2: consultaActualMostrar === 2 ? variacionHcg : null,
-                  variacion_hcg_3: consultaActualMostrar === 3 ? variacionHcg : null,
-                })}
+                {renderBloqueConsultaIndividual()}
 
                 {/* Diagnóstico de Seguimiento */}
                 {resultado && resultado < 0.95 && resultado > 0.01 && (
@@ -1556,7 +1407,7 @@ Sistema CMG Health Solutions
                         <span className="text-white text-xs">📊</span>
                       </div>
                       <span className="text-yellow-800">
-                        Aproximación: se debe realizar {consultaActualMostrar === 1 ? "la segunda" : "la tercera"}{" "}
+                        Aproximación: se debe realizar {numeroConsultaActual === 1 ? "la segunda" : "la tercera"}{" "}
                         consulta.
                       </span>
                     </div>

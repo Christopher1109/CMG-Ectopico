@@ -1243,45 +1243,45 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     <AlertTriangle className="h-5 w-5 text-blue-600" />
                     <span className="font-medium text-blue-900">Información Importante</span>
                   </div>
-                  <p className="text-blue-800 text-sm">
-                    Las consultas de seguimiento se sugiere realizarlas entre 48-72 horas después de la consulta
-                    inicial. Ingrese el ID de seguimiento.
-                  </p>
                 </div>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-base font-medium text-slate-700">ID de Seguimiento:</Label>
-                    <input
-                      type="text"
-                      placeholder="Ej: ID-00001"
-                      value={idBusqueda}
-                      onChange={(e) => setIdBusqueda(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    />
-                    <p className="text-xs text-slate-500">Formato: ID-NNNNN (Ej: ID-00001)</p>
-                  </div>
-                  <div className="flex space-x-4">
-                    <Button
-                      onClick={buscarConsulta}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-6"
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Buscar Consulta
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setModoCargarConsulta(false)
-                        setMostrarPantallaBienvenida(true)
-                      }}
-                      variant="outline"
-                      className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </div>
-                <CMGFooter />
+                <p className="text-blue-800 text-sm">
+                  Las consultas de seguimiento se sugiere realizarlas entre 48-72 horas después de la consulta inicial.
+                  Ingrese el ID de seguimiento.
+                </p>
               </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-700">ID de Seguimiento:</Label>
+                  <input
+                    type="text"
+                    placeholder="Ej: ID-00001"
+                    value={idBusqueda}
+                    onChange={(e) => setIdBusqueda(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-slate-500">Formato: ID-NNNNN (Ej: ID-00001)</p>
+                </div>
+                <div className="flex space-x-4">
+                  <Button
+                    onClick={buscarConsulta}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-6"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Buscar Consulta
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setModoCargarConsulta(false)
+                      setMostrarPantallaBienvenida(true)
+                    }}
+                    variant="outline"
+                    className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+              <CMGFooter />
             </CardContent>
           </Card>
         </div>
@@ -1933,6 +1933,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         Continuar
                       </Button>
                     </div>
+                    <CMGFooter />
                   </div>
                 )}
 
@@ -2025,6 +2026,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         Continuar
                       </Button>
                     </div>
+                    <CMGFooter />
                   </div>
                 )}
 
@@ -2116,6 +2118,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         </Button>
                       </div>
                     </div>
+                    <CMGFooter />
                   </div>
                 )}
 
@@ -2217,6 +2220,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         </Button>
                       </div>
                     </div>
+                    <CMGFooter />
                   </div>
                 )}
 
@@ -2245,82 +2249,121 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
 
                       <div className="space-y-8">
-                        {/* Síntomas Presentes - Layout 2x2 como en la imagen */}
+                        {/* Síntomas Presentes - Layout 2x2 */}
                         <div>
                           <h4 className="text-lg font-semibold text-gray-800 mb-4">Síntomas Presentes</h4>
                           <div className="grid grid-cols-2 gap-4">
-                            {/* Primera fila: 3 elementos */}
-                            <div className="col-span-2 grid grid-cols-3 gap-4">
-                              {sintomas.slice(0, 3).map((sintoma) => (
-                                <label
-                                  key={sintoma.id}
-                                  className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                            {/* Primera fila */}
+                            <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                              <div className="relative">
+                                <input
+                                  type="checkbox"
+                                  checked={sintomasSeleccionados.includes("sangrado")}
+                                  onChange={(e) =>
+                                    setSintomasSeleccionados((prev) =>
+                                      e.target.checked ? [...prev, "sangrado"] : prev.filter((id) => id !== "sangrado"),
+                                    )
+                                  }
+                                  className="sr-only"
+                                />
+                                <div
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                    sintomasSeleccionados.includes("sangrado")
+                                      ? "bg-blue-600 border-blue-600"
+                                      : "border-gray-300 hover:border-blue-400"
+                                  }`}
                                 >
-                                  <div className="relative">
-                                    <input
-                                      type="checkbox"
-                                      checked={sintomasSeleccionados.includes(sintoma.id)}
-                                      onChange={(e) =>
-                                        setSintomasSeleccionados((prev) =>
-                                          e.target.checked
-                                            ? [...prev, sintoma.id]
-                                            : prev.filter((id) => id !== sintoma.id),
-                                        )
-                                      }
-                                      className="sr-only"
-                                    />
-                                    <div
-                                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                        sintomasSeleccionados.includes(sintoma.id)
-                                          ? "bg-blue-600 border-blue-600"
-                                          : "border-gray-300 hover:border-blue-400"
-                                      }`}
-                                    >
-                                      {sintomasSeleccionados.includes(sintoma.id) && (
-                                        <div className="w-2 h-2 bg-white rounded-full"></div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <span className="text-sm font-medium text-gray-700">{sintoma.label}</span>
-                                </label>
-                              ))}
-                            </div>
-                            {/* Segunda fila: 1 elemento */}
-                            <div className="col-span-1">
-                              {sintomas.slice(3, 4).map((sintoma) => (
-                                <label
-                                  key={sintoma.id}
-                                  className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                                  {sintomasSeleccionados.includes("sangrado") && (
+                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-sm font-medium text-gray-700">Sangrado vaginal</span>
+                            </label>
+
+                            <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                              <div className="relative">
+                                <input
+                                  type="checkbox"
+                                  checked={sintomasSeleccionados.includes("dolor")}
+                                  onChange={(e) =>
+                                    setSintomasSeleccionados((prev) =>
+                                      e.target.checked ? [...prev, "dolor"] : prev.filter((id) => id !== "dolor"),
+                                    )
+                                  }
+                                  className="sr-only"
+                                />
+                                <div
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                    sintomasSeleccionados.includes("dolor")
+                                      ? "bg-blue-600 border-blue-600"
+                                      : "border-gray-300 hover:border-blue-400"
+                                  }`}
                                 >
-                                  <div className="relative">
-                                    <input
-                                      type="checkbox"
-                                      checked={sintomasSeleccionados.includes(sintoma.id)}
-                                      onChange={(e) =>
-                                        setSintomasSeleccionados((prev) =>
-                                          e.target.checked
-                                            ? [...prev, sintoma.id]
-                                            : prev.filter((id) => id !== sintoma.id),
-                                        )
-                                      }
-                                      className="sr-only"
-                                    />
-                                    <div
-                                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                        sintomasSeleccionados.includes(sintoma.id)
-                                          ? "bg-blue-600 border-blue-600"
-                                          : "border-gray-300 hover:border-blue-400"
-                                      }`}
-                                    >
-                                      {sintomasSeleccionados.includes(sintoma.id) && (
-                                        <div className="w-2 h-2 bg-white rounded-full"></div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <span className="text-sm font-medium text-gray-700">{sintoma.label}</span>
-                                </label>
-                              ))}
-                            </div>
+                                  {sintomasSeleccionados.includes("dolor") && (
+                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-sm font-medium text-gray-700">Dolor pélvico/abdominal</span>
+                            </label>
+
+                            {/* Segunda fila */}
+                            <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                              <div className="relative">
+                                <input
+                                  type="checkbox"
+                                  checked={sintomasSeleccionados.includes("dolor_sangrado")}
+                                  onChange={(e) =>
+                                    setSintomasSeleccionados((prev) =>
+                                      e.target.checked
+                                        ? [...prev, "dolor_sangrado"]
+                                        : prev.filter((id) => id !== "dolor_sangrado"),
+                                    )
+                                  }
+                                  className="sr-only"
+                                />
+                                <div
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                    sintomasSeleccionados.includes("dolor_sangrado")
+                                      ? "bg-blue-600 border-blue-600"
+                                      : "border-gray-300 hover:border-blue-400"
+                                  }`}
+                                >
+                                  {sintomasSeleccionados.includes("dolor_sangrado") && (
+                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-sm font-medium text-gray-700">Sangrado + Dolor</span>
+                            </label>
+
+                            <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                              <div className="relative">
+                                <input
+                                  type="checkbox"
+                                  checked={sintomasSeleccionados.includes("sincope")}
+                                  onChange={(e) =>
+                                    setSintomasSeleccionados((prev) =>
+                                      e.target.checked ? [...prev, "sincope"] : prev.filter((id) => id !== "sincope"),
+                                    )
+                                  }
+                                  className="sr-only"
+                                />
+                                <div
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                    sintomasSeleccionados.includes("sincope")
+                                      ? "bg-blue-600 border-blue-600"
+                                      : "border-gray-300 hover:border-blue-400"
+                                  }`}
+                                >
+                                  {sintomasSeleccionados.includes("sincope") && (
+                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-sm font-medium text-gray-700">Síncope o mareo</span>
+                            </label>
                           </div>
                         </div>
 
@@ -2420,6 +2463,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         </Button>
                       </div>
                     </div>
+                    <CMGFooter />
                   </div>
                 )}
               </CardContent>

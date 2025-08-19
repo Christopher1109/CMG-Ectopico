@@ -55,49 +55,32 @@ const Page = () => {
     return true
   }
 
-  const completarSeccion = (seccion) => {
-    // Implement logic to complete a section
-    setSeccionesCompletadas([...seccionesCompletadas, seccion])
-  }
-
-  const generarInformePDF = () => {
-    // Implement logic to generate PDF report
-  }
-
-  const volverAInicio = () => {
-    // Implement logic to start a new evaluation
-  }
-
   // ==================== FUNCIÓN PARA GUARDAR DATOS INCOMPLETOS ====================
-  async function guardarDatosIncompletos(
-    motivoFinalizacion: string,
-    seccionCompletada: number,
-    datosActuales: any,
-  ): Promise<boolean> {
+  async function guardarDatosIncompletos(motivoFinalizacion: string, seccionCompletada: number): Promise<boolean> {
     try {
       const fechaActual = new Date().toISOString()
       const datosIncompletos = {
-        id: datosActuales.idSeguimiento || generarIdConsulta(),
+        id: idSeguimiento || generarIdConsulta(),
         fechaCreacion: fechaActual,
         fechaUltimaActualizacion: fechaActual,
-        usuarioCreador: datosActuales.usuarioActual || "anon",
-        nombrePaciente: datosActuales.nombrePaciente || null,
-        edadPaciente: datosActuales.edadPaciente ? Number.parseInt(datosActuales.edadPaciente) : null,
-        frecuenciaCardiaca: datosActuales.frecuenciaCardiaca ? Number.parseInt(datosActuales.frecuenciaCardiaca) : null,
-        presionSistolica: datosActuales.presionSistolica ? Number.parseInt(datosActuales.presionSistolica) : null,
-        presionDiastolica: datosActuales.presionDiastolica ? Number.parseInt(datosActuales.presionDiastolica) : null,
-        estadoConciencia: datosActuales.estadoConciencia || null,
-        pruebaEmbarazoRealizada: datosActuales.pruebaEmbarazoRealizada || null,
-        resultadoPruebaEmbarazo: datosActuales.resultadoPruebaEmbarazo || null,
-        hallazgosExploracion: datosActuales.hallazgosExploracion || null,
-        tieneEcoTransabdominal: datosActuales.tieneEcoTransabdominal || null,
-        resultadoEcoTransabdominal: datosActuales.resultadoEcoTransabdominal || null,
-        sintomasSeleccionados: datosActuales.sintomasSeleccionados || [],
-        factoresSeleccionados: datosActuales.factoresSeleccionados || [],
-        tvus: datosActuales.tvus || null,
-        hcgValor: datosActuales.hcgValor ? Number.parseFloat(datosActuales.hcgValor) : null,
-        variacionHcg: datosActuales.variacionHcg || null,
-        hcgAnterior: datosActuales.hcgAnterior ? Number.parseFloat(datosActuales.hcgAnterior) : null,
+        usuarioCreador: usuarioActual || "anon",
+        nombrePaciente: nombrePaciente || null,
+        edadPaciente: edadPaciente ? Number.parseInt(edadPaciente) : null,
+        frecuenciaCardiaca: frecuenciaCardiaca ? Number.parseInt(frecuenciaCardiaca) : null,
+        presionSistolica: presionSistolica ? Number.parseInt(presionSistolica) : null,
+        presionDiastolica: presionDiastolica ? Number.parseInt(presionDiastolica) : null,
+        estadoConciencia: estadoConciencia || null,
+        pruebaEmbarazoRealizada: pruebaEmbarazoRealizada || null,
+        resultadoPruebaEmbarazo: resultadoPruebaEmbarazo || null,
+        hallazgosExploracion: hallazgosExploracion || null,
+        tieneEcoTransabdominal: tieneEcoTransabdominal || null,
+        resultadoEcoTransabdominal: resultadoEcoTransabdominal || null,
+        sintomasSeleccionados: sintomasSeleccionados || [],
+        factoresSeleccionados: factoresSeleccionados || [],
+        tvus: tvus || null,
+        hcgValor: hcgValor ? Number.parseFloat(hcgValor) : null,
+        variacionHcg: variacionHcg || null,
+        hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
         resultado: null, // No hay resultado en consultas incompletas
         // Campos adicionales para consultas incompletas
         motivoFinalizacion,
@@ -122,36 +105,26 @@ const Page = () => {
     }
   }
 
+  const completarSeccion = (seccion) => {
+    // Implement logic to complete a section
+    setSeccionesCompletadas([...seccionesCompletadas, seccion])
+  }
+
+  const generarInformePDF = () => {
+    // Implement logic to generate PDF report
+  }
+
+  const volverAInicio = () => {
+    // Implement logic to start a new evaluation
+  }
+
   const validarSignosVitales = async () => {
     const fc = Number.parseFloat(frecuenciaCardiaca)
     const sistolica = Number.parseFloat(presionSistolica)
     const diastolica = Number.parseFloat(presionDiastolica)
 
-    // Preparar datos actuales para guardar
-    const datosActuales = {
-      idSeguimiento,
-      usuarioActual,
-      nombrePaciente,
-      edadPaciente,
-      frecuenciaCardiaca,
-      presionSistolica,
-      presionDiastolica,
-      estadoConciencia,
-      pruebaEmbarazoRealizada,
-      resultadoPruebaEmbarazo,
-      hallazgosExploracion,
-      tieneEcoTransabdominal,
-      resultadoEcoTransabdominal,
-      sintomasSeleccionados,
-      factoresSeleccionados,
-      tvus,
-      hcgValor,
-      variacionHcg,
-      hcgAnterior,
-    }
-
     if (sistolica >= 180 || diastolica >= 110) {
-      await guardarDatosIncompletos("signos_vitales_hipertension_severa", 2, datosActuales)
+      await guardarDatosIncompletos("signos_vitales_hipertension_severa", 2)
       setMensajeFinal(
         <div className="text-center">
           🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin
@@ -162,7 +135,7 @@ const Page = () => {
       return false
     }
     if (fc > 100 && (sistolica <= 90 || diastolica <= 60)) {
-      await guardarDatosIncompletos("signos_vitales_taquicardia_hipotension", 2, datosActuales)
+      await guardarDatosIncompletos("signos_vitales_taquicardia_hipotension", 2)
       setMensajeFinal(
         <div className="text-center">
           🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin
@@ -173,7 +146,7 @@ const Page = () => {
       return false
     }
     if (fc > 120) {
-      await guardarDatosIncompletos("signos_vitales_taquicardia_severa", 2, datosActuales)
+      await guardarDatosIncompletos("signos_vitales_taquicardia_severa", 2)
       setMensajeFinal(
         <div className="text-center">
           🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin
@@ -184,7 +157,7 @@ const Page = () => {
       return false
     }
     if (fc < 50) {
-      await guardarDatosIncompletos("signos_vitales_bradicardia_severa", 2, datosActuales)
+      await guardarDatosIncompletos("signos_vitales_bradicardia_severa", 2)
       setMensajeFinal(
         <div className="text-center">
           🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin
@@ -195,7 +168,7 @@ const Page = () => {
       return false
     }
     if (estadoConciencia === "estuporosa" || estadoConciencia === "comatosa") {
-      await guardarDatosIncompletos("signos_vitales_alteracion_conciencia", 2, datosActuales)
+      await guardarDatosIncompletos("signos_vitales_alteracion_conciencia", 2)
       setMensajeFinal(
         <div className="text-center">
           🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin
@@ -228,31 +201,8 @@ const Page = () => {
   }
 
   const validarPruebaEmbarazo = async () => {
-    // Preparar datos actuales para guardar
-    const datosActuales = {
-      idSeguimiento,
-      usuarioActual,
-      nombrePaciente,
-      edadPaciente,
-      frecuenciaCardiaca,
-      presionSistolica,
-      presionDiastolica,
-      estadoConciencia,
-      pruebaEmbarazoRealizada,
-      resultadoPruebaEmbarazo,
-      hallazgosExploracion,
-      tieneEcoTransabdominal,
-      resultadoEcoTransabdominal,
-      sintomasSeleccionados,
-      factoresSeleccionados,
-      tvus,
-      hcgValor,
-      variacionHcg,
-      hcgAnterior,
-    }
-
     if (pruebaEmbarazoRealizada === "no") {
-      await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3, datosActuales)
+      await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
       setMensajeFinal(
         <div className="text-center">
           Se sugiere realizar una prueba de embarazo cualitativa antes de continuar con la evaluación. La decisión final
@@ -263,7 +213,7 @@ const Page = () => {
       return false
     }
     if (resultadoPruebaEmbarazo === "negativa") {
-      await guardarDatosIncompletos("prueba_embarazo_negativa", 3, datosActuales)
+      await guardarDatosIncompletos("prueba_embarazo_negativa", 3)
       setMensajeFinal(
         <div className="text-center">
           Con prueba de embarazo negativa, es poco probable un embarazo ectópico. Sin embargo, se recomienda valoración
@@ -285,31 +235,8 @@ const Page = () => {
       "saco_10mm_decidual_2mm",
     ]
 
-    // Preparar datos actuales para guardar
-    const datosActuales = {
-      idSeguimiento,
-      usuarioActual,
-      nombrePaciente,
-      edadPaciente,
-      frecuenciaCardiaca,
-      presionSistolica,
-      presionDiastolica,
-      estadoConciencia,
-      pruebaEmbarazoRealizada,
-      resultadoPruebaEmbarazo,
-      hallazgosExploracion,
-      tieneEcoTransabdominal,
-      resultadoEcoTransabdominal,
-      sintomasSeleccionados,
-      factoresSeleccionados,
-      tvus,
-      hcgValor,
-      variacionHcg,
-      hcgAnterior,
-    }
-
     if (tieneEcoTransabdominal === "si" && opcionesConfirmatorias.includes(resultadoEcoTransabdominal)) {
-      await guardarDatosIncompletos("embarazo_intrauterino_confirmado", 4, datosActuales)
+      await guardarDatosIncompletos("embarazo_intrauterino_confirmado", 4)
       setMensajeFinal(
         <div className="text-center">
           Los hallazgos ecográficos sugieren evidencia de embarazo intrauterino. Se recomienda seguimiento médico
@@ -324,14 +251,6 @@ const Page = () => {
 
   return (
     <div>
-      {/* rest of code here */}
-      <p>v0</p>
-      <p>no</p>
-      <p>op</p>
-      <p>code</p>
-      <p>block</p>
-      <p>prefix</p>
-
       {/* Section 2: Signos Vitales */}
       <Button
         onClick={async () => {

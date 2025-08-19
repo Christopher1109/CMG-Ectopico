@@ -1967,33 +1967,33 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
                     )}
 
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">Frecuencia Cardíaca (lpm):</Label>
-                        <input
-                          type="number"
-                          placeholder="Frecuencia cardiaca"
-                          value={frecuenciaCardiaca}
-                          onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">Presión Sistólica (mmHg):</Label>
+                          <Label className="text-base font-medium text-slate-700">Frecuencia Cardíaca (lpm)</Label>
                           <input
                             type="number"
-                            placeholder="Sistólica"
+                            placeholder="60-100"
+                            value={frecuenciaCardiaca}
+                            onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-base font-medium text-slate-700">Presión Sistólica (mmHg)</Label>
+                          <input
+                            type="number"
+                            placeholder="90-140"
                             value={presionSistolica}
                             onChange={(e) => setPresionSistolica(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">Presión Diastólica (mmHg):</Label>
+                          <Label className="text-base font-medium text-slate-700">Presión Diastólica (mmHg)</Label>
                           <input
                             type="number"
-                            placeholder="Diastólica"
+                            placeholder="60-90"
                             value={presionDiastolica}
                             onChange={(e) => setPresionDiastolica(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -2001,13 +2001,13 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">Estado de Conciencia:</Label>
+                        <Label className="text-base font-medium text-slate-700">Estado de Conciencia</Label>
                         <select
                           value={estadoConciencia}
                           onChange={(e) => setEstadoConciencia(e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         >
-                          <option value="">Seleccione un estado</option>
+                          <option value="">Seleccione...</option>
                           <option value="alerta">Alerta</option>
                           <option value="somnolienta">Somnolienta</option>
                           <option value="estuporosa">Estuporosa</option>
@@ -2015,19 +2015,13 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         </select>
                       </div>
                     </div>
-                    <div className="flex justify-between">
-                      <Button
-                        onClick={() => setSeccionActual(1)}
-                        variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                      >
-                        Anterior
-                      </Button>
+
+                    <div className="text-center">
                       <Button
                         onClick={() => {
                           if (validarSignosVitales()) completarSeccion(2)
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
                       >
                         Continuar
                       </Button>
@@ -2041,38 +2035,69 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <FileText className="h-6 w-6 text-blue-600" />
                       <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo</h2>
                     </div>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
+
+                    <div className="space-y-6">
+                      <div className="space-y-3">
                         <Label className="text-base font-medium text-slate-700">
-                          ¿Se realizó la prueba de embarazo?
+                          ¿Se realizó prueba de embarazo cualitativa?
                         </Label>
-                        <select
-                          value={pruebaEmbarazoRealizada}
-                          onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        >
-                          <option value="">Seleccione una opción</option>
-                          <option value="si">Sí</option>
-                          <option value="no">No</option>
-                        </select>
+                        <div className="flex space-x-4">
+                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="pruebaEmbarazo"
+                              value="si"
+                              checked={pruebaEmbarazoRealizada === "si"}
+                              onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-sm font-medium text-slate-700">Sí</span>
+                          </label>
+                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="pruebaEmbarazo"
+                              value="no"
+                              checked={pruebaEmbarazoRealizada === "no"}
+                              onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-sm font-medium text-slate-700">No</span>
+                          </label>
+                        </div>
                       </div>
+
                       {pruebaEmbarazoRealizada === "si" && (
-                        <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">
-                            Resultado de la prueba de embarazo:
-                          </Label>
-                          <select
-                            value={resultadoPruebaEmbarazo}
-                            onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                          >
-                            <option value="">Seleccione un resultado</option>
-                            <option value="positiva">Positiva</option>
-                            <option value="negativa">Negativa</option>
-                          </select>
+                        <div className="space-y-3">
+                          <Label className="text-base font-medium text-slate-700">Resultado de la prueba</Label>
+                          <div className="flex space-x-4">
+                            <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="resultadoPrueba"
+                                value="positiva"
+                                checked={resultadoPruebaEmbarazo === "positiva"}
+                                onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                              />
+                              <span className="text-sm font-medium text-slate-700">Positiva</span>
+                            </label>
+                            <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="resultadoPrueba"
+                                value="negativa"
+                                checked={resultadoPruebaEmbarazo === "negativa"}
+                                onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                              />
+                              <span className="text-sm font-medium text-slate-700">Negativa</span>
+                            </label>
+                          </div>
                         </div>
                       )}
                     </div>
+
                     <div className="flex justify-between">
                       <Button
                         onClick={() => setSeccionActual(2)}
@@ -2081,14 +2106,16 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       >
                         Anterior
                       </Button>
-                      <Button
-                        onClick={() => {
-                          if (validarPruebaEmbarazo()) completarSeccion(3)
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
-                      >
-                        Continuar
-                      </Button>
+                      <div className="text-center">
+                        <Button
+                          onClick={() => {
+                            if (validarPruebaEmbarazo()) completarSeccion(3)
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                        >
+                          Continuar
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -2099,43 +2126,56 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <Stethoscope className="h-6 w-6 text-blue-600" />
                       <h2 className="text-2xl font-bold text-slate-800">Evaluación Previa</h2>
                     </div>
-                    <div className="space-y-4">
+
+                    <div className="space-y-6">
                       <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">
-                          Hallazgos en la exploración física:
-                        </Label>
+                        <Label className="text-base font-medium text-slate-700">Hallazgos de Exploración Física</Label>
                         <textarea
-                          placeholder="Notas clínicas relevantes"
+                          placeholder="Describa los hallazgos relevantes..."
                           value={hallazgosExploracion}
                           onChange={(e) => setHallazgosExploracion(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          rows={4}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">
-                          ¿Se realizó ecografía transabdominal?
-                        </Label>
-                        <select
-                          value={tieneEcoTransabdominal}
-                          onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        >
-                          <option value="">Seleccione una opción</option>
-                          <option value="si">Sí</option>
-                          <option value="no">No</option>
-                        </select>
+
+                      <div className="space-y-3">
+                        <Label className="text-base font-medium text-slate-700">¿Tiene ecografía transabdominal?</Label>
+                        <div className="flex space-x-4">
+                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="tieneEco"
+                              value="si"
+                              checked={tieneEcoTransabdominal === "si"}
+                              onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-sm font-medium text-slate-700">Sí</span>
+                          </label>
+                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="tieneEco"
+                              value="no"
+                              checked={tieneEcoTransabdominal === "no"}
+                              onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-sm font-medium text-slate-700">No</span>
+                          </label>
+                        </div>
                       </div>
+
                       {tieneEcoTransabdominal === "si" && (
                         <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">
-                            Resultado de la ecografía transabdominal:
-                          </Label>
+                          <Label className="text-base font-medium text-slate-700">Resultado de la ecografía</Label>
                           <select
                             value={resultadoEcoTransabdominal}
                             onChange={(e) => setResultadoEcoTransabdominal(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                           >
-                            <option value="">Seleccione un resultado</option>
+                            <option value="">Seleccione...</option>
                             <option value="saco_embrion_fc">Saco embrionario con FC</option>
                             <option value="saco_vitelino_embrion">Saco vitelino con embrión</option>
                             <option value="saco_vitelino_sin_embrion">Saco vitelino sin embrión</option>
@@ -2146,6 +2186,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         </div>
                       )}
                     </div>
+
                     <div className="flex justify-between">
                       <Button
                         onClick={() => setSeccionActual(3)}
@@ -2154,14 +2195,16 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       >
                         Anterior
                       </Button>
-                      <Button
-                        onClick={() => {
-                          if (validarEcoTransabdominal()) completarSeccion(4)
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
-                      >
-                        Continuar
-                      </Button>
+                      <div className="text-center">
+                        <Button
+                          onClick={() => {
+                            if (validarEcoTransabdominal()) completarSeccion(4)
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                        >
+                          Continuar
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -2262,12 +2305,14 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       >
                         Anterior
                       </Button>
-                      <Button
-                        onClick={calcular}
-                        className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6"
-                      >
-                        Calcular
-                      </Button>
+                      <div className="text-center">
+                        <Button
+                          onClick={calcular}
+                          className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-8"
+                        >
+                          Calcular
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}

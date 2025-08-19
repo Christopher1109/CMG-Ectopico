@@ -476,27 +476,37 @@ export default function CalculadoraEctopico() {
     setMensajeAlerta("")
 
     if (sistolica >= 180 || diastolica >= 110) {
-      setMensajeFinal("🚨 EMERGENCIA MÉDICA: Crisis hipertensiva (PA ≥ 180/110 mmHg). Traslado inmediato.")
+      setMensajeFinal(
+        "🚨 ALERTA MÉDICA: Se sugiere considerar crisis hipertensiva (PA ≥ 180/110 mmHg). Se recomienda evaluación médica inmediata. La decisión final corresponde al médico tratante.",
+      )
       setProtocoloFinalizado(true)
       return false
     }
     if (fc > 100 && (sistolica <= 90 || diastolica <= 60)) {
-      setMensajeFinal("🚨 EMERGENCIA MÉDICA: Taquicardia + hipotensión. Traslado inmediato.")
+      setMensajeFinal(
+        "🚨 ALERTA MÉDICA: Se sugiere considerar taquicardia con hipotensión. Se recomienda evaluación médica inmediata. La decisión final corresponde al médico tratante.",
+      )
       setProtocoloFinalizado(true)
       return false
     }
     if (fc > 120) {
-      setMensajeFinal("🚨 EMERGENCIA MÉDICA: Taquicardia severa. Traslado inmediato.")
+      setMensajeFinal(
+        "🚨 ALERTA MÉDICA: Se sugiere considerar taquicardia severa. Se recomienda evaluación médica inmediata. La decisión final corresponde al médico tratante.",
+      )
       setProtocoloFinalizado(true)
       return false
     }
     if (fc < 50) {
-      setMensajeFinal("🚨 EMERGENCIA MÉDICA: Bradicardia severa. Traslado inmediato.")
+      setMensajeFinal(
+        "🚨 ALERTA MÉDICA: Se sugiere considerar bradicardia severa. Se recomienda evaluación médica inmediata. La decisión final corresponde al médico tratante.",
+      )
       setProtocoloFinalizado(true)
       return false
     }
     if (estadoConciencia === "estuporosa" || estadoConciencia === "comatosa") {
-      setMensajeFinal("🚨 EMERGENCIA MÉDICA: Alteración severa del estado de conciencia. Traslado inmediato.")
+      setMensajeFinal(
+        "🚨 ALERTA MÉDICA: Se sugiere considerar alteración severa del estado de conciencia. Se recomienda evaluación médica inmediata. La decisión final corresponde al médico tratante.",
+      )
       setProtocoloFinalizado(true)
       return false
     }
@@ -505,16 +515,16 @@ export default function CalculadoraEctopico() {
     let mensajeAlertaTemp = ""
     if (sistolica < 90 || diastolica < 60) {
       hayAlerta = true
-      mensajeAlertaTemp = "Hipotensión arterial detectada. Evaluación inmediata."
+      mensajeAlertaTemp = "Se sugiere considerar hipotensión arterial. Se recomienda evaluación médica."
     } else if (sistolica >= 140 || diastolica >= 90) {
       hayAlerta = true
-      mensajeAlertaTemp = "Hipertensión arterial detectada. Requiere seguimiento."
+      mensajeAlertaTemp = "Se sugiere considerar hipertensión arterial. Se recomienda seguimiento médico."
     } else if (fc > 100) {
       hayAlerta = true
-      mensajeAlertaTemp = "Taquicardia detectada. Monitoreo requerido."
+      mensajeAlertaTemp = "Se sugiere considerar taquicardia. Se recomienda monitoreo médico."
     } else if (fc < 60) {
       hayAlerta = true
-      mensajeAlertaTemp = "Bradicardia detectada. Evaluación recomendada."
+      mensajeAlertaTemp = "Se sugiere considerar bradicardia. Se recomienda evaluación médica."
     }
     if (hayAlerta) {
       setMostrarAlerta(true)
@@ -525,12 +535,16 @@ export default function CalculadoraEctopico() {
 
   const validarPruebaEmbarazo = () => {
     if (pruebaEmbarazoRealizada === "no") {
-      setMensajeFinal("Se necesita realizar una prueba de embarazo cualitativa antes de continuar con la evaluación.")
+      setMensajeFinal(
+        "Se sugiere realizar una prueba de embarazo cualitativa antes de continuar con la evaluación. La decisión final corresponde al médico tratante.",
+      )
       setProtocoloFinalizado(true)
       return false
     }
     if (resultadoPruebaEmbarazo === "negativa") {
-      setMensajeFinal("Embarazo ectópico descartado por prueba negativa.")
+      setMensajeFinal(
+        "Con prueba de embarazo negativa, se sugiere considerar otras causas de los síntomas. La decisión final corresponde al médico tratante.",
+      )
       setProtocoloFinalizado(true)
       return false
     }
@@ -546,7 +560,9 @@ export default function CalculadoraEctopico() {
       "saco_10mm_decidual_2mm",
     ]
     if (tieneEcoTransabdominal === "si" && opcionesConfirmatorias.includes(resultadoEcoTransabdominal)) {
-      setMensajeFinal("Evidencia suficiente de embarazo intrauterino. Embarazo ectópico descartado.")
+      setMensajeFinal(
+        "Los hallazgos ecográficos sugieren evidencia de embarazo intrauterino. Se recomienda seguimiento médico apropiado. La decisión final corresponde al médico tratante.",
+      )
       setProtocoloFinalizado(true)
       return false
     }
@@ -662,10 +678,14 @@ export default function CalculadoraEctopico() {
     }
 
     if (probPost >= 0.95) {
-      setMensajeFinal("Embarazo ectópico confirmado (probabilidad ≥95%). Proceder con tratamiento inmediato.")
+      setMensajeFinal(
+        "Los datos sugieren una alta probabilidad de embarazo ectópico (≥95%). Se recomienda evaluación médica urgente. La decisión final de tratamiento corresponde al médico tratante.",
+      )
       setProtocoloFinalizado(true)
     } else if (probPost < 0.01) {
-      setMensajeFinal("Embarazo ectópico descartado (probabilidad <1%).")
+      setMensajeFinal(
+        "Los datos sugieren una baja probabilidad de embarazo ectópico (<1%). Se recomienda seguimiento médico apropiado. La decisión final corresponde al médico tratante.",
+      )
       setProtocoloFinalizado(true)
     } else {
       setMostrarResultados(true)
@@ -676,8 +696,11 @@ export default function CalculadoraEctopico() {
   const generarInformePDF = () => {
     try {
       const contenidoInforme = `
-INFORME MÉDICO - EVALUACIÓN DE EMBARAZO ECTÓPICO
-================================================
+REPORTE DE APOYO CLÍNICO - HERRAMIENTA DE EVALUACIÓN
+===================================================
+
+IMPORTANTE: Esta herramienta es únicamente de apoyo y no constituye un diagnóstico médico.
+La decisión final siempre corresponde al médico tratante.
 
 ID de Consulta: ${idSeguimiento}
 Fecha: ${new Date().toLocaleDateString()}
@@ -703,35 +726,40 @@ ${sintomasSeleccionados.map((s) => `- ${obtenerNombreSintoma(s)}`).join("\n")}
 FACTORES DE RIESGO:
 ${factoresSeleccionados.map((f) => `- ${obtenerNombreFactorRiesgo(f)}`).join("\n")}
 
-RESULTADO:
-${resultado ? `Probabilidad de Embarazo Ectópico: ${(resultado * 100).toFixed(1)}%` : "No calculado"}
+RESULTADO DE LA HERRAMIENTA:
+${resultado ? `Probabilidad calculada: ${(resultado * 100).toFixed(1)}%` : "No calculado"}
 
-CONCLUSIÓN:
+RECOMENDACIÓN DE APOYO:
 ${
   mensajeFinal ||
   (resultado
     ? resultado >= 0.95
-      ? "Alta probabilidad - Confirmar diagnóstico"
+      ? "Se sugiere considerar alta probabilidad - Evaluación médica recomendada"
       : resultado < 0.01
-        ? "Baja probabilidad - Descartar diagnóstico"
-        : "Probabilidad intermedia - Seguimiento requerido"
+        ? "Se sugiere considerar baja probabilidad - Seguimiento médico recomendado"
+        : "Probabilidad intermedia - Seguimiento médico requerido"
     : "Evaluación en proceso")
 }
 
-================================================
-Sistema CMG Health Solutions
+DESCARGO DE RESPONSABILIDAD:
+Esta herramienta es únicamente de apoyo clínico y no reemplaza el juicio médico profesional.
+El diagnóstico y tratamiento final siempre debe ser determinado por el médico tratante.
+
+===================================================
+Desarrollado por CMG Health Solutions
+Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
       `
       const a = document.createElement("a")
       const archivo = new Blob([contenidoInforme], { type: "text/plain" })
       a.href = URL.createObjectURL(archivo)
-      a.download = `Informe_Ectopico_${idSeguimiento}_${new Date().toISOString().split("T")[0]}.txt`
+      a.download = `Reporte_Apoyo_Ectopico_${idSeguimiento}_${new Date().toISOString().split("T")[0]}.txt`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
-      alert("Informe generado y descargado exitosamente")
+      alert("Reporte de apoyo generado y descargado exitosamente")
     } catch (error) {
-      console.error("Error al generar el informe:", error)
-      alert("Error al generar el informe. Por favor, inténtelo de nuevo.")
+      console.error("Error al generar el reporte:", error)
+      alert("Error al generar el reporte. Por favor, inténtelo de nuevo.")
     }
   }
 
@@ -773,9 +801,14 @@ Sistema CMG Health Solutions
 
   const CMGFooter = () => (
     <div className="text-center mt-8 pt-4 border-t border-gray-200">
-      <p className="text-sm text-gray-500">
-        Desarrollado por <span className="font-semibold text-blue-600">CMG Health Solutions</span> - Sistema de
-        Evaluación Diagnóstica Avanzada
+      <p className="text-sm text-gray-500 mb-2">
+        Desarrollado por <span className="font-semibold text-blue-600">CMG Health Solutions</span> - Herramienta de
+        Apoyo Clínico
+      </p>
+      <p className="text-xs text-gray-400">
+        Esta aplicación es únicamente una herramienta de apoyo y no constituye un dispositivo médico de diagnóstico.
+        <br />
+        El diagnóstico y tratamiento final siempre debe ser determinado por el médico tratante.
       </p>
     </div>
   )
@@ -910,9 +943,11 @@ Sistema CMG Health Solutions
         </div>
 
         <div className={`mt-4 pt-4 border-t ${color.border}`}>
-          <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>Resultado del Algoritmo</span>
+          <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>
+            Resultado de la Herramienta
+          </span>
           <div className={`text-lg font-bold ${color.text}`}>
-            {resultado ? `${(resultado * 100).toFixed(1)}% probabilidad de embarazo ectópico` : "No calculado"}
+            {resultado ? `${(resultado * 100).toFixed(1)}% probabilidad sugerida` : "No calculado"}
           </div>
         </div>
       </div>
@@ -932,7 +967,7 @@ Sistema CMG Health Solutions
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-slate-800">Acceso Restringido</h1>
-                  <p className="text-sm text-slate-600">Sistema Médico Autorizado</p>
+                  <p className="text-sm text-slate-600">Herramienta de Apoyo Médico</p>
                 </div>
               </div>
 
@@ -944,8 +979,9 @@ Sistema CMG Health Solutions
                   </span>
                 </div>
                 <p className="text-amber-800 text-xs">
-                  Este sistema está destinado exclusivamente para uso de profesionales médicos autorizados. El acceso no
-                  autorizado está prohibido.
+                  Esta herramienta está destinada exclusivamente para uso de profesionales médicos autorizados como
+                  apoyo clínico. No constituye un dispositivo médico de diagnóstico. El acceso no autorizado está
+                  prohibido.
                 </p>
               </div>
 
@@ -1020,7 +1056,8 @@ Sistema CMG Health Solutions
               <div className="text-center pt-4 border-t border-slate-200">
                 <p className="text-xs text-slate-500">¿Problemas para acceder? Contacte al administrador del sistema</p>
                 <p className="text-xs text-slate-400 mt-2">
-                  <span className="font-semibold text-blue-600">CMG Health Solutions</span> - Sistema Seguro
+                  <span className="font-semibold text-blue-600">CMG Health Solutions</span> - Herramienta de Apoyo
+                  Clínico
                 </p>
               </div>
             </div>
@@ -1040,8 +1077,10 @@ Sistema CMG Health Solutions
             <div className="flex items-center space-x-4">
               <Heart className="h-8 w-8" />
               <div>
-                <h1 className="text-2xl font-bold">Calculadora de Embarazo Ectópico</h1>
-                <p className="text-blue-100 text-sm">Sistema de Evaluación Diagnóstica Avanzada</p>
+                <h1 className="text-2xl font-bold">Herramienta de Apoyo - Embarazo Ectópico</h1>
+                <p className="text-blue-100 text-sm">
+                  Sistema de Apoyo Clínico - No es un dispositivo médico de diagnóstico
+                </p>
               </div>
             </div>
 
@@ -1085,10 +1124,10 @@ Sistema CMG Health Solutions
                   <div className="p-3 bg-blue-100 rounded-full">
                     <Calculator className="h-8 w-8 text-blue-600" />
                   </div>
-                  <h2 className="text-3xl font-bold text-slate-800">Bienvenido al Sistema</h2>
+                  <h2 className="text-3xl font-bold text-slate-800">Bienvenido a la Herramienta</h2>
                 </div>
                 <p className="text-lg text-slate-600 mb-8">
-                  Seleccione una opción para continuar con la evaluación diagnóstica
+                  Seleccione una opción para continuar con la herramienta de apoyo clínico
                 </p>
                 <div className="grid md:grid-cols-2 gap-6">
                   <Button
@@ -1136,8 +1175,8 @@ Sistema CMG Health Solutions
                     <span className="font-medium text-blue-900">Información Importante</span>
                   </div>
                   <p className="text-blue-800 text-sm">
-                    Las consultas de seguimiento deben realizarse entre 48-72 horas después de la consulta inicial.
-                    Ingrese el ID de seguimiento.
+                    Las consultas de seguimiento se sugiere realizarlas entre 48-72 horas después de la consulta
+                    inicial. Ingrese el ID de seguimiento.
                   </p>
                 </div>
                 <div className="space-y-4">
@@ -1328,10 +1367,10 @@ Sistema CMG Health Solutions
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-green-200 bg-green-100 p-4 rounded-lg">
-                      <span className="font-semibold text-green-700 block mb-2">Resultado del Algoritmo</span>
+                      <span className="font-semibold text-green-700 block mb-2">Resultado de la Herramienta</span>
                       <div className="text-2xl font-bold text-green-900">
                         {consultaCargada.resultado
-                          ? `${(consultaCargada.resultado * 100).toFixed(1)}% probabilidad de embarazo ectópico`
+                          ? `${(consultaCargada.resultado * 100).toFixed(1)}% probabilidad sugerida`
                           : "No calculado"}
                       </div>
                     </div>
@@ -1414,10 +1453,10 @@ Sistema CMG Health Solutions
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-orange-200 bg-orange-100 p-4 rounded-lg">
-                      <span className="font-semibold text-orange-700 block mb-2">Resultado del Algoritmo</span>
+                      <span className="font-semibold text-orange-700 block mb-2">Resultado de la Herramienta</span>
                       <div className="text-2xl font-bold text-orange-900">
                         {consultaCargada.resultado_2
-                          ? `${(consultaCargada.resultado_2 * 100).toFixed(1)}% probabilidad de embarazo ectópico`
+                          ? `${(consultaCargada.resultado_2 * 100).toFixed(1)}% probabilidad sugerida`
                           : "No calculado"}
                       </div>
                     </div>
@@ -1504,10 +1543,10 @@ Sistema CMG Health Solutions
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-purple-200 bg-purple-100 p-4 rounded-lg">
-                      <span className="font-semibold text-purple-700 block mb-2">Resultado del Algoritmo</span>
+                      <span className="font-semibold text-purple-700 block mb-2">Resultado de la Herramienta</span>
                       <div className="text-2xl font-bold text-purple-900">
                         {consultaCargada.resultado_3
-                          ? `${(consultaCargada.resultado_3 * 100).toFixed(1)}% probabilidad de embarazo ectópico`
+                          ? `${(consultaCargada.resultado_3 * 100).toFixed(1)}% probabilidad sugerida`
                           : "No calculado"}
                       </div>
                     </div>
@@ -1525,7 +1564,7 @@ Sistema CMG Health Solutions
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
                     <p className="text-blue-800 text-sm">
                       Al continuar, se cargará automáticamente la información de la consulta previa. Ingrese nuevamente
-                      TVUS y el nuevo valor de β-hCG para la siguiente evaluación.
+                      TVUS y el nuevo valor de β-hCG para la siguiente evaluación de apoyo.
                     </p>
                   </div>
                 </div>
@@ -1577,14 +1616,14 @@ Sistema CMG Health Solutions
 
                 {resultado !== null && (
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 text-center">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-4">Probabilidad de Embarazo Ectópico</h3>
+                    <h3 className="text-lg font-semibold text-blue-900 mb-4">Probabilidad Sugerida</h3>
                     <div className="text-4xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
                     <p className="text-blue-800 text-sm">
                       {resultado >= 0.95
-                        ? "Alta probabilidad - Confirmar diagnóstico"
+                        ? "Se sugiere considerar alta probabilidad - Evaluación médica recomendada"
                         : resultado < 0.01
-                          ? "Baja probabilidad - Descartar diagnóstico"
-                          : "Probabilidad intermedia - Seguimiento requerido"}
+                          ? "Se sugiere considerar baja probabilidad - Seguimiento médico recomendado"
+                          : "Probabilidad intermedia - Seguimiento médico requerido"}
                     </p>
                   </div>
                 )}
@@ -1596,7 +1635,7 @@ Sistema CMG Health Solutions
                     className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent"
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Generar Informe
+                    Generar Reporte
                   </Button>
                   <Button onClick={volverAInicio} className="bg-green-600 hover:bg-green-700 text-white">
                     <User className="h-4 w-4 mr-2" />
@@ -1620,8 +1659,8 @@ Sistema CMG Health Solutions
                       <CheckCircle className="h-8 w-8 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-3xl font-bold text-slate-800">Resultado de la Evaluación</h2>
-                      <p className="text-slate-600">Análisis completado exitosamente</p>
+                      <h2 className="text-3xl font-bold text-slate-800">Resultado de la Herramienta</h2>
+                      <p className="text-slate-600">Análisis de apoyo completado</p>
                     </div>
                   </div>
                 </div>
@@ -1632,14 +1671,14 @@ Sistema CMG Health Solutions
                     <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg mb-4">
                       <span className="text-2xl font-bold text-white">%</span>
                     </div>
-                    <h3 className="text-xl font-semibold text-slate-800 mb-2">Probabilidad de Embarazo Ectópico</h3>
+                    <h3 className="text-xl font-semibold text-slate-800 mb-2">Probabilidad Sugerida</h3>
                     <div className="text-5xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
                     <p className="text-slate-600 text-lg">
                       {resultado >= 0.95
-                        ? "Alta probabilidad - Confirmar diagnóstico"
+                        ? "Se sugiere considerar alta probabilidad - Evaluación médica recomendada"
                         : resultado < 0.01
-                          ? "Baja probabilidad - Descartar diagnóstico"
-                          : "Probabilidad intermedia - Seguimiento requerido"}
+                          ? "Se sugiere considerar baja probabilidad - Seguimiento médico recomendado"
+                          : "Probabilidad intermedia - Seguimiento médico requerido"}
                     </p>
                   </div>
                 </div>
@@ -1651,7 +1690,7 @@ Sistema CMG Health Solutions
                       <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg">
                         <AlertTriangle className="h-6 w-6 text-white" />
                       </div>
-                      <h3 className="text-xl font-semibold text-slate-800">Seguimiento Requerido</h3>
+                      <h3 className="text-xl font-semibold text-slate-800">Seguimiento Sugerido</h3>
                     </div>
                     <div className="space-y-4">
                       <div className="flex items-center space-x-3">
@@ -1672,14 +1711,15 @@ Sistema CMG Health Solutions
                         </div>
                       </div>
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                        <h4 className="font-semibold text-slate-800 mb-2">Instrucciones de Seguimiento</h4>
+                        <h4 className="font-semibold text-slate-800 mb-2">Recomendaciones de Seguimiento</h4>
                         <ul className="text-slate-700 text-sm space-y-1">
-                          <li>• Regrese en 48-72 horas para continuar con la evaluación</li>
-                          <li>• Mantenga vigilancia de los síntomas durante este tiempo</li>
+                          <li>• Se sugiere regresar en 48-72 horas para continuar con la evaluación</li>
+                          <li>• Se recomienda mantener vigilancia de los síntomas durante este tiempo</li>
                           <li>
-                            • Acuda inmediatamente si presenta empeoramiento del dolor, sangrado abundante o síntomas de
-                            shock
+                            • Se sugiere acudir inmediatamente si presenta empeoramiento del dolor, sangrado abundante o
+                            síntomas de shock
                           </li>
+                          <li>• La decisión final siempre corresponde al médico tratante</li>
                         </ul>
                       </div>
                     </div>
@@ -1747,7 +1787,7 @@ Sistema CMG Health Solutions
                       className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-white shadow-sm"
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      Generar Informe
+                      Generar Reporte
                     </Button>
                     <Button
                       onClick={volverAInicio}
@@ -1820,7 +1860,7 @@ Sistema CMG Health Solutions
                       <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                         <div className="flex items-center space-x-2 mb-2">
                           <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                          <span className="font-medium text-yellow-900">Alerta</span>
+                          <span className="font-medium text-yellow-900">Sugerencia</span>
                         </div>
                         <p className="text-yellow-800 text-sm">{mensajeAlerta}</p>
                       </div>

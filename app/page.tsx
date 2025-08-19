@@ -1815,56 +1815,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                 )}
 
                 {/* Resumen de la consulta con diseño mejorado */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="p-2 bg-gradient-to-br from-slate-500 to-slate-600 rounded-full shadow-lg">
-                      <FileText className="h-6 w-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-slate-800">📊 Resumen de la Consulta</h3>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-6 text-sm">
-                    <div className="space-y-3">
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Paciente:</span>
-                        <div className="text-slate-600">
-                          {nombrePaciente}, {edadPaciente} años
-                        </div>
-                      </div>
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Síntomas:</span>
-                        <div className="text-slate-600">
-                          {sintomasSeleccionados.length > 0
-                            ? sintomasSeleccionados.map((s) => obtenerNombreSintoma(s)).join(", ")
-                            : "Asintomática"}
-                        </div>
-                      </div>
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">TVUS:</span>
-                        <div className="text-slate-600">{obtenerNombreTVUS(tvus)}</div>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Factores de Riesgo:</span>
-                        <div className="text-slate-600">
-                          {factoresSeleccionados.length > 0
-                            ? factoresSeleccionados.map((f) => obtenerNombreFactorRiesgo(f)).join(", ")
-                            : "Sin factores de riesgo"}
-                        </div>
-                      </div>
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">β-hCG:</span>
-                        <div className="text-slate-600">{hcgValor} mUI/mL</div>
-                      </div>
-                      {esConsultaSeguimiento && hcgAnterior && (
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold text-slate-700 block mb-1">β-hCG Anterior:</span>
-                          <div className="text-slate-600">{hcgAnterior} mUI/mL</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
 
                 {/* Botones con diseño mejorado */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
@@ -2408,17 +2358,40 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         {/* Ecografía Transvaginal (TVUS) */}
                         <div>
                           <h4 className="text-lg font-semibold text-gray-800 mb-4">Ecografía Transvaginal (TVUS)</h4>
-                          <select
-                            value={tvus}
-                            onChange={(e) => setTvus(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white text-gray-700"
-                          >
-                            <option value="">Seleccione...</option>
-                            <option value="normal">Normal</option>
-                            <option value="libre">Líquido libre</option>
-                            <option value="masa">Masa anexial</option>
-                            <option value="masa_libre">Masa anexial + líquido libre</option>
-                          </select>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {[
+                              { value: "normal", label: "Normal" },
+                              { value: "libre", label: "Líquido libre" },
+                              { value: "masa", label: "Masa anexial" },
+                              { value: "masa_libre", label: "Masa anexial + líquido libre" },
+                            ].map((opcion) => (
+                              <label
+                                key={opcion.value}
+                                className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                              >
+                                <div className="relative">
+                                  <input
+                                    type="radio"
+                                    name="tvus"
+                                    value={opcion.value}
+                                    checked={tvus === opcion.value}
+                                    onChange={(e) => setTvus(e.target.value)}
+                                    className="sr-only"
+                                  />
+                                  <div
+                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                      tvus === opcion.value
+                                        ? "bg-blue-600 border-blue-600"
+                                        : "border-gray-300 hover:border-blue-400"
+                                    }`}
+                                  >
+                                    {tvus === opcion.value && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                                  </div>
+                                </div>
+                                <span className="text-sm font-medium text-gray-700">{opcion.label}</span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
 
                         {/* β-HCG actual */}

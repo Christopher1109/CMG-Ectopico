@@ -477,35 +477,35 @@ export default function CalculadoraEctopico() {
 
     if (sistolica >= 180 || diastolica >= 110) {
       setMensajeFinal(
-        "🚨 ALERTA MÉDICA: Se sugiere considerar crisis hipertensiva (PA ≥ 180/110 mmHg). Se recomienda evaluación médica inmediata. La decisión final corresponde al médico tratante.",
+        "🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin demora.",
       )
       setProtocoloFinalizado(true)
       return false
     }
     if (fc > 100 && (sistolica <= 90 || diastolica <= 60)) {
       setMensajeFinal(
-        "🚨 ALERTA MÉDICA: Se sugiere considerar taquicardia con hipotensión. Se recomienda evaluación médica inmediata. La decisión final corresponde al médico tratante.",
+        "🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin demora.",
       )
       setProtocoloFinalizado(true)
       return false
     }
     if (fc > 120) {
       setMensajeFinal(
-        "🚨 ALERTA MÉDICA: Se sugiere considerar taquicardia severa. Se recomienda evaluación médica inmediata. La decisión final corresponde al médico tratante.",
+        "🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin demora.",
       )
       setProtocoloFinalizado(true)
       return false
     }
     if (fc < 50) {
       setMensajeFinal(
-        "🚨 ALERTA MÉDICA: Se sugiere considerar bradicardia severa. Se recomienda evaluación médica inmediata. La decisión final corresponde al médico tratante.",
+        "🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin demora.",
       )
       setProtocoloFinalizado(true)
       return false
     }
     if (estadoConciencia === "estuporosa" || estadoConciencia === "comatosa") {
       setMensajeFinal(
-        "🚨 ALERTA MÉDICA: Se sugiere considerar alteración severa del estado de conciencia. Se recomienda evaluación médica inmediata. La decisión final corresponde al médico tratante.",
+        "🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin demora.",
       )
       setProtocoloFinalizado(true)
       return false
@@ -543,7 +543,7 @@ export default function CalculadoraEctopico() {
     }
     if (resultadoPruebaEmbarazo === "negativa") {
       setMensajeFinal(
-        "Con prueba de embarazo negativa, se sugiere considerar otras causas de los síntomas. La decisión final corresponde al médico tratante.",
+        "Con prueba de embarazo negativa, es poco probable un embarazo ectópico. Sin embargo, se recomienda valoración médica para descartar otras causas de los síntomas.",
       )
       setProtocoloFinalizado(true)
       return false
@@ -679,7 +679,7 @@ export default function CalculadoraEctopico() {
 
     if (probPost >= 0.95) {
       setMensajeFinal(
-        "Los datos sugieren una alta probabilidad de embarazo ectópico (≥95%). Se recomienda evaluación médica urgente. La decisión final de tratamiento corresponde al médico tratante.",
+        "Los datos ingresados sugieren una probabilidad estimada alta de embarazo ectópico (≥95%). Se recomienda evaluación médica urgente.",
       )
       setProtocoloFinalizado(true)
     } else if (probPost < 0.01) {
@@ -727,7 +727,7 @@ FACTORES DE RIESGO:
 ${factoresSeleccionados.map((f) => `- ${obtenerNombreFactorRiesgo(f)}`).join("\n")}
 
 RESULTADO DE LA HERRAMIENTA:
-${resultado ? `Probabilidad calculada: ${(resultado * 100).toFixed(1)}%` : "No calculado"}
+${resultado ? `Estimación de riesgo: ${(resultado * 100).toFixed(1)}%` : "No calculado"}
 
 RECOMENDACIÓN DE APOYO:
 ${
@@ -947,7 +947,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
             Resultado de la Herramienta
           </span>
           <div className={`text-lg font-bold ${color.text}`}>
-            {resultado ? `${(resultado * 100).toFixed(1)}% probabilidad sugerida` : "No calculado"}
+            {resultado ? `${(resultado * 100).toFixed(1)}% estimación de riesgo` : "No calculado"}
           </div>
         </div>
       </div>
@@ -1078,9 +1078,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
               <Heart className="h-8 w-8" />
               <div>
                 <h1 className="text-2xl font-bold">Herramienta de Apoyo - Embarazo Ectópico</h1>
-                <p className="text-blue-100 text-sm">
-                  Sistema de Apoyo Clínico - No es un dispositivo médico de diagnóstico
-                </p>
+                <p className="text-blue-100 text-sm">Sistema de Apoyo Clínico</p>
               </div>
             </div>
 
@@ -1370,7 +1368,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <span className="font-semibold text-green-700 block mb-2">Resultado de la Herramienta</span>
                       <div className="text-2xl font-bold text-green-900">
                         {consultaCargada.resultado
-                          ? `${(consultaCargada.resultado * 100).toFixed(1)}% probabilidad sugerida`
+                          ? `${(consultaCargada.resultado * 100).toFixed(1)}% estimación de riesgo`
                           : "No calculado"}
                       </div>
                     </div>
@@ -1456,7 +1454,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <span className="font-semibold text-orange-700 block mb-2">Resultado de la Herramienta</span>
                       <div className="text-2xl font-bold text-orange-900">
                         {consultaCargada.resultado_2
-                          ? `${(consultaCargada.resultado_2 * 100).toFixed(1)}% probabilidad sugerida`
+                          ? `${(consultaCargada.resultado_2 * 100).toFixed(1)}% estimación de riesgo`
                           : "No calculado"}
                       </div>
                     </div>
@@ -1546,7 +1544,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <span className="font-semibold text-purple-700 block mb-2">Resultado de la Herramienta</span>
                       <div className="text-2xl font-bold text-purple-900">
                         {consultaCargada.resultado_3
-                          ? `${(consultaCargada.resultado_3 * 100).toFixed(1)}% probabilidad sugerida`
+                          ? `${(consultaCargada.resultado_3 * 100).toFixed(1)}% estimación de riesgo`
                           : "No calculado"}
                       </div>
                     </div>
@@ -1616,7 +1614,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                 {resultado !== null && (
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 text-center">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-4">Probabilidad Sugerida</h3>
+                    <h3 className="text-lg font-semibold text-blue-900 mb-4">Estimación de Riesgo Sugerida</h3>
                     <div className="text-4xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
                     <p className="text-blue-800 text-sm">
                       {resultado >= 0.95
@@ -1671,7 +1669,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg mb-4">
                       <span className="text-2xl font-bold text-white">%</span>
                     </div>
-                    <h3 className="text-xl font-semibold text-slate-800 mb-2">Probabilidad Sugerida</h3>
+                    <h3 className="text-xl font-semibold text-slate-800 mb-2">Estimación de Riesgo Sugerida</h3>
                     <div className="text-5xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
                     <p className="text-slate-600 text-lg">
                       {resultado >= 0.95

@@ -477,35 +477,50 @@ export default function CalculadoraEctopico() {
 
     if (sistolica >= 180 || diastolica >= 110) {
       setMensajeFinal(
-        "🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin demora.",
+        <div className="text-center">
+          🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin
+          demora.
+        </div>,
       )
       setProtocoloFinalizado(true)
       return false
     }
     if (fc > 100 && (sistolica <= 90 || diastolica <= 60)) {
       setMensajeFinal(
-        "🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin demora.",
+        <div className="text-center">
+          🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin
+          demora.
+        </div>,
       )
       setProtocoloFinalizado(true)
       return false
     }
     if (fc > 120) {
       setMensajeFinal(
-        "🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin demora.",
+        <div className="text-center">
+          🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin
+          demora.
+        </div>,
       )
       setProtocoloFinalizado(true)
       return false
     }
     if (fc < 50) {
       setMensajeFinal(
-        "🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin demora.",
+        <div className="text-center">
+          🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin
+          demora.
+        </div>,
       )
       setProtocoloFinalizado(true)
       return false
     }
     if (estadoConciencia === "estuporosa" || estadoConciencia === "comatosa") {
       setMensajeFinal(
-        "🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin demora.",
+        <div className="text-center">
+          🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin
+          demora.
+        </div>,
       )
       setProtocoloFinalizado(true)
       return false
@@ -536,14 +551,20 @@ export default function CalculadoraEctopico() {
   const validarPruebaEmbarazo = () => {
     if (pruebaEmbarazoRealizada === "no") {
       setMensajeFinal(
-        "Se sugiere realizar una prueba de embarazo cualitativa antes de continuar con la evaluación. La decisión final corresponde al médico tratante.",
+        <div className="text-center">
+          Se sugiere realizar una prueba de embarazo cualitativa antes de continuar con la evaluación. La decisión final
+          corresponde al médico tratante.
+        </div>,
       )
       setProtocoloFinalizado(true)
       return false
     }
     if (resultadoPruebaEmbarazo === "negativa") {
       setMensajeFinal(
-        "Con prueba de embarazo negativa, es poco probable un embarazo ectópico. Sin embargo, se recomienda valoración médica para descartar otras causas de los síntomas.",
+        <div className="text-center">
+          Con prueba de embarazo negativa, es poco probable un embarazo ectópico. Sin embargo, se recomienda valoración
+          médica para descartar otras causas de los síntomas.
+        </div>,
       )
       setProtocoloFinalizado(true)
       return false
@@ -561,7 +582,10 @@ export default function CalculadoraEctopico() {
     ]
     if (tieneEcoTransabdominal === "si" && opcionesConfirmatorias.includes(resultadoEcoTransabdominal)) {
       setMensajeFinal(
-        "Los hallazgos ecográficos sugieren evidencia de embarazo intrauterino. Se recomienda seguimiento médico apropiado. La decisión final corresponde al médico tratante.",
+        <div className="text-center">
+          Los hallazgos ecográficos sugieren evidencia de embarazo intrauterino. Se recomienda seguimiento médico
+          apropiado. La decisión final corresponde al médico tratante.
+        </div>,
       )
       setProtocoloFinalizado(true)
       return false
@@ -679,12 +703,18 @@ export default function CalculadoraEctopico() {
 
     if (probPost >= 0.95) {
       setMensajeFinal(
-        "Los datos ingresados sugieren una probabilidad estimada alta de embarazo ectópico (≥95%). Se recomienda evaluación médica urgente.",
+        <div className="text-center">
+          Los datos ingresados sugieren una probabilidad estimada alta de embarazo ectópico (≥95%). Se recomienda
+          evaluación médica urgente.
+        </div>,
       )
       setProtocoloFinalizado(true)
     } else if (probPost < 0.01) {
       setMensajeFinal(
-        "Los datos sugieren una baja probabilidad de embarazo ectópico (<1%). Se recomienda seguimiento médico apropiado. La decisión final corresponde al médico tratante.",
+        <div className="text-center">
+          Los datos sugieren una baja probabilidad de embarazo ectópico (&lt;1%). Se recomienda seguimiento médico
+          apropiado. La decisión final corresponde al médico tratante.
+        </div>,
       )
       setProtocoloFinalizado(true)
     } else {
@@ -1608,7 +1638,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   <h2 className="text-2xl font-bold text-slate-800">Evaluación Completada</h2>
                 </div>
 
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 text-center">
                   <p className="text-blue-900 font-medium">{mensajeFinal}</p>
                 </div>
 

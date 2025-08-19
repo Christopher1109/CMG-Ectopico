@@ -55,7 +55,6 @@ const Page = () => {
     return true
   }
 
-  // ==================== FUNCIÓN PARA GUARDAR DATOS INCOMPLETOS ====================
   async function guardarDatosIncompletos(motivoFinalizacion: string, seccionCompletada: number): Promise<boolean> {
     try {
       const fechaActual = new Date().toISOString()
@@ -81,23 +80,17 @@ const Page = () => {
         hcgValor: hcgValor ? Number.parseFloat(hcgValor) : null,
         variacionHcg: variacionHcg || null,
         hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
-        resultado: null, // No hay resultado en consultas incompletas
-        // Campos adicionales para consultas incompletas
+        resultado: null,
         motivoFinalizacion,
         seccionCompletada,
         consultaCompleta: false,
       }
 
-      // Guardar en localStorage
       localStorage.setItem(`ectopico_${datosIncompletos.id}`, JSON.stringify(datosIncompletos))
-
-      // Intentar guardar en base de datos
       const ok = await enviarDatosAlBackend(datosIncompletos)
-
       if (!ok) {
         console.warn("Datos guardados localmente, pero falló la sincronización con la base de datos")
       }
-
       return true
     } catch (error) {
       console.error("Error al guardar datos incompletos:", error)
@@ -297,7 +290,7 @@ const Page = () => {
                   <p className="text-blue-900 font-medium">{mensajeFinal}</p>
                 </div>
 
-                {/* NUEVA SECCIÓN: Información de la consulta guardada */}
+                {/* Información de la consulta guardada */}
                 <div className="bg-green-50 p-6 rounded-lg border border-green-200">
                   <div className="flex items-center space-x-2 mb-3">
                     <CheckCircle className="h-5 w-5 text-green-600" />

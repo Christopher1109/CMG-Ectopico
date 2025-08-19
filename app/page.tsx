@@ -898,50 +898,24 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
   )
 
   const ProgressBar = () => {
-    const steps = [
-      { id: 1, name: "Expediente Clínico", icon: User },
-      { id: 2, name: "Signos Vitales", icon: Activity },
-      { id: 3, name: "Prueba Embarazo", icon: FileText },
-      { id: 4, name: "Evaluación Previa", icon: Stethoscope },
-      { id: 5, name: "Consultas", icon: Calculator },
-    ]
+    const totalSecciones = 5
+    const seccionesCompletas = seccionesCompletadas.length
+    const progreso = (seccionesCompletas / totalSecciones) * 100
+
     return (
-      <div className="bg-gray-100 py-6 mb-8">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex items-center justify-between">
-            {steps.map((step, index) => {
-              const Icon = step.icon
-              const isCompleted = seccionesCompletadas.includes(step.id)
-              const isCurrent = seccionActual === step.id
-              const isAccessible = step.id <= Math.max(...seccionesCompletadas, seccionActual)
-              return (
-                <div key={step.id} className="flex items-center">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        isCompleted
-                          ? "bg-green-500 text-white"
-                          : isCurrent
-                            ? "bg-blue-500 text-white"
-                            : isAccessible
-                              ? "bg-gray-300 text-gray-600"
-                              : "bg-gray-200 text-gray-400"
-                      }`}
-                    >
-                      {isCompleted ? <CheckCircle className="h-6 w-6" /> : <Icon className="h-6 w-6" />}
-                    </div>
-                    <span
-                      className={`text-xs mt-2 text-center max-w-20 ${
-                        isCurrent ? "font-semibold text-blue-600" : "text-gray-600"
-                      }`}
-                    >
-                      {step.name}
-                    </span>
-                  </div>
-                  {index < steps.length - 1 && <ArrowRight className="h-5 w-5 text-gray-400 mx-4 flex-shrink-0" />}
-                </div>
-              )
-            })}
+      <div className="bg-gray-50 py-4">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Progreso de la Evaluación</span>
+            <span className="text-sm text-gray-500">
+              {seccionesCompletas}/{totalSecciones} secciones
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-in-out"
+              style={{ width: `${progreso}%` }}
+            ></div>
           </div>
         </div>
       </div>
@@ -1196,6 +1170,8 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
           </div>
         </div>
       </div>
+
+      <ProgressBar />
 
       {mostrarPantallaBienvenida ? (
         <div className="max-w-4xl mx-auto p-6">
@@ -2000,19 +1976,32 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           />
                         </div>
                       </div>
-                      <div className="space-y-2">
+
+                      <div className="space-y-3">
                         <Label className="text-base font-medium text-slate-700">Estado de Conciencia</Label>
-                        <select
-                          value={estadoConciencia}
-                          onChange={(e) => setEstadoConciencia(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        >
-                          <option value="">Seleccione...</option>
-                          <option value="alerta">Alerta</option>
-                          <option value="somnolienta">Somnolienta</option>
-                          <option value="estuporosa">Estuporosa</option>
-                          <option value="comatosa">Comatosa</option>
-                        </select>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          {[
+                            { value: "alerta", label: "Alerta" },
+                            { value: "somnolienta", label: "Somnolienta" },
+                            { value: "estuporosa", label: "Estuporosa" },
+                            { value: "comatosa", label: "Comatosa" },
+                          ].map((opcion) => (
+                            <label
+                              key={opcion.value}
+                              className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                            >
+                              <input
+                                type="radio"
+                                name="estadoConciencia"
+                                value={opcion.value}
+                                checked={estadoConciencia === opcion.value}
+                                onChange={(e) => setEstadoConciencia(e.target.value)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                              />
+                              <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
@@ -2168,21 +2157,33 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
 
                       {tieneEcoTransabdominal === "si" && (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <Label className="text-base font-medium text-slate-700">Resultado de la ecografía</Label>
-                          <select
-                            value={resultadoEcoTransabdominal}
-                            onChange={(e) => setResultadoEcoTransabdominal(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                          >
-                            <option value="">Seleccione...</option>
-                            <option value="saco_embrion_fc">Saco embrionario con FC</option>
-                            <option value="saco_vitelino_embrion">Saco vitelino con embrión</option>
-                            <option value="saco_vitelino_sin_embrion">Saco vitelino sin embrión</option>
-                            <option value="saco_sin_embrion">Saco sin embrión</option>
-                            <option value="saco_10mm_decidual_2mm">Saco ≥10mm con anillo decidual ≥2mm</option>
-                            <option value="ausencia_saco">Ausencia de saco</option>
-                          </select>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {[
+                              { value: "saco_embrion_fc", label: "Saco embrionario con FC" },
+                              { value: "saco_vitelino_embrion", label: "Saco vitelino con embrión" },
+                              { value: "saco_vitelino_sin_embrion", label: "Saco vitelino sin embrión" },
+                              { value: "saco_sin_embrion", label: "Saco sin embrión" },
+                              { value: "saco_10mm_decidual_2mm", label: "Saco ≥10mm con anillo decidual ≥2mm" },
+                              { value: "ausencia_saco", label: "Ausencia de saco" },
+                            ].map((opcion) => (
+                              <label
+                                key={opcion.value}
+                                className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                              >
+                                <input
+                                  type="radio"
+                                  name="resultadoEco"
+                                  value={opcion.value}
+                                  checked={resultadoEcoTransabdominal === opcion.value}
+                                  onChange={(e) => setResultadoEcoTransabdominal(e.target.value)}
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                />
+                                <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2259,19 +2260,31 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <Label className="text-base font-medium text-slate-700">TVUS:</Label>
-                        <select
-                          value={tvus}
-                          onChange={(e) => setTvus(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        >
-                          <option value="">Seleccione un resultado</option>
-                          <option value="normal">Normal</option>
-                          <option value="libre">Líquido libre</option>
-                          <option value="masa">Masa anexial</option>
-                          <option value="masa_libre">Masa anexial + líquido libre</option>
-                        </select>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {[
+                            { value: "normal", label: "Normal" },
+                            { value: "libre", label: "Líquido libre" },
+                            { value: "masa", label: "Masa anexial" },
+                            { value: "masa_libre", label: "Masa anexial + líquido libre" },
+                          ].map((opcion) => (
+                            <label
+                              key={opcion.value}
+                              className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                            >
+                              <input
+                                type="radio"
+                                name="tvus"
+                                value={opcion.value}
+                                checked={tvus === opcion.value}
+                                onChange={(e) => setTvus(e.target.value)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                              />
+                              <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
 
                       <div className="space-y-2">

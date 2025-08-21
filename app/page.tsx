@@ -212,7 +212,7 @@ export default function CalculadoraEctopico() {
   const variacionHcgMap = {
     reduccion_1_35: 16.6,
     reduccion_35_50: 0.8,
-    reduccion_mayor_50: 0.01,
+    reduccion_mayor_50: 0.0,
     aumento: 3.3,
     no_disponible: 1,
   }

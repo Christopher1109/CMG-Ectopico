@@ -79,16 +79,12 @@ async function enviarDatosAlBackend(datos: any): Promise<boolean> {
 async function actualizarDatosEnBackend(id: string, visitaNo: 2 | 3, datos: any): Promise<boolean> {
   try {
     const patch = {
-      nombre_paciente: datos.nombrePaciente || null,
-      edad_paciente: Number.isFinite(+datos.edadPaciente) ? +datos.edadPaciente : null,
-      sintomas_seleccionados: Array.isArray(datos.sintomasSeleccionados) ? datos.factoresSeleccionados : [],
+      sintomas_seleccionados: Array.isArray(datos.sintomasSeleccionados) ? datos.sintomasSeleccionados : [],
       factores_seleccionados: Array.isArray(datos.factoresSeleccionados) ? datos.factoresSeleccionados : [],
       tvus: datos.tvus || null,
       hcg_valor: Number.isFinite(+datos.hcgValor) ? +datos.hcgValor : null,
-      hcg_anterior: Number.isFinite(+datos.hcgAnterior) ? +datos.hcgAnterior : null,
       variacion_hcg: datos.variacionHcg || null,
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
-      usuario_editor: datos.usuarioCreador || "anon",
     }
     const res = await actualizarConsulta(id, visitaNo, patch)
     if (res?.error) {
@@ -212,7 +208,7 @@ export default function CalculadoraEctopico() {
   const variacionHcgMap = {
     reduccion_1_35: 16.6,
     reduccion_35_50: 0.8,
-    reduccion_mayor_50: 0.0,
+    reduccion_mayor_50: 0.01,
     aumento: 3.3,
     no_disponible: 1,
   }
@@ -350,7 +346,10 @@ export default function CalculadoraEctopico() {
 
     // LIMPIAR campos para nueva consulta (NO usar datos previos)
     setSintomasSeleccionados([])
-    setFactoresSeleccionados([]) // Siempre empezar limpio
+
+    // MANTENER factores de riesgo de la consulta anterior
+    setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
+
     setTvus("")
 
     let ultimoHcg = consultaCargada.hcg_valor
@@ -2342,7 +2341,14 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                         {/* Factores de Riesgo */}
                         <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-4">Factores de Riesgo</h4>
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-lg font-semibold text-gray-800">Factores de Riesgo</h4>
+                            {esConsultaSeguimiento && (
+                              <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                Mantenidos de consulta anterior
+                              </div>
+                            )}
+                          </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {factoresRiesgo.map((factor) => (
                               <label
@@ -2380,7 +2386,14 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                         {/* Ecografía Transvaginal (TVUS) */}
                         <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-4">Ecografía Transvaginal (TVUS)</h4>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                            Ecografía Transvaginal (TVUS)
+                            {!tvus && (
+                              <span className="text-xs text-red-600 block font-normal mt-1">
+                                * Campo requerido - Seleccione una opción
+                              </span>
+                            )}
+                          </h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {[
                               { value: "normal", label: "Normal" },
@@ -2419,7 +2432,14 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                         {/* β-HCG actual */}
                         <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-4">β-HCG actual (mUI/mL)</h4>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                            β-HCG actual (mUI/mL)
+                            {!hcgValor && (
+                              <span className="text-xs text-red-600 block font-normal mt-1">
+                                * Campo requerido - Ingrese el valor
+                              </span>
+                            )}
+                          </h4>
                           <input
                             type="number"
                             placeholder="Valor actual"

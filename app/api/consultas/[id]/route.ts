@@ -97,10 +97,11 @@ export async function PATCH(req: Request, { params }: Params) {
 
     console.log("Datos a actualizar:", updateData)
 
+    // CORREGIR: Usar el ID como string, no intentar convertir a número
     const { data, error } = await supabaseAdmin
       .from("consultas")
       .update(updateData)
-      .eq("id", params.id)
+      .eq("id", params.id) // Mantener como string
       .select()
       .single()
 

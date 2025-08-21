@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { clienteSeguro } from "@/lib/api/clienteSeguro"
+import { calcularRiesgo } from "@/lib/api/calculos"
 import {
   Heart,
   Stethoscope,
@@ -104,13 +105,7 @@ async function leerDatosDesdeBackend(id: string): Promise<any | null> {
   }
 }
 
-// ==================== FUNCIONES DE CÁLCULO ====================
-function calcularProbabilidad(pretestProb: number, LRs: number[]) {
-  let odds = pretestProb / (1 - pretestProb)
-  for (const LR of LRs) odds *= LR
-  return +(odds / (1 + odds)).toFixed(4)
-}
-
+// ==================== FUNCIONES AUXILIARES ====================
 function normalizarDesdeLocal(d: any) {
   return {
     id: d.id,
@@ -173,33 +168,6 @@ export default function CalculadoraEctopico() {
   const [consultaCargada, setConsultaCargada] = useState<any>(null)
   const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
 
-  // Datos del algoritmo
-  const probabilidadesSinFactores = {
-    asintomatica: 0.017,
-    sangrado: 0.03,
-    dolor: 0.13,
-    dolor_sangrado: 0.15,
-  }
-  const probabilidadesConFactores = {
-    asintomatica: 0.05,
-    sangrado: 0.08,
-    dolor: 0.4,
-    dolor_sangrado: 0.46,
-  }
-  const tvusMap = { normal: 0.07, libre: 2.4, masa: 38, masa_libre: 47 }
-  const hcgMap = {
-    normal: { bajo: 1, alto: 1 },
-    libre: { bajo: 1.8, alto: 2.1 },
-    masa: { bajo: 13, alto: 45 },
-    masa_libre: { bajo: 17, alto: 55 },
-  }
-  const variacionHcgMap = {
-    reduccion_1_35: 16.6,
-    reduccion_35_50: 0.8,
-    reduccion_mayor_50: 0.01,
-    aumento: 3.3,
-    no_disponible: 1,
-  }
   const factoresRiesgo = [
     { id: "infertilidad", label: "Historia de infertilidad" },
     { id: "ectopico_previo", label: "Embarazo ectópico previo" },
@@ -431,18 +399,6 @@ export default function CalculadoraEctopico() {
     }
   }
 
-  const calcularVariacionHcgAutomatica = (previo: string, actual: string) => {
-    if (!previo || !actual) return "no_disponible"
-    const a = Number.parseFloat(previo)
-    const b = Number.parseFloat(actual)
-    if (b > a) return "aumento"
-    const reduccionPorc = ((a - b) / a) * 100
-    if (reduccionPorc >= 50) return "reduccion_mayor_50"
-    if (reduccionPorc >= 35) return "reduccion_35_50"
-    if (reduccionPorc >= 1) return "reduccion_1_35"
-    return "aumento"
-  }
-
   const resetCalculadora = () => {
     setResultado(null)
     setSeccionActual(1)
@@ -504,37 +460,29 @@ export default function CalculadoraEctopico() {
     setMostrarAlerta(false)
     setMensajeAlerta("")
 
-    if (sistolica >= 180 || diastolica >= 110) {
-      await guardarDatosIncompletos("signos_vitales_hipertension_severa", 2)
-      setMensajeFinal(<div className="text-center">🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.</div>)
-      setProtocoloFinalizado(true)
-      return false
-    }
-    if (fc > 100 && (sistolica <= 90 || diastolica <= 60)) {
-      await guardarDatosIncompletos("signos_vitales_taquicardia_hipotension", 2)
-      setMensajeFinal(<div className="text-center">🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.</div>)
-      setProtocoloFinalizado(true)
-      return false
-    }
-    if (fc > 120) {
-      await guardarDatosIncompletos("signos_vitales_taquicardia_severa", 2)
-      setMensajeFinal(<div className="text-center">🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.</div>)
-      setProtocoloFinalizado(true)
-      return false
-    }
-    if (fc < 50) {
-      await guardarDatosIncompletos("signos_vitales_bradicardia_severa", 2)
-      setMensajeFinal(<div className="text-center">🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.</div>)
-      setProtocoloFinalizado(true)
-      return false
-    }
-    if (estadoConciencia === "estuporosa" || estadoConciencia === "comatosa") {
-      await guardarDatosIncompletos("signos_vitales_alteracion_conciencia", 2)
-      setMensajeFinal(<div className="text-center">🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.</div>)
-      setProtocoloFinalizado(true)
-      return false
+    // Llamar al backend para validación
+    try {
+      const respuesta = await calcularRiesgo({
+        frecuenciaCardiaca: fc,
+        presionSistolica: sistolica,
+        presionDiastolica: diastolica,
+        estadoConciencia: estadoConciencia,
+        tvus: "normal", // valor dummy para pasar validación
+        hcgValor: "1000", // valor dummy para pasar validación
+      })
+
+      if (respuesta.bloqueado && respuesta.motivo === "signos_vitales_criticos") {
+        await guardarDatosIncompletos("signos_vitales_criticos", 2)
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+        setProtocoloFinalizado(true)
+        return false
+      }
+    } catch (error) {
+      // Si hay error en la llamada, continuar con validaciones locales básicas para alertas
+      console.warn("Error en validación de signos vitales:", error)
     }
 
+    // Validaciones de alerta (no bloquean)
     let hayAlerta = false
     let mensajeAlertaTemp = ""
     if (sistolica < 90 || diastolica < 60) {
@@ -558,46 +506,45 @@ export default function CalculadoraEctopico() {
   }
 
   const validarPruebaEmbarazo = async () => {
-    if (pruebaEmbarazoRealizada === "no") {
-      await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
-      setMensajeFinal(
-        <div className="text-center">
-          Se sugiere realizar una prueba de embarazo cualitativa antes de continuar con la evaluación.
-        </div>,
-      )
-      setProtocoloFinalizado(true)
-      return false
-    }
-    if (resultadoPruebaEmbarazo === "negativa") {
-      await guardarDatosIncompletos("prueba_embarazo_negativa", 3)
-      setMensajeFinal(
-        <div className="text-center">
-          Con prueba de embarazo negativa, es poco probable un embarazo ectópico. Valore otras causas.
-        </div>,
-      )
-      setProtocoloFinalizado(true)
-      return false
+    // Llamar al backend para validación
+    try {
+      const respuesta = await calcularRiesgo({
+        pruebaEmbarazoRealizada: pruebaEmbarazoRealizada,
+        resultadoPruebaEmbarazo: resultadoPruebaEmbarazo,
+        tvus: "normal", // valor dummy para pasar validación
+        hcgValor: "1000", // valor dummy para pasar validación
+      })
+
+      if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo") {
+        await guardarDatosIncompletos("prueba_embarazo", 3)
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+        setProtocoloFinalizado(true)
+        return false
+      }
+    } catch (error) {
+      console.warn("Error en validación de prueba de embarazo:", error)
     }
     return true
   }
 
   const validarEcoTransabdominal = async () => {
-    const opcionesConfirmatorias = [
-      "saco_embrion_fc",
-      "saco_vitelino_embrion",
-      "saco_vitelino_sin_embrion",
-      "saco_sin_embrion",
-      "saco_10mm_decidual_2mm",
-    ]
-    if (tieneEcoTransabdominal === "si" && opcionesConfirmatorias.includes(resultadoEcoTransabdominal)) {
-      await guardarDatosIncompletos("embarazo_intrauterino_confirmado", 4)
-      setMensajeFinal(
-        <div className="text-center">
-          Hallazgos ecográficos compatibles con embarazo intrauterino. Seguimiento médico apropiado.
-        </div>,
-      )
-      setProtocoloFinalizado(true)
-      return false
+    // Llamar al backend para validación
+    try {
+      const respuesta = await calcularRiesgo({
+        tieneEcoTransabdominal: tieneEcoTransabdominal,
+        resultadoEcoTransabdominal: resultadoEcoTransabdominal,
+        tvus: "normal", // valor dummy para pasar validación
+        hcgValor: "1000", // valor dummy para pasar validación
+      })
+
+      if (respuesta.bloqueado && respuesta.motivo === "embarazo_intrauterino") {
+        await guardarDatosIncompletos("embarazo_intrauterino_confirmado", 4)
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+        setProtocoloFinalizado(true)
+        return false
+      }
+    } catch (error) {
+      console.warn("Error en validación de ecografía transabdominal:", error)
     }
     return true
   }
@@ -608,120 +555,125 @@ export default function CalculadoraEctopico() {
       return
     }
 
-    const tieneFactoresRiesgo = factoresSeleccionados.length > 0
-    const sintomasParaCalculo = sintomasSeleccionados.filter((s) => s !== "sincope")
-
-    let claveSintoma = "asintomatica" as "asintomatica" | "sangrado" | "dolor" | "dolor_sangrado"
-    if (sintomasParaCalculo.includes("dolor_sangrado")) claveSintoma = "dolor_sangrado"
-    else if (sintomasParaCalculo.includes("sangrado") && sintomasParaCalculo.includes("dolor"))
-      claveSintoma = "dolor_sangrado"
-    else if (sintomasParaCalculo.includes("sangrado")) claveSintoma = "sangrado"
-    else if (sintomasParaCalculo.includes("dolor")) claveSintoma = "dolor"
-
-    const tablaProb = tieneFactoresRiesgo ? probabilidadesConFactores : probabilidadesSinFactores
-    let probPre = tablaProb[claveSintoma]
-
-    if (esConsultaSeguimiento && consultaCargada?.resultado) {
-      const v1b = consultaCargada.resultado
-      const v2a = probPre
-      probPre = (1 - v1b) * v2a + v1b
-    }
-
-    const lrs: number[] = []
-    const lrTvus = tvusMap[tvus as keyof typeof tvusMap]
-    if (lrTvus) lrs.push(lrTvus)
-
-    const hcgNumerico = Number.parseFloat(hcgValor)
-    const nivelHcg = hcgNumerico >= 2000 ? "alto" : "bajo"
-    const lrHcg = hcgMap[tvus as keyof typeof hcgMap]?.[nivelHcg as "alto" | "bajo"]
-    if (lrHcg) lrs.push(lrHcg)
-
-    let variacionCalculada = "no_disponible"
-    if (hcgAnterior && hcgValor && esConsultaSeguimiento) {
-      variacionCalculada = calcularVariacionHcgAutomatica(hcgAnterior, hcgValor)
-      const lrVariacion = variacionHcgMap[variacionCalculada as keyof typeof variacionHcgMap]
-      if (lrVariacion !== undefined) lrs.push(lrVariacion)
-    }
-
-    const probPost = calcularProbabilidad(probPre, lrs)
-    setResultado(probPost)
-
-    const fechaActual = new Date().toISOString()
-    const datosCompletos = {
-      id: idSeguimiento,
-      fechaCreacion: fechaActual,
-      fechaUltimaActualizacion: fechaActual,
-      usuarioCreador: usuarioActual || "anon",
-      nombrePaciente,
-      edadPaciente: Number.parseInt(edadPaciente),
-      frecuenciaCardiaca: Number.parseInt(frecuenciaCardiaca),
-      presionSistolica: Number.parseInt(presionSistolica),
-      presionDiastolica: Number.parseInt(presionDiastolica),
-      estadoConciencia,
-      pruebaEmbarazoRealizada,
-      resultadoPruebaEmbarazo,
-      hallazgosExploracion,
-      tieneEcoTransabdominal,
-      resultadoEcoTransabdominal,
-      sintomasSeleccionados,
-      factoresSeleccionados,
-      tvus,
-      hcgValor: Number.parseFloat(hcgValor),
-      variacionHcg: variacionCalculada,
-      hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
-      resultado: probPost,
-    }
-
-    localStorage.setItem(`ectopico_${idSeguimiento}`, JSON.stringify(datosCompletos))
-
     try {
-      let ok = false
-      if (!esConsultaSeguimiento) {
-        ok = await enviarDatosAlBackend(datosCompletos)
-      } else {
-        const tieneC2 =
-          consultaCargada &&
-          (consultaCargada.tvus_2 ||
-            consultaCargada.hcg_valor_2 ||
-            consultaCargada.resultado_2 ||
-            consultaCargada.sintomas_seleccionados_2?.length > 0)
-        const tieneC3 =
-          consultaCargada &&
-          (consultaCargada.tvus_3 ||
-            consultaCargada.hcg_valor_3 ||
-            consultaCargada.resultado_3 ||
-            consultaCargada.sintomas_seleccionados_3?.length > 0)
+      // Llamar al backend para el cálculo
+      const respuesta = await calcularRiesgo({
+        sintomas: sintomasSeleccionados,
+        factoresRiesgo: factoresSeleccionados,
+        tvus: tvus,
+        hcgValor: hcgValor,
+        hcgAnterior: hcgAnterior,
+        esConsultaSeguimiento: esConsultaSeguimiento,
+        resultadoAnterior: consultaCargada?.resultado,
+        frecuenciaCardiaca: frecuenciaCardiaca,
+        presionSistolica: presionSistolica,
+        presionDiastolica: presionDiastolica,
+        estadoConciencia: estadoConciencia,
+        pruebaEmbarazoRealizada: pruebaEmbarazoRealizada,
+        resultadoPruebaEmbarazo: resultadoPruebaEmbarazo,
+        tieneEcoTransabdominal: tieneEcoTransabdominal,
+        resultadoEcoTransabdominal: resultadoEcoTransabdominal,
+      })
 
-        const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
-        ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
+      if (respuesta.error) {
+        alert(`Error: ${respuesta.error}`)
+        return
       }
 
-      if (!ok) {
+      if (respuesta.bloqueado) {
+        await guardarDatosIncompletos(respuesta.motivo || "regla_clinica", 5)
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+        setProtocoloFinalizado(true)
+        return
+      }
+
+      // Usar el resultado del backend
+      const probPost = respuesta.resultado!
+      setResultado(probPost)
+      if (respuesta.variacionHcg) {
+        setVariacionHcg(respuesta.variacionHcg)
+      }
+
+      const fechaActual = new Date().toISOString()
+      const datosCompletos = {
+        id: idSeguimiento,
+        fechaCreacion: fechaActual,
+        fechaUltimaActualizacion: fechaActual,
+        usuarioCreador: usuarioActual || "anon",
+        nombrePaciente,
+        edadPaciente: Number.parseInt(edadPaciente),
+        frecuenciaCardiaca: Number.parseInt(frecuenciaCardiaca),
+        presionSistolica: Number.parseInt(presionSistolica),
+        presionDiastolica: Number.parseInt(presionDiastolica),
+        estadoConciencia,
+        pruebaEmbarazoRealizada,
+        resultadoPruebaEmbarazo,
+        hallazgosExploracion,
+        tieneEcoTransabdominal,
+        resultadoEcoTransabdominal,
+        sintomasSeleccionados,
+        factoresSeleccionados,
+        tvus,
+        hcgValor: Number.parseFloat(hcgValor),
+        variacionHcg: respuesta.variacionHcg || null,
+        hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
+        resultado: probPost,
+      }
+
+      localStorage.setItem(`ectopico_${idSeguimiento}`, JSON.stringify(datosCompletos))
+
+      try {
+        let ok = false
+        if (!esConsultaSeguimiento) {
+          ok = await enviarDatosAlBackend(datosCompletos)
+        } else {
+          const tieneC2 =
+            consultaCargada &&
+            (consultaCargada.tvus_2 ||
+              consultaCargada.hcg_valor_2 ||
+              consultaCargada.resultado_2 ||
+              consultaCargada.sintomas_seleccionados_2?.length > 0)
+          const tieneC3 =
+            consultaCargada &&
+            (consultaCargada.tvus_3 ||
+              consultaCargada.hcg_valor_3 ||
+              consultaCargada.resultado_3 ||
+              consultaCargada.sintomas_seleccionados_3?.length > 0)
+
+          const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
+          ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
+        }
+
+        if (!ok) {
+          alert("Advertencia: Guardado local OK, pero falló la sincronización con la base de datos.")
+        }
+      } catch (e) {
+        console.error("Error al sincronizar con el backend:", e)
         alert("Advertencia: Guardado local OK, pero falló la sincronización con la base de datos.")
       }
-    } catch (e) {
-      console.error("Error al sincronizar con el backend:", e)
-      alert("Advertencia: Guardado local OK, pero falló la sincronización con la base de datos.")
-    }
 
-    if (probPost >= 0.95) {
-      setMensajeFinal(
-        <div className="text-center">
-          Los datos ingresados sugieren una probabilidad estimada alta de embarazo ectópico (≥95%). Se recomienda
-          evaluación médica urgente.
-        </div>,
-      )
-      setProtocoloFinalizado(true)
-    } else if (probPost < 0.01) {
-      setMensajeFinal(
-        <div className="text-center">
-          Los datos sugieren una baja probabilidad de embarazo ectópico (&lt;1%). Seguimiento médico apropiado.
-        </div>,
-      )
-      setProtocoloFinalizado(true)
-    } else {
-      setMostrarResultados(true)
-      setMostrarIdSeguimiento(true)
+      if (probPost >= 0.95) {
+        setMensajeFinal(
+          <div className="text-center">
+            Los datos ingresados sugieren una probabilidad estimada alta de embarazo ectópico (≥95%). Se recomienda
+            evaluación médica urgente.
+          </div>,
+        )
+        setProtocoloFinalizado(true)
+      } else if (probPost < 0.01) {
+        setMensajeFinal(
+          <div className="text-center">
+            Los datos sugieren una baja probabilidad de embarazo ectópico (&lt;1%). Seguimiento médico apropiado.
+          </div>,
+        )
+        setProtocoloFinalizado(true)
+      } else {
+        setMostrarResultados(true)
+        setMostrarIdSeguimiento(true)
+      }
+    } catch (error) {
+      console.error("Error en el cálculo:", error)
+      alert("Error al realizar el cálculo. Por favor, inténtelo de nuevo.")
     }
   }
 

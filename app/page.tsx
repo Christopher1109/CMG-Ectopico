@@ -59,12 +59,10 @@ function generarIdUnico(): string {
 // Arreglar la función enviarDatosAlBackend para incluir el ID generado
 async function enviarDatosAlBackend(datos: any): Promise<{ success: boolean; id?: string }> {
   try {
-    // GENERAR ID ÚNICO AQUÍ
-    const idUnico = generarIdUnico()
-    console.log("🆔 Generando ID único:", idUnico)
+    console.log("📤 Enviando datos con ID:", datos.id)
 
     const payload = {
-      id: idUnico, // INCLUIR EL ID GENERADO
+      id: datos.id, // USAR EL ID QUE YA VIENE EN LOS DATOS
       usuario_creador: datos.usuarioCreador || null,
       nombre_paciente: datos.nombrePaciente || "N/A",
       edad_paciente: Number.isFinite(+datos.edadPaciente) ? +datos.edadPaciente : null,
@@ -86,18 +84,16 @@ async function enviarDatosAlBackend(datos: any): Promise<{ success: boolean; id?
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
     }
 
-    console.log("📤 Enviando payload con ID:", payload.id)
-
     const res = await crearConsulta(payload)
     if (res?.error) {
-      console.error("❌ API /api/consultas error:", res.error)
+      console.error("❌ API error:", res.error)
       return { success: false }
     }
 
-    console.log("✅ Consulta creada exitosamente con ID:", idUnico)
-    return { success: true, id: idUnico }
+    console.log("✅ Consulta creada exitosamente")
+    return { success: true, id: datos.id }
   } catch (e) {
-    console.error("❌ Error llamando /api/consultas:", e)
+    console.error("❌ Error llamando API:", e)
     return { success: false }
   }
 }
@@ -301,8 +297,12 @@ export default function CalculadoraEctopico() {
       const fechaActual = new Date().toISOString()
       const idUnico = generarIdUnico() // GENERAR ID ÚNICO
 
+      // ASIGNAR ID INMEDIATAMENTE
+      setIdSeguimiento(idUnico)
+      console.log("🆔 ID generado para datos incompletos:", idUnico)
+
       const datosIncompletos = {
-        id: idUnico, // USAR ID ÚNICO
+        id: idUnico,
         fechaCreacion: fechaActual,
         fechaUltimaActualizacion: fechaActual,
         usuarioCreador: usuarioActual || "anon",
@@ -329,17 +329,18 @@ export default function CalculadoraEctopico() {
         consultaCompleta: false,
       }
 
-      // Guardar localmente
+      // Guardar localmente SIEMPRE
       localStorage.setItem(`ectopico_${idUnico}`, JSON.stringify(datosIncompletos))
+      console.log("💾 Datos incompletos guardados localmente:", idUnico)
 
-      // Intentar sincronizar con base de datos
-      const resultadoSync = await enviarDatosAlBackend(datosIncompletos)
-
-      if (resultadoSync.success && resultadoSync.id) {
-        setIdSeguimiento(resultadoSync.id)
-        console.log("✅ Datos incompletos guardados con ID:", resultadoSync.id)
-      } else {
-        console.warn("⚠️ Datos guardados localmente, pero falló la sincronización con la base de datos")
+      // Intentar sincronizar (en segundo plano)
+      try {
+        const resultadoSync = await enviarDatosAlBackend(datosIncompletos)
+        if (resultadoSync.success) {
+          console.log("✅ Datos incompletos sincronizados")
+        }
+      } catch (error) {
+        console.warn("⚠️ Error en sincronización, pero guardado localmente")
       }
 
       return true
@@ -681,6 +682,14 @@ export default function CalculadoraEctopico() {
       return
     }
 
+    // 🆔 GENERAR ID INMEDIATAMENTE AL INICIO
+    let idGenerado = idSeguimiento
+    if (!esConsultaSeguimiento) {
+      idGenerado = generarIdUnico()
+      setIdSeguimiento(idGenerado)
+      console.log("🆔 ID generado:", idGenerado)
+    }
+
     const tieneFactoresRiesgo = factoresSeleccionados.length > 0
     const sintomasParaCalculo = sintomasSeleccionados.filter((s) => s !== "sincope")
 
@@ -727,6 +736,7 @@ export default function CalculadoraEctopico() {
 
     const fechaActual = new Date().toISOString()
     const datosCompletos = {
+      id: idGenerado, // USAR EL ID GENERADO
       fechaCreacion: fechaActual,
       fechaUltimaActualizacion: fechaActual,
       usuarioCreador: usuarioActual || "anon",
@@ -750,47 +760,33 @@ export default function CalculadoraEctopico() {
       resultado: probPost,
     }
 
-    try {
-      let resultadoSync = { success: false, id: "" }
+    // Guardar localmente SIEMPRE
+    localStorage.setItem(`ectopico_${idGenerado}`, JSON.stringify(datosCompletos))
+    console.log("💾 Guardado localmente con ID:", idGenerado)
 
+    // Intentar sincronizar con base de datos (en segundo plano)
+    try {
       if (!esConsultaSeguimiento) {
-        // Nueva consulta - generar ID y guardar
-        resultadoSync = await enviarDatosAlBackend(datosCompletos)
-        if (resultadoSync.success && resultadoSync.id) {
-          setIdSeguimiento(resultadoSync.id)
-          console.log("✅ Nueva consulta guardada con ID:", resultadoSync.id)
+        const resultadoSync = await enviarDatosAlBackend(datosCompletos)
+        if (resultadoSync.success) {
+          console.log("✅ Sincronizado con base de datos:", idGenerado)
+        } else {
+          console.warn("⚠️ Error en sincronización, pero datos guardados localmente")
         }
       } else {
-        // Consulta de seguimiento - actualizar existente
         const tieneC2 =
-          consultaCargada &&
-          (consultaCargada.tvus_2 ||
-            consultaCargada.hcg_valor_2 ||
-            consultaCargada.resultado_2 ||
-            consultaCargada.sintomas_seleccionados_2?.length > 0)
+          consultaCargada && (consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2)
         const tieneC3 =
-          consultaCargada &&
-          (consultaCargada.tvus_3 ||
-            consultaCargada.hcg_valor_3 ||
-            consultaCargada.resultado_3 ||
-            consultaCargada.sintomas_seleccionados_3?.length > 0)
-
+          consultaCargada && (consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3)
         const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
-        const actualizacionExitosa = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
 
+        const actualizacionExitosa = await actualizarDatosEnBackend(idGenerado, visitaNo, datosCompletos)
         if (actualizacionExitosa) {
-          console.log("✅ Consulta de seguimiento actualizada:", idSeguimiento)
-          resultadoSync = { success: true, id: idSeguimiento }
+          console.log("✅ Consulta de seguimiento actualizada:", idGenerado)
         }
       }
-
-      if (!resultadoSync.success) {
-        console.warn("⚠️ Error en sincronización con base de datos")
-        // NO mostrar alert, solo log
-      }
     } catch (e) {
-      console.error("❌ Error al sincronizar con el backend:", e)
-      // NO mostrar alert, solo log
+      console.error("❌ Error al sincronizar:", e)
     }
 
     if (probPost >= 0.95) {

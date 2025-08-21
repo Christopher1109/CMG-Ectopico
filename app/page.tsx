@@ -2010,67 +2010,66 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo</h2>
                     </div>
 
-                    <div className="space-y-6">
+                    {/* Reemplazar la sección de botones Sí/No en Prueba de Embarazo */}
+                    <div className="space-y-3">
+                      <Label className="text-base font-medium text-slate-700">
+                        ¿Se realizó prueba de embarazo cualitativa?
+                      </Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
+                          <input
+                            type="radio"
+                            name="pruebaEmbarazo"
+                            value="si"
+                            checked={pruebaEmbarazoRealizada === "si"}
+                            onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
+                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <span className="text-base font-medium text-slate-700">Sí</span>
+                        </label>
+                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
+                          <input
+                            type="radio"
+                            name="pruebaEmbarazo"
+                            value="no"
+                            checked={pruebaEmbarazoRealizada === "no"}
+                            onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
+                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <span className="text-base font-medium text-slate-700">No</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {pruebaEmbarazoRealizada === "si" && (
                       <div className="space-y-3">
-                        <Label className="text-base font-medium text-slate-700">
-                          ¿Se realizó prueba de embarazo cualitativa?
-                        </Label>
-                        <div className="flex space-x-4">
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                        <Label className="text-base font-medium text-slate-700">Resultado de la prueba</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
                             <input
                               type="radio"
-                              name="pruebaEmbarazo"
-                              value="si"
-                              checked={pruebaEmbarazoRealizada === "si"}
-                              onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                              name="resultadoPrueba"
+                              value="positiva"
+                              checked={resultadoPruebaEmbarazo === "positiva"}
+                              onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
+                              className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
-                            <span className="text-sm font-medium text-slate-700">Sí</span>
+                            <span className="text-base font-medium text-slate-700">Positiva</span>
                           </label>
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
                             <input
                               type="radio"
-                              name="pruebaEmbarazo"
-                              value="no"
-                              checked={pruebaEmbarazoRealizada === "no"}
-                              onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                              name="resultadoPrueba"
+                              value="negativa"
+                              checked={resultadoPruebaEmbarazo === "negativa"}
+                              onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
+                              className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
-                            <span className="text-sm font-medium text-slate-700">No</span>
+                            <span className="text-base font-medium text-slate-700">Negativa</span>
                           </label>
                         </div>
                       </div>
-
-                      {pruebaEmbarazoRealizada === "si" && (
-                        <div className="space-y-3">
-                          <Label className="text-base font-medium text-slate-700">Resultado de la prueba</Label>
-                          <div className="flex space-x-4">
-                            <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="resultadoPrueba"
-                                value="positiva"
-                                checked={resultadoPruebaEmbarazo === "positiva"}
-                                onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                              />
-                              <span className="text-sm font-medium text-slate-700">Positiva</span>
-                            </label>
-                            <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="resultadoPrueba"
-                                value="negativa"
-                                checked={resultadoPruebaEmbarazo === "negativa"}
-                                onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                              />
-                              <span className="text-sm font-medium text-slate-700">Negativa</span>
-                            </label>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    )}
 
                     <div className="flex justify-between">
                       <Button
@@ -2114,30 +2113,31 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         />
                       </div>
 
+                      {/* Reemplazar la sección de botones Sí/No en Ecografía */}
                       <div className="space-y-3">
                         <Label className="text-base font-medium text-slate-700">¿Tiene ecografía transabdominal?</Label>
-                        <div className="flex space-x-4">
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                        <div className="grid grid-cols-2 gap-4">
+                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
                             <input
                               type="radio"
                               name="tieneEco"
                               value="si"
                               checked={tieneEcoTransabdominal === "si"}
                               onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                              className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
-                            <span className="text-sm font-medium text-slate-700">Sí</span>
+                            <span className="text-base font-medium text-slate-700">Sí</span>
                           </label>
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
                             <input
                               type="radio"
                               name="tieneEco"
                               value="no"
                               checked={tieneEcoTransabdominal === "no"}
                               onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                              className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
-                            <span className="text-sm font-medium text-slate-700">No</span>
+                            <span className="text-base font-medium text-slate-700">No</span>
                           </label>
                         </div>
                       </div>

@@ -39,6 +39,7 @@ const USUARIOS_AUTORIZADOS = [
 ]
 
 // ==================== FUNCIÓN PARA GENERAR ID ÚNICO ====================
+// Cambiar la función generarIdUnico para que genere IDs más simples y únicos
 function generarIdUnico(): string {
   const fecha = new Date()
   const año = fecha.getFullYear().toString().slice(-2)
@@ -55,10 +56,12 @@ function generarIdUnico(): string {
 }
 
 // ==================== HELPERS API ====================
+// Arreglar la función enviarDatosAlBackend para incluir el ID generado
 async function enviarDatosAlBackend(datos: any): Promise<{ success: boolean; id?: string }> {
   try {
-    // Generar ID único si no existe
-    const idUnico = datos.id || generarIdUnico()
+    // GENERAR ID ÚNICO AQUÍ
+    const idUnico = generarIdUnico()
+    console.log("🆔 Generando ID único:", idUnico)
 
     const payload = {
       id: idUnico, // INCLUIR EL ID GENERADO
@@ -83,18 +86,18 @@ async function enviarDatosAlBackend(datos: any): Promise<{ success: boolean; id?
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
     }
 
-    console.log("Enviando payload con ID:", payload.id)
+    console.log("📤 Enviando payload con ID:", payload.id)
 
     const res = await crearConsulta(payload)
     if (res?.error) {
-      console.error("API /api/consultas error:", res.error)
+      console.error("❌ API /api/consultas error:", res.error)
       return { success: false }
     }
 
-    console.log("Consulta creada exitosamente con ID:", idUnico)
+    console.log("✅ Consulta creada exitosamente con ID:", idUnico)
     return { success: true, id: idUnico }
   } catch (e) {
-    console.error("Error llamando /api/consultas:", e)
+    console.error("❌ Error llamando /api/consultas:", e)
     return { success: false }
   }
 }
@@ -292,6 +295,7 @@ export default function CalculadoraEctopico() {
   const [hcgAnterior, setHcgAnterior] = useState("")
 
   // ==================== FUNCIÓN PARA GUARDAR DATOS INCOMPLETOS ====================
+  // Arreglar la función guardarDatosIncompletos para usar el ID generado
   async function guardarDatosIncompletos(motivoFinalizacion: string, seccionCompletada: number): Promise<boolean> {
     try {
       const fechaActual = new Date().toISOString()
@@ -333,14 +337,14 @@ export default function CalculadoraEctopico() {
 
       if (resultadoSync.success && resultadoSync.id) {
         setIdSeguimiento(resultadoSync.id)
-        console.log("Datos incompletos guardados con ID:", resultadoSync.id)
+        console.log("✅ Datos incompletos guardados con ID:", resultadoSync.id)
       } else {
-        console.warn("Datos guardados localmente, pero falló la sincronización con la base de datos")
+        console.warn("⚠️ Datos guardados localmente, pero falló la sincronización con la base de datos")
       }
 
       return true
     } catch (error) {
-      console.error("Error al guardar datos incompletos:", error)
+      console.error("❌ Error al guardar datos incompletos:", error)
       return false
     }
   }
@@ -670,6 +674,7 @@ export default function CalculadoraEctopico() {
     return true
   }
 
+  // Arreglar la función calcular para generar y usar el ID correctamente
   const calcular = async () => {
     if (!tvus || !hcgValor) {
       alert("Por favor complete todos los campos requeridos: TVUS y β-hCG")
@@ -781,15 +786,11 @@ export default function CalculadoraEctopico() {
 
       if (!resultadoSync.success) {
         console.warn("⚠️ Error en sincronización con base de datos")
-        alert(
-          "Advertencia: Los datos se guardaron localmente, pero hubo un problema con la sincronización a la base de datos.",
-        )
+        // NO mostrar alert, solo log
       }
     } catch (e) {
       console.error("❌ Error al sincronizar con el backend:", e)
-      alert(
-        "Advertencia: Los datos se guardaron localmente, pero hubo un problema con la sincronización a la base de datos.",
-      )
+      // NO mostrar alert, solo log
     }
 
     if (probPost >= 0.95) {

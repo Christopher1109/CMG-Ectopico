@@ -453,36 +453,14 @@ export default function CalculadoraEctopico() {
   }
 
   const validarSignosVitales = async () => {
+    setMostrarAlerta(false)
+    setMensajeAlerta("")
+
+    // Validaciones de alerta (no bloquean) - solo para mostrar sugerencias
     const fc = Number.parseFloat(frecuenciaCardiaca)
     const sistolica = Number.parseFloat(presionSistolica)
     const diastolica = Number.parseFloat(presionDiastolica)
 
-    setMostrarAlerta(false)
-    setMensajeAlerta("")
-
-    // Llamar al backend para validación
-    try {
-      const respuesta = await calcularRiesgo({
-        frecuenciaCardiaca: fc,
-        presionSistolica: sistolica,
-        presionDiastolica: diastolica,
-        estadoConciencia: estadoConciencia,
-        tvus: "normal", // valor dummy para pasar validación
-        hcgValor: "1000", // valor dummy para pasar validación
-      })
-
-      if (respuesta.bloqueado && respuesta.motivo === "signos_vitales_criticos") {
-        await guardarDatosIncompletos("signos_vitales_criticos", 2)
-        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-        setProtocoloFinalizado(true)
-        return false
-      }
-    } catch (error) {
-      // Si hay error en la llamada, continuar con validaciones locales básicas para alertas
-      console.warn("Error en validación de signos vitales:", error)
-    }
-
-    // Validaciones de alerta (no bloquean)
     let hayAlerta = false
     let mensajeAlertaTemp = ""
     if (sistolica < 90 || diastolica < 60) {
@@ -506,46 +484,10 @@ export default function CalculadoraEctopico() {
   }
 
   const validarPruebaEmbarazo = async () => {
-    // Llamar al backend para validación
-    try {
-      const respuesta = await calcularRiesgo({
-        pruebaEmbarazoRealizada: pruebaEmbarazoRealizada,
-        resultadoPruebaEmbarazo: resultadoPruebaEmbarazo,
-        tvus: "normal", // valor dummy para pasar validación
-        hcgValor: "1000", // valor dummy para pasar validación
-      })
-
-      if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo") {
-        await guardarDatosIncompletos("prueba_embarazo", 3)
-        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-        setProtocoloFinalizado(true)
-        return false
-      }
-    } catch (error) {
-      console.warn("Error en validación de prueba de embarazo:", error)
-    }
     return true
   }
 
   const validarEcoTransabdominal = async () => {
-    // Llamar al backend para validación
-    try {
-      const respuesta = await calcularRiesgo({
-        tieneEcoTransabdominal: tieneEcoTransabdominal,
-        resultadoEcoTransabdominal: resultadoEcoTransabdominal,
-        tvus: "normal", // valor dummy para pasar validación
-        hcgValor: "1000", // valor dummy para pasar validación
-      })
-
-      if (respuesta.bloqueado && respuesta.motivo === "embarazo_intrauterino") {
-        await guardarDatosIncompletos("embarazo_intrauterino_confirmado", 4)
-        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-        setProtocoloFinalizado(true)
-        return false
-      }
-    } catch (error) {
-      console.warn("Error en validación de ecografía transabdominal:", error)
-    }
     return true
   }
 
@@ -652,20 +594,9 @@ export default function CalculadoraEctopico() {
         alert("Advertencia: Guardado local OK, pero falló la sincronización con la base de datos.")
       }
 
-      if (probPost >= 0.95) {
-        setMensajeFinal(
-          <div className="text-center">
-            Los datos ingresados sugieren una probabilidad estimada alta de embarazo ectópico (≥95%). Se recomienda
-            evaluación médica urgente.
-          </div>,
-        )
-        setProtocoloFinalizado(true)
-      } else if (probPost < 0.01) {
-        setMensajeFinal(
-          <div className="text-center">
-            Los datos sugieren una baja probabilidad de embarazo ectópico (&lt;1%). Seguimiento médico apropiado.
-          </div>,
-        )
+      // Usar tipoResultado del backend para determinar el flujo
+      if (respuesta.tipoResultado === "finalizado") {
+        setMensajeFinal(<div className="text-center">{respuesta.textoApoyo}</div>)
         setProtocoloFinalizado(true)
       } else {
         setMostrarResultados(true)

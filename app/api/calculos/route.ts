@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// ==================== LÓGICA CLÍNICA Y BAYESIANA ====================
+// ==================== LÓGICA CLÍNICA Y BAYESIANA (SOLO EN BACKEND) ====================
 
 // Probabilidades pretest por síntomas
 const PROBABILIDADES_SIN_FACTORES = {
@@ -80,11 +80,12 @@ function validarSignosVitalesCriticos(
   presionSistolica: number,
   presionDiastolica: number,
   estadoConciencia: string,
-): { bloqueado: boolean; mensaje?: string } {
+): { bloqueado: boolean; mensaje?: string; motivo?: string } {
   if (presionSistolica >= 180 || presionDiastolica >= 110) {
     return {
       bloqueado: true,
       mensaje: "🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.",
+      motivo: "signos_vitales_hipertension_severa",
     }
   }
 
@@ -92,6 +93,7 @@ function validarSignosVitalesCriticos(
     return {
       bloqueado: true,
       mensaje: "🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.",
+      motivo: "signos_vitales_taquicardia_hipotension",
     }
   }
 
@@ -99,6 +101,7 @@ function validarSignosVitalesCriticos(
     return {
       bloqueado: true,
       mensaje: "🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.",
+      motivo: "signos_vitales_taquicardia_severa",
     }
   }
 
@@ -106,6 +109,7 @@ function validarSignosVitalesCriticos(
     return {
       bloqueado: true,
       mensaje: "🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.",
+      motivo: "signos_vitales_bradicardia_severa",
     }
   }
 
@@ -113,6 +117,7 @@ function validarSignosVitalesCriticos(
     return {
       bloqueado: true,
       mensaje: "🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.",
+      motivo: "signos_vitales_alteracion_conciencia",
     }
   }
 
@@ -122,11 +127,12 @@ function validarSignosVitalesCriticos(
 function validarPruebaEmbarazo(
   pruebaRealizada: string,
   resultadoPrueba: string,
-): { bloqueado: boolean; mensaje?: string } {
+): { bloqueado: boolean; mensaje?: string; motivo?: string } {
   if (pruebaRealizada === "no") {
     return {
       bloqueado: true,
       mensaje: "Se sugiere realizar una prueba de embarazo cualitativa antes de continuar con la evaluación.",
+      motivo: "prueba_embarazo_no_realizada",
     }
   }
 
@@ -134,13 +140,17 @@ function validarPruebaEmbarazo(
     return {
       bloqueado: true,
       mensaje: "Con prueba de embarazo negativa, es poco probable un embarazo ectópico. Valore otras causas.",
+      motivo: "prueba_embarazo_negativa",
     }
   }
 
   return { bloqueado: false }
 }
 
-function validarEcoTransabdominal(tieneEco: string, resultadoEco: string): { bloqueado: boolean; mensaje?: string } {
+function validarEcoTransabdominal(
+  tieneEco: string,
+  resultadoEco: string,
+): { bloqueado: boolean; mensaje?: string; motivo?: string } {
   const opcionesConfirmatorias = [
     "saco_embrion_fc",
     "saco_vitelino_embrion",
@@ -153,6 +163,7 @@ function validarEcoTransabdominal(tieneEco: string, resultadoEco: string): { blo
     return {
       bloqueado: true,
       mensaje: "Hallazgos ecográficos compatibles con embarazo intrauterino. Seguimiento médico apropiado.",
+      motivo: "embarazo_intrauterino_confirmado",
     }
   }
 
@@ -173,6 +184,11 @@ function clasificarRiesgo(probabilidad: number): "alto" | "bajo" | "intermedio" 
   if (probabilidad >= 0.95) return "alto"
   if (probabilidad < 0.01) return "bajo"
   return "intermedio"
+}
+
+function determinarTipoResultado(probabilidad: number): "finalizado" | "seguimiento" {
+  if (probabilidad >= 0.95 || probabilidad < 0.01) return "finalizado"
+  return "seguimiento"
 }
 
 // ==================== ENDPOINT ====================
@@ -213,7 +229,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           bloqueado: true,
           mensaje: validacionSignos.mensaje,
-          motivo: "signos_vitales_criticos",
+          motivo: validacionSignos.motivo,
+          tipoResultado: "finalizado",
         })
       }
     }
@@ -225,7 +242,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           bloqueado: true,
           mensaje: validacionEmbarazo.mensaje,
-          motivo: "prueba_embarazo",
+          motivo: validacionEmbarazo.motivo,
+          tipoResultado: "finalizado",
         })
       }
     }
@@ -237,7 +255,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           bloqueado: true,
           mensaje: validacionEco.mensaje,
-          motivo: "embarazo_intrauterino",
+          motivo: validacionEco.motivo,
+          tipoResultado: "finalizado",
         })
       }
     }
@@ -295,6 +314,7 @@ export async function POST(request: NextRequest) {
     const porcentaje = Number((probabilidadPosterior * 100).toFixed(1))
     const clasificacion = clasificarRiesgo(probabilidadPosterior)
     const textoApoyo = generarTextoApoyo(probabilidadPosterior)
+    const tipoResultado = determinarTipoResultado(probabilidadPosterior)
 
     return NextResponse.json({
       bloqueado: false,
@@ -302,6 +322,7 @@ export async function POST(request: NextRequest) {
       porcentaje,
       clasificacion,
       textoApoyo,
+      tipoResultado,
       variacionHcg: esConsultaSeguimiento ? variacionHcg : undefined,
     })
   } catch (error) {

@@ -20,6 +20,7 @@ interface CalculoResponse {
   bloqueado: boolean
   mensaje?: string
   motivo?: string
+  tipoResultado?: "finalizado" | "seguimiento"
   resultado?: number
   porcentaje?: number
   clasificacion?: "alto" | "bajo" | "intermedio"

@@ -1,17 +1,13 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { NextResponse } from "next/server"
+import { supabaseAdmin } from "@/lib/supabaseAdmin"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+type Params = { params: { id: string } }
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: Params) {
   try {
-    const { data, error } = await supabase.from("consultas").select("*").eq("id", params.id).single()
+    const { data, error } = await supabaseAdmin.from("consultas").select("*").eq("id", params.id).single()
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 404 })
-    }
+    if (error) return NextResponse.json({ error: error.message }, { status: 404 })
 
     // Mapear del esquema de base de datos al formato frontend
     const consultaNormalizada = {
@@ -56,74 +52,77 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     return NextResponse.json({ data: consultaNormalizada })
-  } catch (error) {
-    console.error("Error in GET /api/consultas/[id]:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  } catch (e: any) {
+    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: Params) {
   try {
-    const body = await request.json()
-    const visitaNo = body.visitaNo || 2 // Por defecto segunda consulta
+    const body = await req.json()
+    const { searchParams } = new URL(req.url)
+    const visita = searchParams.get("visita") // 2 o 3
 
-    let updateData: any = {}
+    console.log("PATCH recibido:", { id: params.id, visita, body })
 
-    if (visitaNo === 2) {
-      updateData = {
-        Sintomas_2: Array.isArray(body.sintomas_seleccionados)
-          ? body.sintomas_seleccionados.join(", ")
-          : body.sintomas_seleccionados || null,
-        Factores_2: Array.isArray(body.factores_seleccionados)
-          ? body.factores_seleccionados.join(", ")
-          : body.factores_seleccionados || null,
-        TVUS_2: body.tvus || null,
-        hCG_2: body.hcg_valor || null,
-        Variacion_hCG_2: body.variacion_hcg || null,
-        Pronostico_2: body.resultado ? `${(body.resultado * 100).toFixed(1)}%` : null,
-        Consulta_2_Date: new Date().toISOString(),
-      }
-    } else if (visitaNo === 3) {
-      updateData = {
-        Sintomas_3: Array.isArray(body.sintomas_seleccionados)
-          ? body.sintomas_seleccionados.join(", ")
-          : body.sintomas_seleccionados || null,
-        Factores_3: Array.isArray(body.factores_seleccionados)
-          ? body.factores_seleccionados.join(", ")
-          : body.factores_seleccionados || null,
-        TVUS_3: body.tvus || null,
-        hCG_3: body.hcg_valor || null,
-        Variacion_hCG_3: body.variacion_hcg || null,
-        Pronostico_3: body.resultado ? `${(body.resultado * 100).toFixed(1)}%` : null,
-        Consulta_3_Date: new Date().toISOString(),
-      }
+    // Preparar el objeto de actualización usando TU esquema
+    const updateData: Record<string, any> = {}
+
+    // Si es consulta de seguimiento (visita 2 o 3), mapear campos con sufijo
+    if (visita === "2") {
+      updateData.Sintomas_2 = Array.isArray(body.sintomas_seleccionados)
+        ? body.sintomas_seleccionados.join(", ")
+        : body.sintomas_seleccionados || null
+      updateData.Factores_2 = Array.isArray(body.factores_seleccionados)
+        ? body.factores_seleccionados.join(", ")
+        : body.factores_seleccionados || null
+      updateData.TVUS_2 = body.tvus || null
+      updateData.hCG_2 = body.hcg_valor != null ? Number(body.hcg_valor) : null
+      updateData.Variacion_hCG_2 = body.variacion_hcg || null
+      updateData.Pronostico_2 = body.resultado ? `${(body.resultado * 100).toFixed(1)}%` : null
+      updateData.Consulta_2_Date = new Date().toISOString()
+    } else if (visita === "3") {
+      updateData.Sintomas_3 = Array.isArray(body.sintomas_seleccionados)
+        ? body.sintomas_seleccionados.join(", ")
+        : body.sintomas_seleccionados || null
+      updateData.Factores_3 = Array.isArray(body.factores_seleccionados)
+        ? body.factores_seleccionados.join(", ")
+        : body.factores_seleccionados || null
+      updateData.TVUS_3 = body.tvus || null
+      updateData.hCG_3 = body.hcg_valor != null ? Number(body.hcg_valor) : null
+      updateData.Variacion_hCG_3 = body.variacion_hcg || null
+      updateData.Pronostico_3 = body.resultado ? `${(body.resultado * 100).toFixed(1)}%` : null
+      updateData.Consulta_3_Date = new Date().toISOString()
     }
 
-    const { data, error } = await supabase.from("consultas").update(updateData).eq("id", params.id).select()
+    console.log("Datos a actualizar:", updateData)
+
+    const { data, error } = await supabaseAdmin
+      .from("consultas")
+      .update(updateData)
+      .eq("id", params.id)
+      .select()
+      .single()
 
     if (error) {
-      console.error("Error updating consulta:", error)
+      console.error("Error de Supabase:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ data: data[0] })
-  } catch (error) {
-    console.error("Error in PATCH /api/consultas/[id]:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.log("Actualización exitosa:", data)
+    return NextResponse.json({ data })
+  } catch (e: any) {
+    console.error("Error en PATCH:", e)
+    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: Params) {
   try {
-    const { error } = await supabase.from("consultas").delete().eq("id", params.id)
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ message: "Consulta deleted successfully" })
-  } catch (error) {
-    console.error("Error in DELETE /api/consultas/[id]:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    const { error } = await supabaseAdmin.from("consultas").delete().eq("id", params.id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  } catch (e: any) {
+    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
 }

@@ -23,28 +23,35 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
+    // IMPORTANTE: Usar un UUID real o generar uno válido
+    // Para pruebas, usamos un UUID fijo. En producción deberías usar auth.uid()
+    const testUUID = "550e8400-e29b-41d4-a716-446655440000"
+
     const payload = {
-      dr: body.usuarioCreador || body.dr || "Dr. Sistema",
-      px: body.nombrePaciente || body.px || "N/A",
-      edad_px: body.edadPaciente != null ? Number(body.edadPaciente) : null,
-      fc: body.frecuenciaCardiaca != null ? Number(body.frecuenciaCardiaca) : null,
-      ps: body.presionSistolica != null ? Number(body.presionSistolica) : null,
-      pd: body.presionDiastolica != null ? Number(body.presionDiastolica) : null,
-      ec: body.estadoConciencia ?? null,
-      prueba_emb: body.pruebaEmbarazoRealizada ?? null,
-      resultado_emb: body.resultadoPruebaEmbarazo ?? null,
-      hallazgos: body.hallazgosExploracion ?? null,
-      eco_abdominal: body.tieneEcoTransabdominal ?? null,
-      resultado_ecoabd: body.resultadoEcoTransabdominal ?? null,
-      sintomas: Array.isArray(body.sintomasSeleccionados) ? body.sintomasSeleccionados.join(", ") : "",
-      fac_riesg: Array.isArray(body.factoresSeleccionados) ? body.factoresSeleccionados.join(", ") : "",
-      tvus_1: body.tvus ?? null,
-      hcg_1: body.hcgValor != null ? Number(body.hcgValor) : null,
-      pronostico_1: body.resultado != null ? `${(Number(body.resultado) * 100).toFixed(1)}%` : null,
-      consulta_1_date: new Date().toISOString(),
+      id: (body.id ?? "ID-" + Math.random().toString(36).slice(2, 7).toUpperCase()).slice(0, 20),
+      created_by: testUUID, // Tu esquema requiere UUID real
+      medico_nombre: body.usuarioCreador || body.medico_nombre || "Dr. Sistema", // Nuevo campo
+      nombre_paciente: body.nombre_paciente ?? "N/A",
+      edad_paciente: body.edad_paciente != null ? Number(body.edad_paciente) : null,
+      frecuencia_cardiaca: body.frecuencia_cardiaca != null ? Number(body.frecuencia_cardiaca) : null,
+      presion_sistolica: body.presion_sistolica != null ? Number(body.presion_sistolica) : null,
+      presion_diastolica: body.presion_diastolica != null ? Number(body.presion_diastolica) : null,
+      estado_conciencia: body.estado_conciencia ?? null,
+      prueba_embarazo_realizada: body.prueba_embarazo_realizada ?? null,
+      resultado_prueba_embarazo: body.resultado_prueba_embarazo ?? null,
+      hallazgos_exploracion: body.hallazgos_exploracion ?? null,
+      tiene_eco_transabdominal: body.tiene_eco_transabdominal ?? null,
+      resultado_eco_transabdominal: body.resultado_eco_transabdominal ?? null,
+      sintomas_seleccionados: Array.isArray(body.sintomas_seleccionados) ? body.sintomas_seleccionados : [],
+      factores_seleccionados: Array.isArray(body.factores_seleccionados) ? body.factores_seleccionados : [],
+      tvus: body.tvus ?? null,
+      hcg_valor: body.hcg_valor != null ? Number(body.hcg_valor) : null,
+      variacion_hcg: body.variacion_hcg ?? null,
+      hcg_anterior: body.hcg_anterior != null ? Number(body.hcg_anterior) : null,
+      resultado: body.resultado != null ? Number(body.resultado) : null,
     }
 
-    console.log("Enviando payload adaptado al nuevo esquema:", payload)
+    console.log("Enviando payload adaptado a tu esquema:", payload)
 
     const { data, error } = await supabaseAdmin.from("consultas").insert(payload).select().single()
 

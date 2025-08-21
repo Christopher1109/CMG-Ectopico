@@ -22,60 +22,61 @@ export async function PATCH(req: Request, { params }: Params) {
 
     console.log("PATCH recibido:", { id: params.id, visita, body })
 
-    // Preparar el objeto de actualización usando el NUEVO esquema
+    const testUUID = "550e8400-e29b-41d4-a716-446655440000"
+
+    // Preparar el objeto de actualización usando TU esquema
     const updateData: Record<string, any> = {
-      updated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(), // Tu trigger se encarga de esto
     }
 
     // Si es consulta de seguimiento (visita 2 o 3), mapear campos con sufijo
     if (visita === "2" || visita === "3") {
       const suffix = `_${visita}`
 
-      if (body.sintomasSeleccionados !== undefined) {
-        updateData[`sintomas${suffix}`] = Array.isArray(body.sintomasSeleccionados)
-          ? body.sintomasSeleccionados.join(", ")
-          : ""
+      if (body.sintomas_seleccionados !== undefined) {
+        updateData[`sintomas_seleccionados${suffix}`] = Array.isArray(body.sintomas_seleccionados)
+          ? body.sintomas_seleccionados
+          : []
       }
 
-      if (body.factoresSeleccionados !== undefined) {
-        updateData[`factores${suffix}`] = Array.isArray(body.factoresSeleccionados)
-          ? body.factoresSeleccionados.join(", ")
-          : ""
+      if (body.factores_seleccionados !== undefined) {
+        updateData[`factores_seleccionados${suffix}`] = Array.isArray(body.factores_seleccionados)
+          ? body.factores_seleccionados
+          : []
       }
 
       if (body.tvus !== undefined) {
         updateData[`tvus${suffix}`] = body.tvus
       }
 
-      if (body.hcgValor !== undefined) {
-        updateData[`hcg${suffix}`] = body.hcgValor != null ? Number(body.hcgValor) : null
+      if (body.hcg_valor !== undefined) {
+        updateData[`hcg_valor${suffix}`] = body.hcg_valor != null ? Number(body.hcg_valor) : null
       }
 
-      if (body.variacionHcg !== undefined) {
-        updateData[`variacion_hcg${suffix}`] = body.variacionHcg
+      if (body.hcg_anterior !== undefined) {
+        updateData[`hcg_anterior${suffix}`] = body.hcg_anterior != null ? Number(body.hcg_anterior) : null
+      }
+
+      if (body.variacion_hcg !== undefined) {
+        updateData[`variacion_hcg${suffix}`] = body.variacion_hcg
       }
 
       if (body.resultado !== undefined) {
-        updateData[`pronostico${suffix}`] =
-          body.resultado != null ? `${(Number(body.resultado) * 100).toFixed(1)}%` : null
+        updateData[`resultado${suffix}`] = body.resultado != null ? Number(body.resultado) : null
       }
 
-      updateData[`consulta${suffix}_date`] = new Date().toISOString()
+      if (body.usuario_editor !== undefined) {
+        updateData[`usuario_visita${suffix}`] = testUUID // UUID para tu esquema
+      }
+
+      updateData[`fecha_visita${suffix}`] = new Date().toISOString()
     } else {
       // Para consulta inicial, actualizar campos normales
-      if (body.nombrePaciente !== undefined) updateData.px = body.nombrePaciente
-      if (body.edadPaciente !== undefined) updateData.edad_px = Number(body.edadPaciente)
-      if (body.sintomasSeleccionados !== undefined) {
-        updateData.sintomas = Array.isArray(body.sintomasSeleccionados) ? body.sintomasSeleccionados.join(", ") : ""
-      }
-      if (body.factoresSeleccionados !== undefined) {
-        updateData.fac_riesg = Array.isArray(body.factoresSeleccionados) ? body.factoresSeleccionados.join(", ") : ""
-      }
-      if (body.tvus !== undefined) updateData.tvus_1 = body.tvus
-      if (body.hcgValor !== undefined) updateData.hcg_1 = Number(body.hcgValor)
-      if (body.resultado !== undefined) {
-        updateData.pronostico_1 = `${(Number(body.resultado) * 100).toFixed(1)}%`
-      }
+      Object.keys(body).forEach((key) => {
+        if (key !== "id" && key !== "created_by") {
+          updateData[key] = body[key]
+        }
+      })
     }
 
     console.log("Datos a actualizar:", updateData)

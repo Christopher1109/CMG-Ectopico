@@ -1266,6 +1266,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     <AlertTriangle className="h-5 w-5 text-blue-600" />
                     <span className="font-medium text-blue-900">Información Importante</span>
                   </div>
+                </div>
                 <p className="text-blue-800 text-sm">
                   Las consultas de seguimiento se sugiere realizarlas entre 48-72 horas después de la consulta inicial.
                   Ingrese el ID de seguimiento.
@@ -2379,7 +2380,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                         {/* Ecografía Transvaginal (TVUS) */}
                         <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-4">Ecografía Transvaginal (TVUS) *</h4>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4">Ecografía Transvaginal (TVUS)</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {[
                               { value: "normal", label: "Normal" },
@@ -2389,11 +2390,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             ].map((opcion) => (
                               <label
                                 key={opcion.value}
-                                className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                                  tvus === opcion.value
-                                    ? "border-blue-500 bg-blue-50 shadow-md"
-                                    : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                                }`}
+                                className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
                               >
                                 <div className="relative">
                                   <input
@@ -2414,17 +2411,10 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                                     {tvus === opcion.value && <div className="w-2 h-2 bg-white rounded-full"></div>}
                                   </div>
                                 </div>
-                                <span className={`text-sm font-medium ${
-                                  tvus === opcion.value ? "text-blue-700" : "text-gray-700"
-                                }`}>
-                                  {opcion.label}
-                                </span>
+                                <span className="text-sm font-medium text-gray-700">{opcion.label}</span>
                               </label>
                             ))}
                           </div>
-                          {!tvus && (
-                            <p className="text-red-500 text-sm mt-2">* Este campo es requerido</p>
-                          )}
                         </div>
 
                         {/* β-HCG actual */}
@@ -2478,5 +2468,5 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
         </div>
       )}
     </div>
-  )\
+  )
 }

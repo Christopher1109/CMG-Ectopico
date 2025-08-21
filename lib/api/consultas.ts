@@ -1,4 +1,4 @@
-// Funciones helper para interactuar con la API de consultas
+// Funciones helper para interactuar con las APIs de consultas
 
 export async function crearConsulta(datos: any) {
   try {
@@ -52,7 +52,7 @@ export async function actualizarConsulta(id: string, visitaNo: 2 | 3, datos: any
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ ...datos, visitaNo }),
+      body: JSON.stringify({ visitaNo, ...datos }),
     })
 
     if (!response.ok) {

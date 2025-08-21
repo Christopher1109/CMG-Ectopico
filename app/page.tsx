@@ -43,7 +43,6 @@ const USUARIOS_AUTORIZADOS = [
 async function enviarDatosAlBackend(datos: any): Promise<boolean> {
   try {
     const payload = {
-      id: datos.id,
       usuario_creador: datos.usuarioCreador || null,
       nombre_paciente: datos.nombrePaciente || "N/A",
       edad_paciente: Number.isFinite(+datos.edadPaciente) ? +datos.edadPaciente : null,
@@ -81,7 +80,7 @@ async function actualizarDatosEnBackend(id: string, visitaNo: 2 | 3, datos: any)
     const patch = {
       nombre_paciente: datos.nombrePaciente || null,
       edad_paciente: Number.isFinite(+datos.edadPaciente) ? +datos.edadPaciente : null,
-      sintomas_seleccionados: Array.isArray(datos.sintomasSeleccionados) ? datos.factoresSeleccionados : [],
+      sintomas_seleccionados: Array.isArray(datos.sintomasSeleccionados) ? datos.sintomasSeleccionados : [],
       factores_seleccionados: Array.isArray(datos.factoresSeleccionados) ? datos.factoresSeleccionados : [],
       tvus: datos.tvus || null,
       hcg_valor: Number.isFinite(+datos.hcgValor) ? +datos.hcgValor : null,
@@ -163,18 +162,9 @@ function normalizarDesdeLocal(d: any) {
   }
 }
 
-function generarIdConsulta(): string {
-  const idsExistentes: number[] = []
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key && key.startsWith("ectopico_ID-")) {
-      const idCompleto = key.replace("ectopico_", "")
-      const numeroId = Number.parseInt(idCompleto.replace("ID-", ""))
-      if (!isNaN(numeroId)) idsExistentes.push(numeroId)
-    }
-  }
-  const siguienteNumero = idsExistentes.length > 0 ? Math.max(...idsExistentes) + 1 : 1
-  return `ID-${siguienteNumero.toString().padStart(5, "0")}`
+// Función para generar ID temporal para localStorage (ya no se usa para DB)
+function generarIdTemporal(): string {
+  return `TEMP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
 // ==================== COMPONENTE PRINCIPAL ====================
@@ -282,7 +272,7 @@ export default function CalculadoraEctopico() {
     try {
       const fechaActual = new Date().toISOString()
       const datosIncompletos = {
-        id: idSeguimiento || generarIdConsulta(),
+        idTemporal: generarIdTemporal(),
         fechaCreacion: fechaActual,
         fechaUltimaActualizacion: fechaActual,
         usuarioCreador: usuarioActual || "anon",
@@ -309,7 +299,7 @@ export default function CalculadoraEctopico() {
         consultaCompleta: false,
       }
 
-      localStorage.setItem(`ectopico_${datosIncompletos.id}`, JSON.stringify(datosIncompletos))
+      localStorage.setItem(`ectopico_${datosIncompletos.idTemporal}`, JSON.stringify(datosIncompletos))
       const ok = await enviarDatosAlBackend(datosIncompletos)
 
       if (!ok) {
@@ -325,16 +315,14 @@ export default function CalculadoraEctopico() {
 
   // ====== FUNCIONES PRINCIPALES ======
   const iniciarNuevaEvaluacion = async () => {
-    const nuevoId = generarIdConsulta()
     resetCalculadora()
-    setIdSeguimiento(nuevoId)
     setMostrarPantallaBienvenida(false)
     setEsConsultaSeguimiento(false)
     setNumeroConsultaActual(1)
   }
 
   const continuarConsultaCargada = async () => {
-    setIdSeguimiento(consultaCargada.id)
+    setIdSeguimiento(consultaCargada.id.toString())
     // Mantener datos del paciente (NO cambiar)
     setNombrePaciente(consultaCargada.nombre_paciente || "")
     setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
@@ -383,14 +371,15 @@ export default function CalculadoraEctopico() {
   }
 
   const buscarConsulta = async () => {
-    const id = idBusqueda.trim().toUpperCase()
-    if (!id.startsWith("ID-") || id.length !== 8) {
-      alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)")
+    const id = idBusqueda.trim()
+    if (!id) {
+      alert("Por favor ingrese un ID de consulta")
       return
     }
 
     let consultaEncontrada: any = null
 
+    // Primero buscar en localStorage
     const datosLocal = localStorage.getItem(`ectopico_${id}`)
     if (datosLocal) {
       try {
@@ -400,6 +389,7 @@ export default function CalculadoraEctopico() {
       }
     }
 
+    // Si no se encuentra localmente, buscar en la base de datos
     if (!consultaEncontrada) {
       try {
         const { data, error } = await supabase.from("consultas").select("*").eq("id", id).single()
@@ -700,7 +690,6 @@ export default function CalculadoraEctopico() {
 
     const fechaActual = new Date().toISOString()
     const datosCompletos = {
-      id: idSeguimiento,
       fechaCreacion: fechaActual,
       fechaUltimaActualizacion: fechaActual,
       usuarioCreador: usuarioActual || "anon",
@@ -724,12 +713,17 @@ export default function CalculadoraEctopico() {
       resultado: probPost,
     }
 
-    localStorage.setItem(`ectopico_${idSeguimiento}`, JSON.stringify(datosCompletos))
-
     try {
       let ok = false
+      let consultaId = null
+
       if (!esConsultaSeguimiento) {
-        ok = await enviarDatosAlBackend(datosCompletos)
+        const res = await enviarDatosAlBackend(datosCompletos)
+        if (res) {
+          ok = true
+          // La base de datos ahora genera el ID automáticamente
+          consultaId = "Generado automáticamente"
+        }
       } else {
         const tieneC2 =
           consultaCargada &&
@@ -746,14 +740,19 @@ export default function CalculadoraEctopico() {
 
         const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
         ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
+        consultaId = idSeguimiento
+      }
+
+      if (consultaId) {
+        setIdSeguimiento(consultaId)
       }
 
       if (!ok) {
-        alert("Advertencia: Guardado local OK, pero falló la sincronización con la base de datos.")
+        alert("Advertencia: Falló la sincronización con la base de datos.")
       }
     } catch (e) {
       console.error("Error al sincronizar con el backend:", e)
-      alert("Advertencia: Guardado local OK, pero falló la sincronización con la base de datos.")
+      alert("Advertencia: Falló la sincronización con la base de datos.")
     }
 
     if (probPost >= 0.95) {
@@ -950,96 +949,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
               className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-in-out"
               style={{ width: `${progreso}%` }}
             ></div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // FUNCIÓN PARA RENDERIZAR BLOQUE DE CONSULTA INDIVIDUAL
-  const renderBloqueConsultaIndividual = () => {
-    const colores = {
-      1: { bg: "bg-green-50", border: "border-green-200", text: "text-green-900", icon: "text-green-600" },
-      2: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-900", icon: "text-orange-600" },
-      3: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-900", icon: "text-purple-600" },
-    }
-
-    const color = colores[numeroConsultaActual]
-
-    return (
-      <div className={`${color.bg} p-6 rounded-lg ${color.border} border`}>
-        <div className="flex items-center space-x-2 mb-4">
-          <div
-            className={`w-6 h-6 bg-${color.icon.split("-")[1]}-600 rounded text-white flex items-center justify-center text-sm font-bold`}
-          >
-            📋
-          </div>
-          <h3 className={`text-lg font-semibold ${color.text}`}>
-            {numeroConsultaActual === 1
-              ? "Primera Consulta Realizada"
-              : numeroConsultaActual === 2
-                ? "Segunda Consulta Realizada"
-                : "Tercera Consulta Realizada"}
-          </h3>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <div>
-              <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>Síntomas</span>
-              {sintomasSeleccionados && sintomasSeleccionados.length > 0 ? (
-                sintomasSeleccionados.map((sintoma: string) => (
-                  <div key={sintoma} className={color.text.replace("900", "800")}>
-                    {obtenerNombreSintoma(sintoma)}
-                  </div>
-                ))
-              ) : (
-                <div className={color.text.replace("900", "800")}>Asintomática</div>
-              )}
-            </div>
-
-            <div>
-              <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>TVUS</span>
-              <div className={color.text.replace("900", "800")}>{obtenerNombreTVUS(tvus)}</div>
-            </div>
-
-            {numeroConsultaActual > 1 && variacionHcg && (
-              <div>
-                <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>Variación β-hCG</span>
-                <div className={`${color.text.replace("900", "800")} capitalize`}>
-                  {variacionHcg?.replace(/_/g, " ") || "No calculada"}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>Factores de Riesgo</span>
-              {factoresSeleccionados && factoresSeleccionados.length > 0 ? (
-                factoresSeleccionados.map((factor: string) => (
-                  <div key={factor} className={color.text.replace("900", "800")}>
-                    {obtenerNombreFactorRiesgo(factor)}
-                  </div>
-                ))
-              ) : (
-                <div className={color.text.replace("900", "800")}>Sin factores de riesgo</div>
-              )}
-            </div>
-
-            <div>
-              <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>β-hCG</span>
-              <div className={color.text.replace("900", "800")}>{hcgValor || "No especificado"} mUI/mL</div>
-            </div>
-          </div>
-        </div>
-
-        <div className={`mt-4 pt-4 border-t ${color.border}`}>
-          <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>
-            Resultado de la Herramienta
-          </span>
-          <div className={`text-lg font-bold ${color.text}`}>
-            {resultado ? `${(resultado * 100).toFixed(1)}% estimación de riesgo` : "No calculado"}
           </div>
         </div>
       </div>
@@ -1266,44 +1175,45 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     <AlertTriangle className="h-5 w-5 text-blue-600" />
                     <span className="font-medium text-blue-900">Información Importante</span>
                   </div>
-                <p className="text-blue-800 text-sm">
-                  Las consultas de seguimiento se sugiere realizarlas entre 48-72 horas después de la consulta inicial.
-                  Ingrese el ID de seguimiento.
-                </p>
-              </div>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-slate-700">ID de Seguimiento:</Label>
-                  <input
-                    type="text"
-                    placeholder="Ej: ID-00001"
-                    value={idBusqueda}
-                    onChange={(e) => setIdBusqueda(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  />
-                  <p className="text-xs text-slate-500">Formato: ID-NNNNN (Ej: ID-00001)</p>
+                  <p className="text-blue-800 text-sm">
+                    Las consultas de seguimiento se sugiere realizarlas entre 48-72 horas después de la consulta
+                    inicial. Ingrese el ID numérico de la consulta.
+                  </p>
                 </div>
-                <div className="flex space-x-4">
-                  <Button
-                    onClick={buscarConsulta}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-6"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Buscar Consulta
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setModoCargarConsulta(false)
-                      setMostrarPantallaBienvenida(true)
-                    }}
-                    variant="outline"
-                    className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </Button>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium text-slate-700">ID de Consulta:</Label>
+                    <input
+                      type="text"
+                      placeholder="Ej: 123"
+                      value={idBusqueda}
+                      onChange={(e) => setIdBusqueda(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-slate-500">Ingrese el ID numérico de la consulta</p>
+                  </div>
+                  <div className="flex space-x-4">
+                    <Button
+                      onClick={buscarConsulta}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-6"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Buscar Consulta
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setModoCargarConsulta(false)
+                        setMostrarPantallaBienvenida(true)
+                      }}
+                      variant="outline"
+                      className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
                 </div>
+                <CMGFooter />
               </div>
-              <CMGFooter />
             </CardContent>
           </Card>
         </div>
@@ -1337,10 +1247,10 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   <div className="grid md:grid-cols-3 gap-6 text-sm">
                     <div className="space-y-3">
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg">
-                        <span className="font-semibold text-blue-700 block mb-1">ID de Seguimiento</span>
+                        <span className="font-semibold text-blue-700 block mb-1">ID de Consulta</span>
                         <div className="flex items-center space-x-2">
                           <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
-                            <span className="text-white text-xs font-bold">ID</span>
+                            <span className="text-white text-xs font-bold">#</span>
                           </div>
                           <span className="font-mono text-blue-600 font-bold">{consultaCargada.id}</span>
                         </div>
@@ -1807,7 +1717,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         <span className="text-slate-700 font-medium">⚪ Guarde este ID:</span>
                         <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-lg border border-blue-200">
                           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
-                            <span className="text-white text-xs font-bold">ID</span>
+                            <span className="text-white text-xs font-bold">#</span>
                           </div>
                           <span className="font-mono text-blue-700 font-bold text-lg">{idSeguimiento}</span>
                           <Button
@@ -1835,8 +1745,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     </div>
                   </div>
                 )}
-
-                {/* Resumen de la consulta con diseño mejorado */}
 
                 {/* Botones con diseño mejorado */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
@@ -2377,7 +2285,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           </div>
                         </div>
 
-                        {/* Ecografía Transvaginal (TVUS) */}
+                        {/* Ecografía Transvaginal (TVUS) - DISEÑO ACTUALIZADO CON RADIO BUTTONS */}
                         <div>
                           <h4 className="text-lg font-semibold text-gray-800 mb-4">Ecografía Transvaginal (TVUS) *</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2414,22 +2322,22 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                                     {tvus === opcion.value && <div className="w-2 h-2 bg-white rounded-full"></div>}
                                   </div>
                                 </div>
-                                <span className={`text-sm font-medium ${
-                                  tvus === opcion.value ? "text-blue-700" : "text-gray-700"
-                                }`}>
+                                <span
+                                  className={`text-sm font-medium ${
+                                    tvus === opcion.value ? "text-blue-700" : "text-gray-700"
+                                  }`}
+                                >
                                   {opcion.label}
                                 </span>
                               </label>
                             ))}
                           </div>
-                          {!tvus && (
-                            <p className="text-red-500 text-sm mt-2">* Este campo es requerido</p>
-                          )}
+                          {!tvus && <p className="text-red-500 text-sm mt-2">* Este campo es requerido</p>}
                         </div>
 
                         {/* β-HCG actual */}
                         <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-4">β-HCG actual (mUI/mL)</h4>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4">β-HCG actual (mUI/mL) *</h4>
                           <input
                             type="number"
                             placeholder="Valor actual"
@@ -2437,6 +2345,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             onChange={(e) => setHcgValor(e.target.value)}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-700"
                           />
+                          {!hcgValor && <p className="text-red-500 text-sm mt-2">* Este campo es requerido</p>}
                         </div>
 
                         {esConsultaSeguimiento && hcgAnterior && (
@@ -2478,5 +2387,5 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
         </div>
       )}
     </div>
-  )\
+  )
 }

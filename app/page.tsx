@@ -613,7 +613,8 @@ export default function CalculadoraEctopico() {
 
     let claveSintoma = "asintomatica" as "asintomatica" | "sangrado" | "dolor" | "dolor_sangrado"
     if (sintomasParaCalculo.includes("dolor_sangrado")) claveSintoma = "dolor_sangrado"
-    else if (sintomasParaCalculo.includes("sangrado") && sintomasParaCalculo.includes("dolor")) claveSintoma = "dolor_sangrado"
+    else if (sintomasParaCalculo.includes("sangrado") && sintomasParaCalculo.includes("dolor"))
+      claveSintoma = "dolor_sangrado"
     else if (sintomasParaCalculo.includes("sangrado")) claveSintoma = "sangrado"
     else if (sintomasParaCalculo.includes("dolor")) claveSintoma = "dolor"
 
@@ -913,8 +914,8 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
             {numeroConsultaActual === 1
               ? "Primera Consulta Realizada"
               : numeroConsultaActual === 2
-              ? "Segunda Consulta Realizada"
-              : "Tercera Consulta Realizada"}
+                ? "Segunda Consulta Realizada"
+                : "Tercera Consulta Realizada"}
           </h3>
         </div>
 
@@ -1046,7 +1047,11 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       onClick={() => setMostrarContraseña(!mostrarContraseña)}
                       disabled={intentosLogin >= 5}
                     >
-                      {mostrarContraseña ? <EyeOff className="h-4 w-4 text-slate-500" /> : <Eye className="h-4 w-4 text-slate-500" />}
+                      {mostrarContraseña ? (
+                        <EyeOff className="h-4 w-4 text-slate-500" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-slate-500" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -1109,7 +1114,12 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
               {idSeguimiento && (
                 <div className="bg-white/20 px-4 py-2 rounded-full flex items-center space-x-2">
                   <span className="text-sm font-mono">ID: {idSeguimiento}</span>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-white hover:bg-white/20" onClick={copiarId}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                    onClick={copiarId}
+                  >
                     <Copy className="h-3 w-3" />
                   </Button>
                 </div>
@@ -1144,7 +1154,9 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                   <h2 className="text-3xl font-bold text-slate-800">Bienvenido a la Herramienta</h2>
                 </div>
-                <p className="text-lg text-slate-600 mb-8">Seleccione una opción para continuar con la herramienta de apoyo clínico</p>
+                <p className="text-lg text-slate-600 mb-8">
+                  Seleccione una opción para continuar con la herramienta de apoyo clínico
+                </p>
                 <div className="grid md:grid-cols-2 gap-6">
                   <Button
                     onClick={iniciarNuevaEvaluacion}
@@ -1190,45 +1202,45 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     <AlertTriangle className="h-5 w-5 text-blue-600" />
                     <span className="font-medium text-blue-900">Información Importante</span>
                   </div>
+                  <p className="text-blue-800 text-sm">
+                    Las consultas de seguimiento se sugiere realizarlas entre 48-72 horas después de la consulta
+                    inicial. Ingrese el ID de seguimiento.
+                  </p>
                 </div>
-                <p className="text-blue-800 text-sm">
-                  Las consultas de seguimiento se sugiere realizarlas entre 48-72 horas después de la consulta inicial.
-                  Ingrese el ID de seguimiento.
-                </p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium text-slate-700">ID de Seguimiento:</Label>
+                    <input
+                      type="text"
+                      placeholder="Ej: ID-00001"
+                      value={idBusqueda}
+                      onChange={(e) => setIdBusqueda(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-slate-500">Formato: ID-NNNNN (Ej: ID-00001)</p>
+                  </div>
+                  <div className="flex space-x-4">
+                    <Button
+                      onClick={buscarConsulta}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-6"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Buscar Consulta
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setModoCargarConsulta(false)
+                        setMostrarPantallaBienvenida(true)
+                      }}
+                      variant="outline"
+                      className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+                <CMGFooter />
               </div>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-slate-700">ID de Seguimiento:</Label>
-                  <input
-                    type="text"
-                    placeholder="Ej: ID-00001"
-                    value={idBusqueda}
-                    onChange={(e) => setIdBusqueda(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  />
-                  <p className="text-xs text-slate-500">Formato: ID-NNNNN (Ej: ID-00001)</p>
-                </div>
-                <div className="flex space-x-4">
-                  <Button
-                    onClick={buscarConsulta}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-6"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Buscar Consulta
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setModoCargarConsulta(false)
-                      setMostrarPantallaBienvenida(true)
-                    }}
-                    variant="outline"
-                    className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-              <CMGFooter />
             </CardContent>
           </Card>
         </div>
@@ -1656,14 +1668,18 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       {resultado >= 0.95
                         ? "Se sugiere considerar alta probabilidad - Evaluación médica recomendada"
                         : resultado < 0.01
-                        ? "Se sugiere considerar baja probabilidad - Seguimiento médico recomendado"
-                        : "Probabilidad intermedia - Seguimiento médico requerido"}
+                          ? "Se sugiere considerar baja probabilidad - Seguimiento médico recomendado"
+                          : "Probabilidad intermedia - Seguimiento médico requerido"}
                     </p>
                   </div>
                 )}
 
                 <div className="flex space-x-4">
-                  <Button onClick={generarInformePDF} variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent">
+                  <Button
+                    onClick={generarInformePDF}
+                    variant="outline"
+                    className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent"
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Generar Reporte
                   </Button>
@@ -1707,8 +1723,8 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       {resultado >= 0.95
                         ? "Se sugiere considerar alta probabilidad - Evaluación médica recomendada"
                         : resultado < 0.01
-                        ? "Se sugiere considerar baja probabilidad - Seguimiento médico recomendado"
-                        : "Probabilidad intermedia - Seguimiento médico requerido"}
+                          ? "Se sugiere considerar baja probabilidad - Seguimiento médico recomendado"
+                          : "Probabilidad intermedia - Seguimiento médico requerido"}
                     </p>
                   </div>
                 </div>
@@ -1730,7 +1746,12 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             <span className="text-white text-xs font-bold">ID</span>
                           </div>
                           <span className="font-mono text-blue-700 font-bold text-lg">{idSeguimiento}</span>
-                          <Button onClick={copiarId} variant="outline" size="sm" className="h-8 w-8 p-0 bg-white border-blue-300 hover:bg-blue-50">
+                          <Button
+                            onClick={copiarId}
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0 bg-white border-blue-300 hover:bg-blue-50"
+                          >
                             <Copy className="h-3 w-3 text-blue-600" />
                           </Button>
                         </div>
@@ -1740,7 +1761,9 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         <ul className="text-slate-700 text-sm space-y-1">
                           <li>• Se sugiere regresar en 48-72 horas para continuar con la evaluación</li>
                           <li>• Mantener vigilancia de los síntomas durante este tiempo</li>
-                          <li>• Acudir de inmediato si presenta dolor severo, sangrado abundante o síntomas de shock</li>
+                          <li>
+                            • Acudir de inmediato si presenta dolor severo, sangrado abundante o síntomas de shock
+                          </li>
                           <li>• La decisión final siempre corresponde al médico tratante</li>
                         </ul>
                       </div>
@@ -1751,7 +1774,11 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                 {/* Botones */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
                   <div className="flex space-x-4 justify-center">
-                    <Button onClick={generarInformePDF} variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-white shadow-sm">
+                    <Button
+                      onClick={generarInformePDF}
+                      variant="outline"
+                      className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-white shadow-sm"
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Generar Reporte
                     </Button>
@@ -1804,7 +1831,10 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
                     </div>
                     <div className="flex justify-end">
-                      <Button onClick={() => completarSeccion(1)} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6">
+                      <Button
+                        onClick={() => completarSeccion(1)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
+                      >
                         Continuar
                       </Button>
                     </div>
@@ -1814,7 +1844,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                 {seccionActual === 2 && (
                   <div className="space-y-6">
-                    <div className="flex
                     <div className="flex items-center space-x-3">
                       <Activity className="h-6 w-6 text-blue-600" />
                       <h2 className="text-2xl font-bold text-slate-800">Signos Vitales</h2>
@@ -2016,9 +2045,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
 
                       <div className="space-y-3">
-                        <Label className="text-base font-medium text-slate-700">
-                          ¿Tiene ecografía transabdominal?
-                        </Label>
+                        <Label className="text-base font-medium text-slate-700">¿Tiene ecografía transabdominal?</Label>
                         <div className="grid grid-cols-2 gap-4">
                           <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
                             <input
@@ -2143,9 +2170,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                                     checked={sintomasSeleccionados.includes(op.id)}
                                     onChange={(e) =>
                                       setSintomasSeleccionados((prev) =>
-                                        e.target.checked
-                                          ? [...prev, op.id]
-                                          : prev.filter((id) => id !== op.id),
+                                        e.target.checked ? [...prev, op.id] : prev.filter((id) => id !== op.id),
                                       )
                                     }
                                     className="sr-only"
@@ -2190,9 +2215,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                                     checked={factoresSeleccionados.includes(factor.id)}
                                     onChange={(e) =>
                                       setFactoresSeleccionados((prev) =>
-                                        e.target.checked
-                                          ? [...prev, factor.id]
-                                          : prev.filter((id) => id !== factor.id),
+                                        e.target.checked ? [...prev, factor.id] : prev.filter((id) => id !== factor.id),
                                       )
                                     }
                                     className="sr-only"
@@ -2322,4 +2345,3 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
     </div>
   )
 }
-

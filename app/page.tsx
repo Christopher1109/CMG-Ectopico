@@ -17,7 +17,6 @@ import {
   EyeOff,
   CheckCircle,
   Download,
-  ArrowRight,
 } from "lucide-react"
 import { useState } from "react"
 import type React from "react"
@@ -39,11 +38,31 @@ const USUARIOS_AUTORIZADOS = [
   { usuario: "Christopher", contraseña: "Matutito22", nombre: "Christopher" },
 ]
 
+// ==================== FUNCIÓN PARA GENERAR ID ÚNICO ====================
+// Cambiar la función generarIdUnico para que genere IDs más simples y únicos
+function generarIdUnico(): string {
+  const fecha = new Date()
+  const año = fecha.getFullYear().toString().slice(-2)
+  const mes = (fecha.getMonth() + 1).toString().padStart(2, "0")
+  const dia = fecha.getDate().toString().padStart(2, "0")
+  const hora = fecha.getHours().toString().padStart(2, "0")
+  const minuto = fecha.getMinutes().toString().padStart(2, "0")
+  const segundo = fecha.getSeconds().toString().padStart(2, "0")
+  const random = Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0")
+
+  return `${año}${mes}${dia}${hora}${minuto}${segundo}${random}`
+}
+
 // ==================== HELPERS API ====================
-async function enviarDatosAlBackend(datos: any): Promise<boolean> {
+// Arreglar la función enviarDatosAlBackend para incluir el ID generado
+async function enviarDatosAlBackend(datos: any): Promise<{ success: boolean; id?: string }> {
   try {
+    console.log("📤 Enviando datos con ID:", datos.id)
+
     const payload = {
-      id: datos.id,
+      id: datos.id, // USAR EL ID QUE YA VIENE EN LOS DATOS
       usuario_creador: datos.usuarioCreador || null,
       nombre_paciente: datos.nombrePaciente || "N/A",
       edad_paciente: Number.isFinite(+datos.edadPaciente) ? +datos.edadPaciente : null,
@@ -64,15 +83,18 @@ async function enviarDatosAlBackend(datos: any): Promise<boolean> {
       hcg_anterior: Number.isFinite(+datos.hcgAnterior) ? +datos.hcgAnterior : null,
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
     }
+
     const res = await crearConsulta(payload)
     if (res?.error) {
-      console.error("API /api/consultas error:", res.error)
-      return false
+      console.error("❌ API error:", res.error)
+      return { success: false }
     }
-    return true
+
+    console.log("✅ Consulta creada exitosamente")
+    return { success: true, id: datos.id }
   } catch (e) {
-    console.error("Error llamando /api/consultas:", e)
-    return false
+    console.error("❌ Error llamando API:", e)
+    return { success: false }
   }
 }
 
@@ -81,11 +103,11 @@ async function actualizarDatosEnBackend(id: string, visitaNo: 2 | 3, datos: any)
     const patch = {
       nombre_paciente: datos.nombrePaciente || null,
       edad_paciente: Number.isFinite(+datos.edadPaciente) ? +datos.edadPaciente : null,
-      sintomas_seleccionados: Array.isArray(datos.sintomasSeleccionados) ? datos.factoresSeleccionados : [],
+      sintomas_seleccionados: Array.isArray(datos.sintomasSeleccionados) ? datos.sintomasSeleccionados : [],
       factores_seleccionados: Array.isArray(datos.factoresSeleccionados) ? datos.factoresSeleccionados : [],
       tvus: datos.tvus || null,
       hcg_valor: Number.isFinite(+datos.hcgValor) ? +datos.hcgValor : null,
-      hcg_anterior: Number.isFinite(+datos.hcgAnterior) ? +datos.hcgAnterior : null,
+      hcg_anterior: Number.isFinite(+datos.hcgAnterior) ? +datos.hcgValor : null,
       variacion_hcg: datos.variacionHcg || null,
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
       usuario_editor: datos.usuarioCreador || "anon",
@@ -163,18 +185,9 @@ function normalizarDesdeLocal(d: any) {
   }
 }
 
-function generarIdConsulta(): string {
-  const idsExistentes: number[] = []
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key && key.startsWith("ectopico_ID-")) {
-      const idCompleto = key.replace("ectopico_", "")
-      const numeroId = Number.parseInt(idCompleto.replace("ID-", ""))
-      if (!isNaN(numeroId)) idsExistentes.push(numeroId)
-    }
-  }
-  const siguienteNumero = idsExistentes.length > 0 ? Math.max(...idsExistentes) + 1 : 1
-  return `ID-${siguienteNumero.toString().padStart(5, "0")}`
+// Función para generar ID temporal para localStorage
+function generarIdTemporal(): string {
+  return `TEMP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
 // ==================== COMPONENTE PRINCIPAL ====================
@@ -278,11 +291,18 @@ export default function CalculadoraEctopico() {
   const [hcgAnterior, setHcgAnterior] = useState("")
 
   // ==================== FUNCIÓN PARA GUARDAR DATOS INCOMPLETOS ====================
+  // Arreglar la función guardarDatosIncompletos para usar el ID generado
   async function guardarDatosIncompletos(motivoFinalizacion: string, seccionCompletada: number): Promise<boolean> {
     try {
       const fechaActual = new Date().toISOString()
+      const idUnico = generarIdUnico() // GENERAR ID ÚNICO
+
+      // ASIGNAR ID INMEDIATAMENTE
+      setIdSeguimiento(idUnico)
+      console.log("🆔 ID generado para datos incompletos:", idUnico)
+
       const datosIncompletos = {
-        id: idSeguimiento || generarIdConsulta(),
+        id: idUnico,
         fechaCreacion: fechaActual,
         fechaUltimaActualizacion: fechaActual,
         usuarioCreador: usuarioActual || "anon",
@@ -309,32 +329,37 @@ export default function CalculadoraEctopico() {
         consultaCompleta: false,
       }
 
-      localStorage.setItem(`ectopico_${datosIncompletos.id}`, JSON.stringify(datosIncompletos))
-      const ok = await enviarDatosAlBackend(datosIncompletos)
+      // Guardar localmente SIEMPRE
+      localStorage.setItem(`ectopico_${idUnico}`, JSON.stringify(datosIncompletos))
+      console.log("💾 Datos incompletos guardados localmente:", idUnico)
 
-      if (!ok) {
-        console.warn("Datos guardados localmente, pero falló la sincronización con la base de datos")
+      // Intentar sincronizar (en segundo plano)
+      try {
+        const resultadoSync = await enviarDatosAlBackend(datosIncompletos)
+        if (resultadoSync.success) {
+          console.log("✅ Datos incompletos sincronizados")
+        }
+      } catch (error) {
+        console.warn("⚠️ Error en sincronización, pero guardado localmente")
       }
 
       return true
     } catch (error) {
-      console.error("Error al guardar datos incompletos:", error)
+      console.error("❌ Error al guardar datos incompletos:", error)
       return false
     }
   }
 
   // ====== FUNCIONES PRINCIPALES ======
   const iniciarNuevaEvaluacion = async () => {
-    const nuevoId = generarIdConsulta()
     resetCalculadora()
-    setIdSeguimiento(nuevoId)
     setMostrarPantallaBienvenida(false)
     setEsConsultaSeguimiento(false)
     setNumeroConsultaActual(1)
   }
 
   const continuarConsultaCargada = async () => {
-    setIdSeguimiento(consultaCargada.id)
+    setIdSeguimiento(consultaCargada.id.toString())
     // Mantener datos del paciente (NO cambiar)
     setNombrePaciente(consultaCargada.nombre_paciente || "")
     setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
@@ -383,14 +408,15 @@ export default function CalculadoraEctopico() {
   }
 
   const buscarConsulta = async () => {
-    const id = idBusqueda.trim().toUpperCase()
-    if (!id.startsWith("ID-") || id.length !== 8) {
-      alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)")
+    const id = idBusqueda.trim()
+    if (!id) {
+      alert("Por favor ingrese un ID de consulta")
       return
     }
 
     let consultaEncontrada: any = null
 
+    // Primero buscar en localStorage
     const datosLocal = localStorage.getItem(`ectopico_${id}`)
     if (datosLocal) {
       try {
@@ -400,6 +426,7 @@ export default function CalculadoraEctopico() {
       }
     }
 
+    // Si no se encuentra localmente, buscar en la base de datos
     if (!consultaEncontrada) {
       try {
         const { data, error } = await supabase.from("consultas").select("*").eq("id", id).single()
@@ -648,10 +675,19 @@ export default function CalculadoraEctopico() {
     return true
   }
 
+  // Arreglar la función calcular para generar y usar el ID correctamente
   const calcular = async () => {
     if (!tvus || !hcgValor) {
       alert("Por favor complete todos los campos requeridos: TVUS y β-hCG")
       return
+    }
+
+    // 🆔 GENERAR ID INMEDIATAMENTE AL INICIO
+    let idGenerado = idSeguimiento
+    if (!esConsultaSeguimiento) {
+      idGenerado = generarIdUnico()
+      setIdSeguimiento(idGenerado)
+      console.log("🆔 ID generado:", idGenerado)
     }
 
     const tieneFactoresRiesgo = factoresSeleccionados.length > 0
@@ -700,7 +736,7 @@ export default function CalculadoraEctopico() {
 
     const fechaActual = new Date().toISOString()
     const datosCompletos = {
-      id: idSeguimiento,
+      id: idGenerado, // USAR EL ID GENERADO
       fechaCreacion: fechaActual,
       fechaUltimaActualizacion: fechaActual,
       usuarioCreador: usuarioActual || "anon",
@@ -724,36 +760,33 @@ export default function CalculadoraEctopico() {
       resultado: probPost,
     }
 
-    localStorage.setItem(`ectopico_${idSeguimiento}`, JSON.stringify(datosCompletos))
+    // Guardar localmente SIEMPRE
+    localStorage.setItem(`ectopico_${idGenerado}`, JSON.stringify(datosCompletos))
+    console.log("💾 Guardado localmente con ID:", idGenerado)
 
+    // Intentar sincronizar con base de datos (en segundo plano)
     try {
-      let ok = false
       if (!esConsultaSeguimiento) {
-        ok = await enviarDatosAlBackend(datosCompletos)
+        const resultadoSync = await enviarDatosAlBackend(datosCompletos)
+        if (resultadoSync.success) {
+          console.log("✅ Sincronizado con base de datos:", idGenerado)
+        } else {
+          console.warn("⚠️ Error en sincronización, pero datos guardados localmente")
+        }
       } else {
         const tieneC2 =
-          consultaCargada &&
-          (consultaCargada.tvus_2 ||
-            consultaCargada.hcg_valor_2 ||
-            consultaCargada.resultado_2 ||
-            consultaCargada.sintomas_seleccionados_2?.length > 0)
+          consultaCargada && (consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2)
         const tieneC3 =
-          consultaCargada &&
-          (consultaCargada.tvus_3 ||
-            consultaCargada.hcg_valor_3 ||
-            consultaCargada.resultado_3 ||
-            consultaCargada.sintomas_seleccionados_3?.length > 0)
-
+          consultaCargada && (consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3)
         const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
-        ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
-      }
 
-      if (!ok) {
-        alert("Advertencia: Guardado local OK, pero falló la sincronización con la base de datos.")
+        const actualizacionExitosa = await actualizarDatosEnBackend(idGenerado, visitaNo, datosCompletos)
+        if (actualizacionExitosa) {
+          console.log("✅ Consulta de seguimiento actualizada:", idGenerado)
+        }
       }
     } catch (e) {
-      console.error("Error al sincronizar con el backend:", e)
-      alert("Advertencia: Guardado local OK, pero falló la sincronización con la base de datos.")
+      console.error("❌ Error al sincronizar:", e)
     }
 
     if (probPost >= 0.95) {
@@ -956,7 +989,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
     )
   }
 
-  // FUNCIÓN PARA RENDERIZAR BLOQUE DE CONSULTA INDIVIDUAL
+  // Función para renderizar el bloque de consulta individual con pronóstico y sugerencias
   const renderBloqueConsultaIndividual = () => {
     const colores = {
       1: { bg: "bg-green-50", border: "border-green-200", text: "text-green-900", icon: "text-green-600" },
@@ -969,17 +1002,15 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
     return (
       <div className={`${color.bg} p-6 rounded-lg ${color.border} border`}>
         <div className="flex items-center space-x-2 mb-4">
-          <div
-            className={`w-6 h-6 bg-${color.icon.split("-")[1]}-600 rounded text-white flex items-center justify-center text-sm font-bold`}
-          >
+          <div className="w-6 h-6 bg-blue-600 rounded text-white flex items-center justify-center text-sm font-bold">
             📋
           </div>
           <h3 className={`text-lg font-semibold ${color.text}`}>
             {numeroConsultaActual === 1
-              ? "Primera Consulta Realizada"
+              ? "Primera Consulta"
               : numeroConsultaActual === 2
-                ? "Segunda Consulta Realizada"
-                : "Tercera Consulta Realizada"}
+                ? "Segunda Consulta"
+                : "Tercera Consulta"}
           </h3>
         </div>
 
@@ -1040,6 +1071,106 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
           </span>
           <div className={`text-lg font-bold ${color.text}`}>
             {resultado ? `${(resultado * 100).toFixed(1)}% estimación de riesgo` : "No calculado"}
+          </div>
+        </div>
+
+        {/* SECCIÓN DE PRONÓSTICO Y SUGERENCIAS RESTAURADA */}
+        <div className={`mt-6 pt-4 border-t ${color.border} bg-white p-4 rounded-lg`}>
+          <div className="space-y-4">
+            <div>
+              <span className="font-semibold text-gray-800 block mb-2">📋 Pronóstico Clínico</span>
+              <div className="text-gray-700 text-sm">
+                {resultado && resultado >= 0.95 ? (
+                  <div className="bg-red-50 p-3 rounded border border-red-200">
+                    <span className="text-red-800 font-medium">⚠️ ALTA PROBABILIDAD</span>
+                    <p className="text-red-700 mt-1">Se sugiere evaluación médica urgente</p>
+                  </div>
+                ) : resultado && resultado < 0.01 ? (
+                  <div className="bg-green-50 p-3 rounded border border-green-200">
+                    <span className="text-green-800 font-medium">✅ BAJA PROBABILIDAD</span>
+                    <p className="text-green-700 mt-1">Seguimiento médico apropiado recomendado</p>
+                  </div>
+                ) : (
+                  <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+                    <span className="text-yellow-800 font-medium">⚡ PROBABILIDAD INTERMEDIA</span>
+                    <p className="text-yellow-700 mt-1">Seguimiento médico requerido</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <span className="font-semibold text-gray-800 block mb-2">💡 Sugerencias Clínicas</span>
+              <div className="text-gray-700 text-sm space-y-2">
+                <div className="flex items-start space-x-2">
+                  <span className="text-blue-600 font-bold">•</span>
+                  <span>Monitoreo continuo de signos vitales</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-blue-600 font-bold">•</span>
+                  <span>Vigilancia de síntomas de alarma</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-blue-600 font-bold">•</span>
+                  <span>Seguimiento de β-hCG seriado</span>
+                </div>
+                {numeroConsultaActual < 3 && (
+                  <div className="flex items-start space-x-2">
+                    <span className="text-blue-600 font-bold">•</span>
+                    <span>Reevaluación en 48-72 horas</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* BOTÓN PARA COPIAR INFORMACIÓN RESTAURADO */}
+            <div className="pt-3 border-t border-gray-200">
+              <Button
+                onClick={() => {
+                  const infoCompleta = `
+CONSULTA ${numeroConsultaActual} - EMBARAZO ECTÓPICO
+=====================================
+
+RESULTADO: ${resultado ? `${(resultado * 100).toFixed(1)}%` : "No calculado"}
+
+SÍNTOMAS: ${sintomasSeleccionados.length > 0 ? sintomasSeleccionados.map((s) => obtenerNombreSintoma(s)).join(", ") : "Asintomática"}
+
+FACTORES DE RIESGO: ${factoresSeleccionados.length > 0 ? factoresSeleccionados.map((f) => obtenerNombreFactorRiesgo(f)).join(", ") : "Ninguno"}
+
+TVUS: ${obtenerNombreTVUS(tvus)}
+
+β-hCG: ${hcgValor} mUI/mL
+${hcgAnterior ? `β-hCG Anterior: ${hcgAnterior} mUI/mL` : ""}
+${variacionHcg ? `Variación: ${variacionHcg.replace(/_/g, " ")}` : ""}
+
+PRONÓSTICO:
+${
+  resultado && resultado >= 0.95
+    ? "⚠️ ALTA PROBABILIDAD - Evaluación médica urgente"
+    : resultado && resultado < 0.01
+      ? "✅ BAJA PROBABILIDAD - Seguimiento médico apropiado"
+      : "⚡ PROBABILIDAD INTERMEDIA - Seguimiento médico requerido"
+}
+
+SUGERENCIAS:
+• Monitoreo continuo de signos vitales
+• Vigilancia de síntomas de alarma
+• Seguimiento de β-hCG seriado
+${numeroConsultaActual < 3 ? "• Reevaluación en 48-72 horas" : ""}
+
+Fecha: ${new Date().toLocaleString()}
+                  `
+                  navigator.clipboard.writeText(infoCompleta)
+                  alert("Información copiada al portapapeles")
+                }}
+                variant="outline"
+                size="sm"
+                className="w-full border-blue-300 text-blue-600 hover:bg-blue-50"
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copiar Información Completa
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -1266,492 +1397,42 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     <AlertTriangle className="h-5 w-5 text-blue-600" />
                     <span className="font-medium text-blue-900">Información Importante</span>
                   </div>
+                  <p className="text-blue-800 text-sm">
+                    Las consultas de seguimiento se sugiere realizarlas entre 48-72 horas después de la consulta
+                    inicial. Ingrese el ID numérico de la consulta.
+                  </p>
                 </div>
-                <p className="text-blue-800 text-sm">
-                  Las consultas de seguimiento se sugiere realizarlas entre 48-72 horas después de la consulta inicial.
-                  Ingrese el ID de seguimiento.
-                </p>
-              </div>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-slate-700">ID de Seguimiento:</Label>
-                  <input
-                    type="text"
-                    placeholder="Ej: ID-00001"
-                    value={idBusqueda}
-                    onChange={(e) => setIdBusqueda(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  />
-                  <p className="text-xs text-slate-500">Formato: ID-NNNNN (Ej: ID-00001)</p>
-                </div>
-                <div className="flex space-x-4">
-                  <Button
-                    onClick={buscarConsulta}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-6"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Buscar Consulta
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setModoCargarConsulta(false)
-                      setMostrarPantallaBienvenida(true)
-                    }}
-                    variant="outline"
-                    className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-              <CMGFooter />
-            </CardContent>
-          </Card>
-        </div>
-      ) : mostrarResumenConsulta && consultaCargada ? (
-        <div className="max-w-4xl mx-auto p-6">
-          <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                {/* Header mejorado */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg">
-                      <FileText className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-bold text-slate-800">📋 Historial Clínico Completo</h2>
-                      <p className="text-slate-600">Registro completo de todas las consultas</p>
-                    </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium text-slate-700">ID de Consulta:</Label>
+                    <input
+                      type="text"
+                      placeholder="Ej: 2412251430451234"
+                      value={idBusqueda}
+                      onChange={(e) => setIdBusqueda(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-slate-500">Ingrese el ID completo de la consulta</p>
                   </div>
-                </div>
-
-                {/* Información del Paciente */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg">
-                      <User className="h-6 w-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-slate-800">Información del Paciente</h3>
-                  </div>
-
-                  <div className="grid md:grid-cols-3 gap-6 text-sm">
-                    <div className="space-y-3">
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg">
-                        <span className="font-semibold text-blue-700 block mb-1">ID de Seguimiento</span>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
-                            <span className="text-white text-xs font-bold">ID</span>
-                          </div>
-                          <span className="font-mono text-blue-600 font-bold">{consultaCargada.id}</span>
-                        </div>
-                      </div>
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Última Actualización</span>
-                        <div className="text-slate-600 text-xs">
-                          {consultaCargada.fecha_ultima_actualizacion || consultaCargada.fechaUltimaActualizacion
-                            ? new Date(
-                                consultaCargada.fecha_ultima_actualizacion || consultaCargada.fechaUltimaActualizacion,
-                              ).toLocaleString()
-                            : "No disponible"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Paciente</span>
-                        <div className="font-semibold text-slate-800">
-                          {consultaCargada.nombre_paciente || "No especificado"},{" "}
-                          {consultaCargada.edad_paciente || "N/A"} años
-                        </div>
-                      </div>
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Signos Vitales</span>
-                        <div className="text-slate-600 text-sm">
-                          FC: {consultaCargada.frecuencia_cardiaca || "N/A"} lpm | PA:{" "}
-                          {consultaCargada.presion_sistolica || "N/A"}/{consultaCargada.presion_diastolica || "N/A"}{" "}
-                          mmHg
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Fecha de Creación</span>
-                        <div className="text-slate-600 text-sm">
-                          {consultaCargada.fecha_creacion || consultaCargada.fechaCreacion
-                            ? new Date(
-                                consultaCargada.fecha_creacion || consultaCargada.fechaCreacion,
-                              ).toLocaleDateString()
-                            : "No disponible"}
-                        </div>
-                      </div>
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Estado de Conciencia</span>
-                        <div className="text-slate-600 capitalize text-sm">
-                          {consultaCargada.estado_conciencia || "No especificado"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* PRIMERA CONSULTA - BLOQUE VERDE INDEPENDIENTE */}
-                {(consultaCargada.tvus || consultaCargada.hcg_valor || consultaCargada.resultado) && (
-                  <div className="bg-green-50 p-6 rounded-xl border border-green-200 shadow-sm">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-green-900">Evaluación inicial</h3>
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div className="bg-white p-4 rounded-lg border border-green-200">
-                          <span className="font-semibold text-green-700 block mb-2">Síntomas</span>
-                          {consultaCargada.sintomas_seleccionados &&
-                          consultaCargada.sintomas_seleccionados.length > 0 ? (
-                            <div className="space-y-1">
-                              {consultaCargada.sintomas_seleccionados.map((sintoma: string) => (
-                                <div key={sintoma} className="text-green-800 text-sm flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                  <span>{obtenerNombreSintoma(sintoma)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-green-800 text-sm">Asintomática</div>
-                          )}
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-green-200">
-                          <span className="font-semibold text-green-700 block mb-2">TVUS</span>
-                          <div className="text-green-800 font-medium">{obtenerNombreTVUS(consultaCargada.tvus)}</div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="bg-white p-4 rounded-lg border border-green-200">
-                          <span className="font-semibold text-green-700 block mb-2">Factores de Riesgo</span>
-                          {consultaCargada.factores_seleccionados &&
-                          consultaCargada.factores_seleccionados.length > 0 ? (
-                            <div className="space-y-1">
-                              {consultaCargada.factores_seleccionados.map((factor: string) => (
-                                <div key={factor} className="text-green-800 text-sm flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                  <span>{obtenerNombreFactorRiesgo(factor)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-green-800 text-sm">Sin factores de riesgo</div>
-                          )}
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-green-200">
-                          <span className="font-semibold text-green-700 block mb-2">β-hCG</span>
-                          <div className="text-green-800 font-bold text-lg">
-                            {consultaCargada.hcg_valor || "No especificado"} mUI/mL
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 pt-4 border-t border-green-200 bg-green-100 p-4 rounded-lg">
-                      <span className="font-semibold text-green-700 block mb-2">Resultado de la Herramienta</span>
-                      <div className="text-2xl font-bold text-green-900">
-                        {consultaCargada.resultado
-                          ? `${(consultaCargada.resultado * 100).toFixed(1)}% estimación de riesgo`
-                          : "No calculado"}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* SEGUNDA CONSULTA - BLOQUE NARANJA INDEPENDIENTE */}
-                {(consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2) && (
-                  <div className="bg-orange-50 p-6 rounded-xl border border-orange-200 shadow-sm">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-orange-900">Segunda Evaluación</h3>
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div className="bg-white p-4 rounded-lg border border-orange-200">
-                          <span className="font-semibold text-orange-700 block mb-2">Síntomas</span>
-                          {consultaCargada.sintomas_seleccionados_2 &&
-                          consultaCargada.sintomas_seleccionados_2.length > 0 ? (
-                            <div className="space-y-1">
-                              {consultaCargada.sintomas_seleccionados_2.map((sintoma: string) => (
-                                <div key={sintoma} className="text-orange-800 text-sm flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                                  <span>{obtenerNombreSintoma(sintoma)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-orange-800 text-sm">Asintomática</div>
-                          )}
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-orange-200">
-                          <span className="font-semibold text-orange-700 block mb-2">TVUS</span>
-                          <div className="text-orange-800 font-medium">{obtenerNombreTVUS(consultaCargada.tvus_2)}</div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-orange-200">
-                          <span className="font-semibold text-orange-700 block mb-2">Variación β-hCG</span>
-                          <div className="text-orange-800 font-medium capitalize">
-                            {consultaCargada.variacion_hcg_2?.replace(/_/g, " ") || "No calculada"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="bg-white p-4 rounded-lg border border-orange-200">
-                          <span className="font-semibold text-orange-700 block mb-2">Factores de Riesgo</span>
-                          {consultaCargada.factores_seleccionados_2 &&
-                          consultaCargada.factores_seleccionados_2.length > 0 ? (
-                            <div className="space-y-1">
-                              {consultaCargada.factores_seleccionados_2.map((factor: string) => (
-                                <div key={factor} className="text-orange-800 text-sm flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                                  <span>{obtenerNombreFactorRiesgo(factor)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-orange-800 text-sm">Sin factores de riesgo</div>
-                          )}
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-orange-200">
-                          <span className="font-semibold text-orange-700 block mb-2">β-hCG Actual</span>
-                          <div className="text-orange-800 font-bold text-lg">
-                            {consultaCargada.hcg_valor_2 || "No especificado"} mUI/mL
-                          </div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-orange-200">
-                          <span className="font-semibold text-orange-700 block mb-2">β-hCG Anterior</span>
-                          <div className="text-orange-800 font-medium">
-                            {consultaCargada.hcg_anterior_2 || consultaCargada.hcg_valor || "No especificado"} mUI/mL
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 pt-4 border-t border-orange-200 bg-orange-100 p-4 rounded-lg">
-                      <span className="font-semibold text-orange-700 block mb-2">Resultado de la Herramienta</span>
-                      <div className="text-2xl font-bold text-orange-900">
-                        {consultaCargada.resultado_2
-                          ? `${(consultaCargada.resultado_2 * 100).toFixed(1)}% estimación de riesgo`
-                          : "No calculado"}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* TERCERA CONSULTA - BLOQUE PÚRPURA INDEPENDIENTE */}
-                {(consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3) && (
-                  <div className="bg-purple-50 p-6 rounded-xl border border-purple-200 shadow-sm">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-purple-900">Tercera Evaluación</h3>
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div className="bg-white p-4 rounded-lg border border-purple-200">
-                          <span className="font-semibold text-purple-700 block mb-2">Síntomas</span>
-                          {consultaCargada.sintomas_seleccionados_3 &&
-                          consultaCargada.sintomas_seleccionados_3.length > 0 ? (
-                            <div className="space-y-1">
-                              {consultaCargada.sintomas_seleccionados_3.map((sintoma: string) => (
-                                <div key={sintoma} className="text-purple-800 text-sm flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                                  <span>{obtenerNombreSintoma(sintoma)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-purple-800 text-sm">Asintomática</div>
-                          )}
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-purple-200">
-                          <span className="font-semibold text-purple-700 block mb-2">TVUS</span>
-                          <div className="text-purple-800 font-medium">{obtenerNombreTVUS(consultaCargada.tvus_3)}</div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-purple-200">
-                          <span className="font-semibold text-purple-700 block mb-2">Variación β-hCG</span>
-                          <div className="text-purple-800 font-medium capitalize">
-                            {consultaCargada.variacion_hcg_3?.replace(/_/g, " ") || "No calculada"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="bg-white p-4 rounded-lg border border-purple-200">
-                          <span className="font-semibold text-purple-700 block mb-2">Factores de Riesgo</span>
-                          {consultaCargada.factores_seleccionados_3 &&
-                          consultaCargada.factores_seleccionados_3.length > 0 ? (
-                            <div className="space-y-1">
-                              {consultaCargada.factores_seleccionados_3.map((factor: string) => (
-                                <div key={factor} className="text-purple-800 text-sm flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                                  <span>{obtenerNombreFactorRiesgo(factor)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-purple-800 text-sm">Sin factores de riesgo</div>
-                          )}
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-purple-200">
-                          <span className="font-semibold text-purple-700 block mb-2">β-hCG Actual</span>
-                          <div className="text-purple-800 font-bold text-lg">
-                            {consultaCargada.hcg_valor_3 || "No especificado"} mUI/mL
-                          </div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-purple-200">
-                          <span className="font-semibold text-purple-700 block mb-2">β-hCG Anterior</span>
-                          <div className="text-purple-800 font-medium">
-                            {consultaCargada.hcg_anterior_3 ||
-                              consultaCargada.hcg_valor_2 ||
-                              consultaCargada.hcg_valor ||
-                              "No especificado"}{" "}
-                            mUI/mL
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 pt-4 border-t border-purple-200 bg-purple-100 p-4 rounded-lg">
-                      <span className="font-semibold text-purple-700 block mb-2">Resultado de la Herramienta</span>
-                      <div className="text-2xl font-bold text-purple-900">
-                        {consultaCargada.resultado_3
-                          ? `${(consultaCargada.resultado_3 * 100).toFixed(1)}% estimación de riesgo`
-                          : "No calculado"}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Información de seguimiento */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg">
-                      <AlertTriangle className="h-6 w-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-slate-800">Consulta de Seguimiento</h3>
-                  </div>
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                    <p className="text-blue-800 text-sm">
-                      Al continuar, se cargará automáticamente la información de la consulta previa. Ingrese nuevamente
-                      TVUS y el nuevo valor de β-hCG para la siguiente evaluación de apoyo.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Botones de acción */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                  <div className="flex space-x-4 justify-center">
+                  <div className="flex space-x-4">
                     <Button
-                      onClick={continuarConsultaCargada}
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-2 px-6 shadow-sm"
+                      onClick={buscarConsulta}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-6"
                     >
-                      <ArrowRight className="h-4 w-4 mr-2" />
-                      Continuar Consulta
+                      <FileText className="h-4 w-4 mr-2" />
+                      Buscar Consulta
                     </Button>
                     <Button
                       onClick={() => {
-                        setMostrarResumenConsulta(false)
-                        setModoCargarConsulta(true)
-                        setConsultaCargada(null)
+                        setModoCargarConsulta(false)
+                        setMostrarPantallaBienvenida(true)
                       }}
                       variant="outline"
-                      className="border-gray-300 text-gray-600 hover:bg-gray-50 shadow-sm"
+                      className="border-gray-300 text-gray-600 hover:bg-gray-50"
                     >
-                      Buscar Otra Consulta
+                      Cancelar
                     </Button>
                   </div>
-                </div>
-
-                <CMGFooter />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      ) : protocoloFinalizado ? (
-        <div className="max-w-4xl mx-auto p-6">
-          <Card className="shadow-lg">
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-slate-800">Evaluación Completada</h2>
-                </div>
-
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 text-center">
-                  <p className="text-blue-900 font-medium">{mensajeFinal}</p>
-                </div>
-
-                {/* NUEVA SECCIÓN: Información de la consulta guardada */}
-                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <span className="font-semibold text-green-900">Información Guardada</span>
-                  </div>
-                  <div className="text-green-800 text-sm space-y-2">
-                    <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
-                    <p>
-                      📋 ID de Consulta: <span className="font-mono font-bold">{idSeguimiento}</span>
-                    </p>
-                    <p>
-                      👤 Paciente: {nombrePaciente}, {edadPaciente} años
-                    </p>
-                    <p>📊 Sección completada: {Math.max(...seccionesCompletadas, seccionActual - 1)} de 5</p>
-                    <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
-                  </div>
-                </div>
-
-                {resultado !== null && (
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 text-center">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-4">Estimación de Riesgo Sugerida</h3>
-                    <div className="text-4xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
-                    <p className="text-blue-800 text-sm">
-                      {resultado >= 0.95
-                        ? "Se sugiere considerar alta probabilidad - Evaluación médica recomendada"
-                        : resultado < 0.01
-                          ? "Se sugiere considerar baja probabilidad - Seguimiento médico recomendado"
-                          : "Probabilidad intermedia - Seguimiento médico requerido"}
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex space-x-4">
-                  <Button
-                    onClick={generarInformePDF}
-                    variant="outline"
-                    className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Generar Reporte
-                  </Button>
-                  <Button onClick={volverAInicio} className="bg-green-600 hover:bg-green-700 text-white">
-                    <User className="h-4 w-4 mr-2" />
-                    Nueva Evaluación
-                  </Button>
                 </div>
                 <CMGFooter />
               </div>
@@ -1794,6 +1475,9 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                 </div>
 
+                {/* Renderizar el bloque de consulta con pronóstico y sugerencias */}
+                {renderBloqueConsultaIndividual()}
+
                 {/* ID de seguimiento con diseño mejorado */}
                 {mostrarIdSeguimiento && idSeguimiento && resultado < 0.95 && resultado > 0.01 && (
                   <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
@@ -1808,7 +1492,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         <span className="text-slate-700 font-medium">⚪ Guarde este ID:</span>
                         <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-lg border border-blue-200">
                           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
-                            <span className="text-white text-xs font-bold">ID</span>
+                            <span className="text-white text-xs font-bold">#</span>
                           </div>
                           <span className="font-mono text-blue-700 font-bold text-lg">{idSeguimiento}</span>
                           <Button
@@ -1837,8 +1521,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                 )}
 
-                {/* Resumen de la consulta con diseño mejorado */}
-
                 {/* Botones con diseño mejorado */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
                   <div className="flex space-x-4 justify-center">
@@ -1865,110 +1547,533 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
             </CardContent>
           </Card>
         </div>
-      ) : (
-        <div>
-          <div className="max-w-4xl mx-auto p-6">
-            <Card className="shadow-lg">
-              <CardContent className="p-8">
-                {seccionActual === 1 && (
-                  <div className="space-y-6">
-                    <div className="flex items-center space-x-3">
-                      <User className="h-6 w-6 text-blue-600" />
-                      <h2 className="text-2xl font-bold text-slate-800">Expediente Clínico</h2>
+      ) : protocoloFinalizado ? (
+        <div className="max-w-4xl mx-auto p-6">
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-red-50 to-orange-50">
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-red-100">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-gradient-to-br from-red-500 to-orange-600 rounded-full shadow-lg">
+                      <AlertTriangle className="h-8 w-8 text-white" />
                     </div>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">Nombre del Paciente:</Label>
-                        <input
-                          type="text"
-                          placeholder="Nombre"
-                          value={nombrePaciente}
-                          onChange={(e) => setNombrePaciente(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">Edad del Paciente:</Label>
-                        <input
-                          type="number"
-                          placeholder="Edad en años"
-                          value={edadPaciente}
-                          onChange={(e) => setEdadPaciente(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        />
-                      </div>
+                    <div>
+                      <h2 className="text-3xl font-bold text-slate-800">Protocolo Finalizado</h2>
+                      <p className="text-slate-600">Evaluación completada por criterios de exclusión</p>
                     </div>
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={() => completarSeccion(1)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
-                      >
-                        Continuar
-                      </Button>
-                    </div>
-                    <CMGFooter />
                   </div>
-                )}
+                </div>
 
-                {seccionActual === 2 && (
-                  <div className="space-y-6">
-                    <div className="flex items-center space-x-3">
-                      <Activity className="h-6 w-6 text-blue-600" />
-                      <h2 className="text-2xl font-bold text-slate-800">Signos Vitales</h2>
-                    </div>
-
-                    {mostrarAlerta && (
-                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                          <span className="font-medium text-yellow-900">Sugerencia</span>
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-red-100">
+                  <div className="text-center space-y-4">
+                    <div className="text-lg text-slate-700">{mensajeFinal}</div>
+                    {idSeguimiento && (
+                      <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center justify-center space-x-3">
+                          <span className="text-slate-700 font-medium">ID de Consulta:</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-mono text-blue-700 font-bold text-lg">{idSeguimiento}</span>
+                            <Button
+                              onClick={copiarId}
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 bg-white border-blue-300 hover:bg-blue-50"
+                            >
+                              <Copy className="h-3 w-3 text-blue-600" />
+                            </Button>
+                          </div>
                         </div>
-                        <p className="text-yellow-800 text-sm">{mensajeAlerta}</p>
                       </div>
                     )}
+                  </div>
+                </div>
 
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">Frecuencia Cardíaca (lpm)</Label>
-                          <input
-                            type="number"
-                            placeholder="60-100"
-                            value={frecuenciaCardiaca}
-                            onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                          />
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-red-100">
+                  <div className="flex space-x-4 justify-center">
+                    <Button
+                      onClick={generarInformePDF}
+                      variant="outline"
+                      className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-white shadow-sm"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Generar Reporte
+                    </Button>
+                    <Button
+                      onClick={volverAInicio}
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-sm"
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Nueva Evaluación
+                    </Button>
+                  </div>
+                </div>
+
+                <CMGFooter />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : mostrarResumenConsulta && consultaCargada ? (
+        <div className="max-w-6xl mx-auto p-6">
+          <Card className="shadow-lg">
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <FileText className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-slate-800">Resumen de Consulta</h2>
+                      <p className="text-slate-600">ID: {consultaCargada.id}</p>
+                    </div>
+                  </div>
+                  <div className="flex space-x-3">
+                    <Button
+                      onClick={continuarConsultaCargada}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                    >
+                      Continuar Consulta
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setMostrarResumenConsulta(false)
+                        setModoCargarConsulta(true)
+                      }}
+                      variant="outline"
+                    >
+                      Buscar Otra
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 p-6 rounded-lg">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Datos del Paciente</h3>
+                    <div className="space-y-2">
+                      <div>
+                        <span className="font-medium text-slate-700">Nombre:</span>{" "}
+                        {consultaCargada.nombre_paciente || "No especificado"}
+                      </div>
+                      <div>
+                        <span className="font-medium text-slate-700">Edad:</span>{" "}
+                        {consultaCargada.edad_paciente || "No especificado"} años
+                      </div>
+                      <div>
+                        <span className="font-medium text-slate-700">Médico:</span>{" "}
+                        {consultaCargada.usuario_creador || "No especificado"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 p-6 rounded-lg">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Signos Vitales</h3>
+                    <div className="space-y-2">
+                      <div>
+                        <span className="font-medium text-slate-700">FC:</span>{" "}
+                        {consultaCargada.frecuencia_cardiaca || "No especificado"} lpm
+                      </div>
+                      <div>
+                        <span className="font-medium text-slate-700">PA:</span>{" "}
+                        {consultaCargada.presion_sistolica || "No especificado"}/
+                        {consultaCargada.presion_diastolica || "No especificado"} mmHg
+                      </div>
+                      <div>
+                        <span className="font-medium text-slate-700">Estado de Conciencia:</span>{" "}
+                        {consultaCargada.estado_conciencia || "No especificado"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mostrar consultas realizadas */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-slate-800">Consultas Realizadas</h3>
+
+                  {/* Primera consulta */}
+                  {(consultaCargada.tvus || consultaCargada.hcg_valor || consultaCargada.resultado) && (
+                    <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <div className="w-6 h-6 bg-green-600 rounded text-white flex items-center justify-center text-sm font-bold">
+                          1
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">Presión Sistólica (mmHg)</Label>
-                          <input
-                            type="number"
-                            placeholder="90-140"
-                            value={presionSistolica}
-                            onChange={(e) => setPresionSistolica(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                          />
+                        <h4 className="text-lg font-semibold text-green-900">Primera Consulta</h4>
+                      </div>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div>
+                          <span className="font-medium text-green-700">TVUS:</span>{" "}
+                          {obtenerNombreTVUS(consultaCargada.tvus)}
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">Presión Diastólica (mmHg)</Label>
-                          <input
-                            type="number"
-                            placeholder="60-90"
-                            value={presionDiastolica}
-                            onChange={(e) => setPresionDiastolica(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                          />
+                        <div>
+                          <span className="font-medium text-green-700">β-hCG:</span>{" "}
+                          {consultaCargada.hcg_valor || "No especificado"} mUI/mL
+                        </div>
+                        <div>
+                          <span className="font-medium text-green-700">Resultado:</span>{" "}
+                          {consultaCargada.resultado
+                            ? `${(consultaCargada.resultado * 100).toFixed(1)}%`
+                            : "No calculado"}
                         </div>
                       </div>
+                    </div>
+                  )}
 
-                      <div className="space-y-3">
-                        <Label className="text-base font-medium text-slate-700">Estado de Conciencia</Label>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {/* Segunda consulta */}
+                  {(consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2) && (
+                    <div className="bg-orange-50 p-6 rounded-lg border border-orange-200">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <div className="w-6 h-6 bg-orange-600 rounded text-white flex items-center justify-center text-sm font-bold">
+                          2
+                        </div>
+                        <h4 className="text-lg font-semibold text-orange-900">Segunda Consulta</h4>
+                      </div>
+                      <div className="grid md:grid-cols-4 gap-4">
+                        <div>
+                          <span className="font-medium text-orange-700">TVUS:</span>{" "}
+                          {obtenerNombreTVUS(consultaCargada.tvus_2)}
+                        </div>
+                        <div>
+                          <span className="font-medium text-orange-700">β-hCG:</span>{" "}
+                          {consultaCargada.hcg_valor_2 || "No especificado"} mUI/mL
+                        </div>
+                        <div>
+                          <span className="font-medium text-orange-700">Variación:</span>{" "}
+                          {consultaCargada.variacion_hcg_2?.replace(/_/g, " ") || "No calculada"}
+                        </div>
+                        <div>
+                          <span className="font-medium text-orange-700">Resultado:</span>{" "}
+                          {consultaCargada.resultado_2
+                            ? `${(consultaCargada.resultado_2 * 100).toFixed(1)}%`
+                            : "No calculado"}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tercera consulta */}
+                  {(consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3) && (
+                    <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <div className="w-6 h-6 bg-purple-600 rounded text-white flex items-center justify-center text-sm font-bold">
+                          3
+                        </div>
+                        <h4 className="text-lg font-semibold text-purple-900">Tercera Consulta</h4>
+                      </div>
+                      <div className="grid md:grid-cols-4 gap-4">
+                        <div>
+                          <span className="font-medium text-purple-700">TVUS:</span>{" "}
+                          {obtenerNombreTVUS(consultaCargada.tvus_3)}
+                        </div>
+                        <div>
+                          <span className="font-medium text-purple-700">β-hCG:</span>{" "}
+                          {consultaCargada.hcg_valor_3 || "No especificado"} mUI/mL
+                        </div>
+                        <div>
+                          <span className="font-medium text-purple-700">Variación:</span>{" "}
+                          {consultaCargada.variacion_hcg_3?.replace(/_/g, " ") || "No calculada"}
+                        </div>
+                        <div>
+                          <span className="font-medium text-purple-700">Resultado:</span>{" "}
+                          {consultaCargada.resultado_3
+                            ? `${(consultaCargada.resultado_3 * 100).toFixed(1)}%`
+                            : "No calculado"}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <CMGFooter />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        // Resto de la aplicación (secciones del formulario)
+        <div className="max-w-4xl mx-auto p-6">
+          <Card className="shadow-lg">
+            <CardContent className="p-8">
+              {seccionActual === 1 && (
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-3">
+                    <User className="h-6 w-6 text-blue-600" />
+                    <h2 className="text-2xl font-bold text-slate-800">Expediente Clínico</h2>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium text-slate-700">Nombre del Paciente:</Label>
+                      <input
+                        type="text"
+                        placeholder="Nombre"
+                        value={nombrePaciente}
+                        onChange={(e) => setNombrePaciente(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium text-slate-700">Edad del Paciente:</Label>
+                      <input
+                        type="number"
+                        placeholder="Edad en años"
+                        value={edadPaciente}
+                        onChange={(e) => setEdadPaciente(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => completarSeccion(1)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
+                    >
+                      Continuar
+                    </Button>
+                  </div>
+                  <CMGFooter />
+                </div>
+              )}
+
+              {seccionActual === 2 && (
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-3">
+                    <Activity className="h-6 w-6 text-blue-600" />
+                    <h2 className="text-2xl font-bold text-slate-800">Signos Vitales</h2>
+                  </div>
+
+                  {mostrarAlerta && (
+                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                        <span className="font-medium text-yellow-900">Sugerencia</span>
+                      </div>
+                      <p className="text-yellow-800 text-sm">{mensajeAlerta}</p>
+                    </div>
+                  )}
+
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-base font-medium text-slate-700">Frecuencia Cardíaca (lpm)</Label>
+                        <input
+                          type="number"
+                          placeholder="60-100"
+                          value={frecuenciaCardiaca}
+                          onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-base font-medium text-slate-700">Presión Sistólica (mmHg)</Label>
+                        <input
+                          type="number"
+                          placeholder="90-140"
+                          value={presionSistolica}
+                          onChange={(e) => setPresionSistolica(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-base font-medium text-slate-700">Presión Diastólica (mmHg)</Label>
+                        <input
+                          type="number"
+                          placeholder="60-90"
+                          value={presionDiastolica}
+                          onChange={(e) => setPresionDiastolica(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-base font-medium text-slate-700">Estado de Conciencia</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {[
+                          { value: "alerta", label: "Alerta" },
+                          { value: "somnolienta", label: "Somnolienta" },
+                          { value: "estuporosa", label: "Estuporosa" },
+                          { value: "comatosa", label: "Comatosa" },
+                        ].map((opcion) => (
+                          <label
+                            key={opcion.value}
+                            className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                          >
+                            <input
+                              type="radio"
+                              name="estadoConciencia"
+                              value={opcion.value}
+                              checked={estadoConciencia === opcion.value}
+                              onChange={(e) => setEstadoConciencia(e.target.value)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-center">
+                    <Button
+                      onClick={async () => {
+                        if (await validarSignosVitales()) completarSeccion(2)
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                    >
+                      Continuar
+                    </Button>
+                  </div>
+                  <CMGFooter />
+                </div>
+              )}
+
+              {seccionActual === 3 && (
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-3">
+                    <Stethoscope className="h-6 w-6 text-blue-600" />
+                    <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo</h2>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium text-slate-700">¿Se realizó prueba de embarazo?</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="pruebaEmbarazoRealizada"
+                            value="si"
+                            checked={pruebaEmbarazoRealizada === "si"}
+                            onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <span className="text-sm font-medium text-slate-700">Sí</span>
+                        </label>
+                        <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="pruebaEmbarazoRealizada"
+                            value="no"
+                            checked={pruebaEmbarazoRealizada === "no"}
+                            onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <span className="text-sm font-medium text-slate-700">No</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {pruebaEmbarazoRealizada === "si" && (
+                      <div className="space-y-2">
+                        <Label className="text-base font-medium text-slate-700">
+                          Resultado de la prueba de embarazo:
+                        </Label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="resultadoPruebaEmbarazo"
+                              value="positiva"
+                              checked={resultadoPruebaEmbarazo === "positiva"}
+                              onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-sm font-medium text-slate-700">Positiva</span>
+                          </label>
+                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="resultadoPruebaEmbarazo"
+                              value="negativa"
+                              checked={resultadoPruebaEmbarazo === "negativa"}
+                              onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-sm font-medium text-slate-700">Negativa</span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-center">
+                    <Button
+                      onClick={async () => {
+                        if (await validarPruebaEmbarazo()) completarSeccion(3)
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                    >
+                      Continuar
+                    </Button>
+                  </div>
+                  <CMGFooter />
+                </div>
+              )}
+
+              {seccionActual === 4 && (
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-3">
+                    <Stethoscope className="h-6 w-6 text-blue-600" />
+                    <h2 className="text-2xl font-bold text-slate-800">Hallazgos y Ecografía</h2>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium text-slate-700">
+                        Hallazgos en la exploración física:
+                      </Label>
+                      <input
+                        type="text"
+                        placeholder="Hallazgos"
+                        value={hallazgosExploracion}
+                        onChange={(e) => setHallazgosExploracion(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium text-slate-700">
+                        ¿Se realizó ecografía transabdominal?
+                      </Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="tieneEcoTransabdominal"
+                            value="si"
+                            checked={tieneEcoTransabdominal === "si"}
+                            onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <span className="text-sm font-medium text-slate-700">Sí</span>
+                        </label>
+                        <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="tieneEcoTransabdominal"
+                            value="no"
+                            checked={tieneEcoTransabdominal === "no"}
+                            onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <span className="text-sm font-medium text-slate-700">No</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {tieneEcoTransabdominal === "si" && (
+                      <div className="space-y-2">
+                        <Label className="text-base font-medium text-slate-700">
+                          Resultado de la ecografía transabdominal:
+                        </Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {[
-                            { value: "alerta", label: "Alerta" },
-                            { value: "somnolienta", label: "Somnolienta" },
-                            { value: "estuporosa", label: "Estuporosa" },
-                            { value: "comatosa", label: "Comatosa" },
+                            { value: "saco_embrion_fc", label: "Saco embrionario con FC" },
+                            { value: "saco_vitelino_embrion", label: "Saco vitelino con embrión" },
+                            { value: "saco_vitelino_sin_embrion", label: "Saco vitelino sin embrión" },
+                            { value: "saco_sin_embrion", label: "Saco sin embrión" },
+                            { value: "saco_10mm_decidual_2mm", label: "Saco >10mm con anillo decidual >2mm" },
+                            { value: "sin_hallazgos", label: "Sin hallazgos" },
+                            { value: "otros", label: "Otros" },
                           ].map((opcion) => (
                             <label
                               key={opcion.value}
@@ -1976,10 +2081,10 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             >
                               <input
                                 type="radio"
-                                name="estadoConciencia"
+                                name="resultadoEcoTransabdominal"
                                 value={opcion.value}
-                                checked={estadoConciencia === opcion.value}
-                                onChange={(e) => setEstadoConciencia(e.target.value)}
+                                checked={resultadoEcoTransabdominal === opcion.value}
+                                onChange={(e) => setResultadoEcoTransabdominal(e.target.value)}
                                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                               />
                               <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
@@ -1987,484 +2092,152 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           ))}
                         </div>
                       </div>
-                    </div>
-
-                    <div className="text-center">
-                      <Button
-                        onClick={() => {
-                          if (validarSignosVitales()) completarSeccion(2)
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
-                      >
-                        Continuar
-                      </Button>
-                    </div>
-                    <CMGFooter />
+                    )}
                   </div>
-                )}
 
-                {seccionActual === 3 && (
-                  <div className="space-y-6">
-                    <div className="flex items-center space-x-3">
-                      <FileText className="h-6 w-6 text-blue-600" />
-                      <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo</h2>
-                    </div>
+                  <div className="text-center">
+                    <Button
+                      onClick={async () => {
+                        if (await validarEcoTransabdominal()) completarSeccion(4)
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                    >
+                      Continuar
+                    </Button>
+                  </div>
+                  <CMGFooter />
+                </div>
+              )}
 
-                    <div className="space-y-6">
-                      <div className="space-y-3">
-                        <Label className="text-base font-medium text-slate-700">
-                          ¿Se realizó prueba de embarazo cualitativa?
-                        </Label>
-                        <div className="flex space-x-4">
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+              {seccionActual === 5 && (
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-3">
+                    <Calculator className="h-6 w-6 text-blue-600" />
+                    <h2 className="text-2xl font-bold text-slate-800">Calculadora de Riesgo</h2>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium text-slate-700">Síntomas:</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {sintomas.map((sintoma) => (
+                          <label
+                            key={sintoma.id}
+                            className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                          >
                             <input
-                              type="radio"
-                              name="pruebaEmbarazo"
-                              value="si"
-                              checked={pruebaEmbarazoRealizada === "si"}
-                              onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
+                              type="checkbox"
+                              value={sintoma.id}
+                              checked={sintomasSeleccionados.includes(sintoma.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSintomasSeleccionados([...sintomasSeleccionados, sintoma.id])
+                                } else {
+                                  setSintomasSeleccionados(sintomasSeleccionados.filter((id) => id !== sintoma.id))
+                                }
+                              }}
                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
-                            <span className="text-sm font-medium text-slate-700">Sí</span>
+                            <span className="text-sm font-medium text-slate-700">{sintoma.label}</span>
                           </label>
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium text-slate-700">Factores de Riesgo:</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {factoresRiesgo.map((factor) => (
+                          <label
+                            key={factor.id}
+                            className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                          >
                             <input
-                              type="radio"
-                              name="pruebaEmbarazo"
-                              value="no"
-                              checked={pruebaEmbarazoRealizada === "no"}
-                              onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
+                              type="checkbox"
+                              value={factor.id}
+                              checked={factoresSeleccionados.includes(factor.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFactoresSeleccionados([...factoresSeleccionados, factor.id])
+                                } else {
+                                  setFactoresSeleccionados(factoresSeleccionados.filter((id) => id !== factor.id))
+                                }
+                              }}
                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
-                            <span className="text-sm font-medium text-slate-700">No</span>
+                            <span className="text-sm font-medium text-slate-700">{factor.label}</span>
                           </label>
-                        </div>
-                      </div>
-
-                      {pruebaEmbarazoRealizada === "si" && (
-                        <div className="space-y-3">
-                          <Label className="text-base font-medium text-slate-700">Resultado de la prueba</Label>
-                          <div className="flex space-x-4">
-                            <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="resultadoPrueba"
-                                value="positiva"
-                                checked={resultadoPruebaEmbarazo === "positiva"}
-                                onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                              />
-                              <span className="text-sm font-medium text-slate-700">Positiva</span>
-                            </label>
-                            <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="resultadoPrueba"
-                                value="negativa"
-                                checked={resultadoPruebaEmbarazo === "negativa"}
-                                onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                              />
-                              <span className="text-sm font-medium text-slate-700">Negativa</span>
-                            </label>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex justify-between">
-                      <Button
-                        onClick={() => setSeccionActual(2)}
-                        variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                      >
-                        Anterior
-                      </Button>
-                      <div className="text-center">
-                        <Button
-                          onClick={() => {
-                            if (validarPruebaEmbarazo()) completarSeccion(3)
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
-                        >
-                          Continuar
-                        </Button>
+                        ))}
                       </div>
                     </div>
-                    <CMGFooter />
-                  </div>
-                )}
 
-                {seccionActual === 4 && (
-                  <div className="space-y-6">
-                    <div className="flex items-center space-x-3">
-                      <Stethoscope className="h-6 w-6 text-blue-600" />
-                      <h2 className="text-2xl font-bold text-slate-800">Evaluación Previa</h2>
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium text-slate-700">Ecografía Transvaginal (TVUS):</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {[
+                          { value: "normal", label: "Normal" },
+                          { value: "libre", label: "Líquido libre" },
+                          { value: "masa", label: "Masa anexial" },
+                          { value: "masa_libre", label: "Masa anexial + líquido libre" },
+                        ].map((opcion) => (
+                          <label
+                            key={opcion.value}
+                            className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                          >
+                            <input
+                              type="radio"
+                              name="tvus"
+                              value={opcion.value}
+                              checked={tvus === opcion.value}
+                              onChange={(e) => setTvus(e.target.value)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">Hallazgos de Exploración Física</Label>
-                        <textarea
-                          placeholder="Describa los hallazgos relevantes..."
-                          value={hallazgosExploracion}
-                          onChange={(e) => setHallazgosExploracion(e.target.value)}
-                          rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
+                        <Label className="text-base font-medium text-slate-700">β-hCG (mUI/mL):</Label>
+                        <input
+                          type="number"
+                          placeholder="Valor de β-hCG"
+                          value={hcgValor}
+                          onChange={(e) => setHcgValor(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         />
                       </div>
 
-                      <div className="space-y-3">
-                        <Label className="text-base font-medium text-slate-700">¿Tiene ecografía transabdominal?</Label>
-                        <div className="flex space-x-4">
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="tieneEco"
-                              value="si"
-                              checked={tieneEcoTransabdominal === "si"}
-                              onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">Sí</span>
-                          </label>
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="tieneEco"
-                              value="no"
-                              checked={tieneEcoTransabdominal === "no"}
-                              onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">No</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      {tieneEcoTransabdominal === "si" && (
-                        <div className="space-y-3">
-                          <Label className="text-base font-medium text-slate-700">Resultado de la ecografía</Label>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {[
-                              { value: "saco_embrion_fc", label: "Saco embrionario con FC" },
-                              { value: "saco_vitelino_embrion", label: "Saco vitelino con embrión" },
-                              { value: "saco_vitelino_sin_embrion", label: "Saco vitelino sin embrión" },
-                              { value: "saco_sin_embrion", label: "Saco sin embrión" },
-                              { value: "saco_10mm_decidual_2mm", label: "Saco ≥10mm con anillo decidual ≥2mm" },
-                              { value: "ausencia_saco", label: "Ausencia de saco" },
-                            ].map((opcion) => (
-                              <label
-                                key={opcion.value}
-                                className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
-                              >
-                                <input
-                                  type="radio"
-                                  name="resultadoEco"
-                                  value={opcion.value}
-                                  checked={resultadoEcoTransabdominal === opcion.value}
-                                  onChange={(e) => setResultadoEcoTransabdominal(e.target.value)}
-                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                                />
-                                <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
-                              </label>
-                            ))}
-                          </div>
+                      {esConsultaSeguimiento && (
+                        <div className="space-y-2">
+                          <Label className="text-base font-medium text-slate-700">β-hCG Anterior (mUI/mL):</Label>
+                          <input
+                            type="number"
+                            placeholder="Valor anterior de β-hCG"
+                            value={hcgAnterior}
+                            onChange={(e) => setHcgAnterior(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          />
                         </div>
                       )}
                     </div>
-
-                    <div className="flex justify-between">
-                      <Button
-                        onClick={() => setSeccionActual(3)}
-                        variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                      >
-                        Anterior
-                      </Button>
-                      <div className="text-center">
-                        <Button
-                          onClick={() => {
-                            if (validarEcoTransabdominal()) completarSeccion(4)
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
-                        >
-                          Continuar
-                        </Button>
-                      </div>
-                    </div>
-                    <CMGFooter />
                   </div>
-                )}
 
-                {seccionActual === 5 && (
-                  <div className="space-y-6">
-                    {/* Header con diseño mejorado */}
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg shadow-lg">
-                      <div className="flex items-center space-x-3">
-                        <Calculator className="h-8 w-8" />
-                        <div>
-                          <h2 className="text-2xl font-bold">Calculadora de Riesgo de Embarazo Ectópico</h2>
-                          <p className="text-blue-100 text-sm">
-                            Herramienta de apoyo clínico para la evaluación del riesgo de embarazo ectópico
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Contenido principal */}
-                    <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                      <div className="flex items-center space-x-2 mb-6">
-                        <div className="p-2 bg-orange-100 rounded-lg">
-                          <FileText className="h-5 w-5 text-orange-600" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-gray-800">Evaluación de Riesgo</h3>
-                      </div>
-
-                      <div className="space-y-8">
-                        {/* Síntomas Presentes - Layout 2x2 */}
-                        <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-4">Síntomas Presentes</h4>
-                          <div className="grid grid-cols-2 gap-4">
-                            {/* Primera fila */}
-                            <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                              <div className="relative">
-                                <input
-                                  type="checkbox"
-                                  checked={sintomasSeleccionados.includes("sangrado")}
-                                  onChange={(e) =>
-                                    setSintomasSeleccionados((prev) =>
-                                      e.target.checked ? [...prev, "sangrado"] : prev.filter((id) => id !== "sangrado"),
-                                    )
-                                  }
-                                  className="sr-only"
-                                />
-                                <div
-                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                    sintomasSeleccionados.includes("sangrado")
-                                      ? "bg-blue-600 border-blue-600"
-                                      : "border-gray-300 hover:border-blue-400"
-                                  }`}
-                                >
-                                  {sintomasSeleccionados.includes("sangrado") && (
-                                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                                  )}
-                                </div>
-                              </div>
-                              <span className="text-sm font-medium text-gray-700">Sangrado vaginal</span>
-                            </label>
-
-                            <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                              <div className="relative">
-                                <input
-                                  type="checkbox"
-                                  checked={sintomasSeleccionados.includes("dolor")}
-                                  onChange={(e) =>
-                                    setSintomasSeleccionados((prev) =>
-                                      e.target.checked ? [...prev, "dolor"] : prev.filter((id) => id !== "dolor"),
-                                    )
-                                  }
-                                  className="sr-only"
-                                />
-                                <div
-                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                    sintomasSeleccionados.includes("dolor")
-                                      ? "bg-blue-600 border-blue-600"
-                                      : "border-gray-300 hover:border-blue-400"
-                                  }`}
-                                >
-                                  {sintomasSeleccionados.includes("dolor") && (
-                                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                                  )}
-                                </div>
-                              </div>
-                              <span className="text-sm font-medium text-gray-700">Dolor pélvico/abdominal</span>
-                            </label>
-
-                            {/* Segunda fila */}
-                            <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                              <div className="relative">
-                                <input
-                                  type="checkbox"
-                                  checked={sintomasSeleccionados.includes("dolor_sangrado")}
-                                  onChange={(e) =>
-                                    setSintomasSeleccionados((prev) =>
-                                      e.target.checked
-                                        ? [...prev, "dolor_sangrado"]
-                                        : prev.filter((id) => id !== "dolor_sangrado"),
-                                    )
-                                  }
-                                  className="sr-only"
-                                />
-                                <div
-                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                    sintomasSeleccionados.includes("dolor_sangrado")
-                                      ? "bg-blue-600 border-blue-600"
-                                      : "border-gray-300 hover:border-blue-400"
-                                  }`}
-                                >
-                                  {sintomasSeleccionados.includes("dolor_sangrado") && (
-                                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                                  )}
-                                </div>
-                              </div>
-                              <span className="text-sm font-medium text-gray-700">Sangrado + Dolor</span>
-                            </label>
-
-                            <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                              <div className="relative">
-                                <input
-                                  type="checkbox"
-                                  checked={sintomasSeleccionados.includes("sincope")}
-                                  onChange={(e) =>
-                                    setSintomasSeleccionados((prev) =>
-                                      e.target.checked ? [...prev, "sincope"] : prev.filter((id) => id !== "sincope"),
-                                    )
-                                  }
-                                  className="sr-only"
-                                />
-                                <div
-                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                    sintomasSeleccionados.includes("sincope")
-                                      ? "bg-blue-600 border-blue-600"
-                                      : "border-gray-300 hover:border-blue-400"
-                                  }`}
-                                >
-                                  {sintomasSeleccionados.includes("sincope") && (
-                                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                                  )}
-                                </div>
-                              </div>
-                              <span className="text-sm font-medium text-gray-700">Síncope o mareo</span>
-                            </label>
-                          </div>
-                        </div>
-
-                        {/* Factores de Riesgo */}
-                        <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-4">Factores de Riesgo</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {factoresRiesgo.map((factor) => (
-                              <label
-                                key={factor.id}
-                                className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                              >
-                                <div className="relative">
-                                  <input
-                                    type="checkbox"
-                                    checked={factoresSeleccionados.includes(factor.id)}
-                                    onChange={(e) =>
-                                      setFactoresSeleccionados((prev) =>
-                                        e.target.checked ? [...prev, factor.id] : prev.filter((id) => id !== factor.id),
-                                      )
-                                    }
-                                    className="sr-only"
-                                  />
-                                  <div
-                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                      factoresSeleccionados.includes(factor.id)
-                                        ? "bg-blue-600 border-blue-600"
-                                        : "border-gray-300 hover:border-blue-400"
-                                    }`}
-                                  >
-                                    {factoresSeleccionados.includes(factor.id) && (
-                                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                                    )}
-                                  </div>
-                                </div>
-                                <span className="text-sm font-medium text-gray-700">{factor.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Ecografía Transvaginal (TVUS) */}
-                        <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-4">Ecografía Transvaginal (TVUS)</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {[
-                              { value: "normal", label: "Normal" },
-                              { value: "libre", label: "Líquido libre" },
-                              { value: "masa", label: "Masa anexial" },
-                              { value: "masa_libre", label: "Masa anexial + líquido libre" },
-                            ].map((opcion) => (
-                              <label
-                                key={opcion.value}
-                                className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                              >
-                                <div className="relative">
-                                  <input
-                                    type="radio"
-                                    name="tvus"
-                                    value={opcion.value}
-                                    checked={tvus === opcion.value}
-                                    onChange={(e) => setTvus(e.target.value)}
-                                    className="sr-only"
-                                  />
-                                  <div
-                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                      tvus === opcion.value
-                                        ? "bg-blue-600 border-blue-600"
-                                        : "border-gray-300 hover:border-blue-400"
-                                    }`}
-                                  >
-                                    {tvus === opcion.value && <div className="w-2 h-2 bg-white rounded-full"></div>}
-                                  </div>
-                                </div>
-                                <span className="text-sm font-medium text-gray-700">{opcion.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* β-HCG actual */}
-                        <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-4">β-HCG actual (mUI/mL)</h4>
-                          <input
-                            type="number"
-                            placeholder="Valor actual"
-                            value={hcgValor}
-                            onChange={(e) => setHcgValor(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-700"
-                          />
-                        </div>
-
-                        {esConsultaSeguimiento && hcgAnterior && (
-                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <p className="text-sm text-blue-800">
-                              <strong>β-hCG de consulta anterior:</strong> {hcgAnterior} mUI/mL
-                            </p>
-                            <p className="text-xs text-blue-600 mt-1">
-                              Se calculará automáticamente la variación con el valor actual
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Botones */}
-                      <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
-                        <Button
-                          onClick={() => setSeccionActual(4)}
-                          variant="outline"
-                          className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                        >
-                          Anterior
-                        </Button>
-                        <Button
-                          onClick={calcular}
-                          className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg"
-                        >
-                          <Calculator className="h-5 w-5 mr-2" />
-                          Calcular Riesgo
-                        </Button>
-                      </div>
-                    </div>
-                    <CMGFooter />
+                  <div className="text-center">
+                    <Button
+                      onClick={calcular}
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-8"
+                    >
+                      Calcular Riesgo
+                    </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                  <CMGFooter />
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

@@ -3,15 +3,39 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin"
 
 type Params = { params: { id: string } }
 
+// Función auxiliar para extraer el número del ID
+function extractNumericId(id: string): number | null {
+  // Si el ID tiene formato "ID-00098", extraer solo la parte numérica
+  if (id.startsWith("ID-")) {
+    const numericPart = id.replace("ID-", "")
+    const parsedId = Number.parseInt(numericPart, 10)
+    return isNaN(parsedId) ? null : parsedId
+  }
+  // Si ya es numérico, intentar convertirlo
+  const parsedId = Number.parseInt(id, 10)
+  return isNaN(parsedId) ? null : parsedId
+}
+
 export async function GET(_req: Request, { params }: Params) {
   try {
-    const { data, error } = await supabaseAdmin.from("consultas").select("*").eq("id", params.id).single()
+    // Intentamos buscar primero por el ID completo (por si la base de datos usa strings)
+    let { data, error } = await supabaseAdmin.from("consultas").select("*").eq("id", params.id).single()
+
+    // Si no se encuentra, intentamos con el ID numérico
+    if (error) {
+      const numericId = extractNumericId(params.id)
+      if (numericId !== null) {
+        const result = await supabaseAdmin.from("consultas").select("*").eq("id", numericId).single()
+        data = result.data
+        error = result.error
+      }
+    }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 404 })
 
     // Mapear del esquema de base de datos al formato frontend
     const consultaNormalizada = {
-      id: data.id,
+      id: params.id, // Mantenemos el ID original para el frontend
       fecha_creacion: data.created_at,
       fecha_ultima_actualizacion: data.updated_at,
       usuario_creador: data.Dr,
@@ -65,6 +89,12 @@ export async function PATCH(req: Request, { params }: Params) {
 
     console.log("PATCH recibido:", { id: params.id, visita, body })
 
+    // Extraer el ID numérico
+    const numericId = extractNumericId(params.id)
+    if (numericId === null) {
+      return NextResponse.json({ error: "ID inválido" }, { status: 400 })
+    }
+
     // Preparar el objeto de actualización usando TU esquema
     const updateData: Record<string, any> = {}
 
@@ -96,12 +126,13 @@ export async function PATCH(req: Request, { params }: Params) {
     }
 
     console.log("Datos a actualizar:", updateData)
+    console.log("ID numérico extraído:", numericId)
 
-    // CORREGIR: Usar el ID como string, no intentar convertir a número
+    // Usar el ID numérico para la actualización
     const { data, error } = await supabaseAdmin
       .from("consultas")
       .update(updateData)
-      .eq("id", params.id) // Mantener como string
+      .eq("id", numericId) // Usar el ID numérico
       .select()
       .single()
 
@@ -120,7 +151,12 @@ export async function PATCH(req: Request, { params }: Params) {
 
 export async function DELETE(_req: Request, { params }: Params) {
   try {
-    const { error } = await supabaseAdmin.from("consultas").delete().eq("id", params.id)
+    const numericId = extractNumericId(params.id)
+    if (numericId === null) {
+      return NextResponse.json({ error: "ID inválido" }, { status: 400 })
+    }
+
+    const { error } = await supabaseAdmin.from("consultas").delete().eq("id", numericId)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })
   } catch (e: any) {

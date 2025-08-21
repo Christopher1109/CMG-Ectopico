@@ -1,9 +1,18 @@
 // lib/api/consultas.ts - Adaptado a tu esquema
 export async function crearConsulta(payload: any) {
+  // Si el ID tiene formato "ID-00098", extraer solo la parte numérica para la base de datos
+  const dbPayload = { ...payload }
+  if (typeof dbPayload.id === "string" && dbPayload.id.startsWith("ID-")) {
+    const numericId = Number.parseInt(dbPayload.id.replace("ID-", ""), 10)
+    if (!isNaN(numericId)) {
+      dbPayload.id = numericId
+    }
+  }
+
   const res = await fetch("/api/consultas", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(dbPayload),
   })
   return res.json()
 }

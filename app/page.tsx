@@ -2,6 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { clienteSeguro } from "@/lib/api/clienteSeguro"
 import {
   Heart,
   Stethoscope,
@@ -847,28 +848,50 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
     }
   }
 
-  const manejarLogin = (e: React.FormEvent) => {
+  const manejarLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorLogin("")
+
     if (intentosLogin >= 5) {
       setErrorLogin("Demasiados intentos fallidos. Contacte al administrador.")
       return
     }
-    const usuarioEncontrado = USUARIOS_AUTORIZADOS.find(
-      (u) => u.usuario.toLowerCase() === usuario.toLowerCase() && u.contraseña === contraseña,
-    )
-    if (usuarioEncontrado) {
-      setEstaAutenticado(true)
-      setUsuarioActual(usuarioEncontrado.usuario)
-      setNombreUsuario(usuarioEncontrado.nombre)
-      setErrorLogin("")
-      setIntentosLogin(0)
-      setUsuario("")
-      setContraseña("")
-    } else {
-      setIntentosLogin((prev) => prev + 1)
-      setErrorLogin(`Credenciales incorrectas. Intento ${intentosLogin + 1} de 5.`)
-      setContraseña("")
+
+    try {
+      const resultado = await clienteSeguro.login(usuario, contraseña)
+
+      if (resultado.success) {
+        setEstaAutenticado(true)
+        setUsuarioActual(resultado.usuario.usuario)
+        setNombreUsuario(resultado.usuario.nombre)
+        setErrorLogin("")
+        setIntentosLogin(0)
+        setUsuario("")
+        setContraseña("")
+      } else {
+        setIntentosLogin((prev) => prev + 1)
+        setErrorLogin(`Credenciales incorrectas. Intento ${intentosLogin + 1} de 5.`)
+        setContraseña("")
+      }
+    } catch (error) {
+      // Fallback al método original si falla
+      const usuarioEncontrado = USUARIOS_AUTORIZADOS.find(
+        (u) => u.usuario.toLowerCase() === usuario.toLowerCase() && u.contraseña === contraseña,
+      )
+
+      if (usuarioEncontrado) {
+        setEstaAutenticado(true)
+        setUsuarioActual(usuarioEncontrado.usuario)
+        setNombreUsuario(usuarioEncontrado.nombre)
+        setErrorLogin("")
+        setIntentosLogin(0)
+        setUsuario("")
+        setContraseña("")
+      } else {
+        setIntentosLogin((prev) => prev + 1)
+        setErrorLogin(`Credenciales incorrectas. Intento ${intentosLogin + 1} de 5.`)
+        setContraseña("")
+      }
     }
   }
 
@@ -1243,7 +1266,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     <AlertTriangle className="h-5 w-5 text-blue-600" />
                     <span className="font-medium text-blue-900">Información Importante</span>
                   </div>
-                </div>
                 <p className="text-blue-800 text-sm">
                   Las consultas de seguimiento se sugiere realizarlas entre 48-72 horas después de la consulta inicial.
                   Ingrese el ID de seguimiento.
@@ -2357,7 +2379,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                         {/* Ecografía Transvaginal (TVUS) */}
                         <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-4">Ecografía Transvaginal (TVUS)</h4>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4">Ecografía Transvaginal (TVUS) *</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {[
                               { value: "normal", label: "Normal" },
@@ -2367,7 +2389,11 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             ].map((opcion) => (
                               <label
                                 key={opcion.value}
-                                className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                                className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                                  tvus === opcion.value
+                                    ? "border-blue-500 bg-blue-50 shadow-md"
+                                    : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                                }`}
                               >
                                 <div className="relative">
                                   <input
@@ -2388,10 +2414,17 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                                     {tvus === opcion.value && <div className="w-2 h-2 bg-white rounded-full"></div>}
                                   </div>
                                 </div>
-                                <span className="text-sm font-medium text-gray-700">{opcion.label}</span>
+                                <span className={`text-sm font-medium ${
+                                  tvus === opcion.value ? "text-blue-700" : "text-gray-700"
+                                }`}>
+                                  {opcion.label}
+                                </span>
                               </label>
                             ))}
                           </div>
+                          {!tvus && (
+                            <p className="text-red-500 text-sm mt-2">* Este campo es requerido</p>
+                          )}
                         </div>
 
                         {/* β-HCG actual */}
@@ -2445,5 +2478,5 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
         </div>
       )}
     </div>
-  )
+  )\
 }

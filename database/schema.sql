@@ -1,60 +1,75 @@
--- Crear la base de datos
-CREATE DATABASE calculadora_ectopico;
+-- 1. Si ya existe, elimínala
+DROP TABLE IF EXISTS public.consultas CASCADE;
 
--- Usar la base de datos
-\c calculadora_ectopico;
+-- 2. Crear tabla limpia
+CREATE TABLE public.consultas (
+  -- ID autoincremental
+  id BIGSERIAL PRIMARY KEY,
 
--- Crear tabla de consultas
-CREATE TABLE consultas (
-    id VARCHAR(20) PRIMARY KEY,
-    fecha_creacion TIMESTAMP WITH TIME ZONE NOT NULL,
-    fecha_ultima_actualizacion TIMESTAMP WITH TIME ZONE NOT NULL,
-    usuario_creador VARCHAR(100) NOT NULL,
-    nombre_paciente VARCHAR(200) NOT NULL,
-    edad_paciente INTEGER NOT NULL,
-    frecuencia_cardiaca INTEGER,
-    presion_sistolica INTEGER,
-    presion_diastolica INTEGER,
-    estado_conciencia VARCHAR(50),
-    prueba_embarazo_realizada VARCHAR(10),
-    resultado_prueba_embarazo VARCHAR(20),
-    hallazgos_exploracion TEXT,
-    tiene_eco_transabdominal VARCHAR(10),
-    resultado_eco_transabdominal VARCHAR(100),
-    sintomas_seleccionados JSONB,
-    factores_seleccionados JSONB,
-    tvus VARCHAR(50),
-    hcg_valor DECIMAL(10,2),
-    variacion_hcg VARCHAR(50),
-    hcg_anterior DECIMAL(10,2),
-    resultado DECIMAL(6,4),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  -- Doctor y paciente
+  Dr varchar(200),
+  Px varchar(200),
+  Edad_Px integer,
+
+  -- Signos vitales
+  FC integer,
+  PS integer,
+  PD integer,
+  EC varchar(50),
+
+  -- Pruebas y resultados iniciales
+  Prueba_Emb varchar(50),
+  Resultado_Emb varchar(50),
+  Hallazgos text,
+  Eco_abdominal varchar(50),
+  Resultado_EcoAbd varchar(100),
+
+  -- CONSULTA 1
+  Sintomas text,
+  Fac_Riesg text,
+  TVUS_1 varchar(50),
+  hCG_1 numeric(10,2),
+  Pronostico_1 varchar(100),
+  Consulta_1_Date timestamp with time zone,
+
+  -- CONSULTA 2
+  Sintomas_2 text,
+  Factores_2 text,
+  TVUS_2 varchar(50),
+  hCG_2 numeric(10,2),
+  Variacion_hCG_2 varchar(50),
+  Pronostico_2 varchar(100),
+  Consulta_2_Date timestamp with time zone,
+
+  -- CONSULTA 3
+  Sintomas_3 text,
+  Factores_3 text,
+  TVUS_3 varchar(50),
+  hCG_3 numeric(10,2),
+  Variacion_hCG_3 varchar(50),
+  Pronostico_3 varchar(100),
+  Consulta_3_Date timestamp with time zone,
+
+  -- Control del sistema
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
 );
 
--- Crear índices para mejorar el rendimiento
-CREATE INDEX idx_consultas_id ON consultas(id);
-CREATE INDEX idx_consultas_usuario ON consultas(usuario_creador);
-CREATE INDEX idx_consultas_fecha ON consultas(fecha_creacion);
-CREATE INDEX idx_consultas_paciente ON consultas(nombre_paciente);
+-- 3. Trigger para actualizar "updated_at"
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
 
--- Crear tabla de usuarios (opcional, para gestión avanzada)
-CREATE TABLE usuarios (
-    id SERIAL PRIMARY KEY,
-    usuario VARCHAR(100) UNIQUE NOT NULL,
-    nombre VARCHAR(200) NOT NULL,
-    email VARCHAR(200),
-    especialidad VARCHAR(100),
-    hospital VARCHAR(200),
-    activo BOOLEAN DEFAULT true,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+DROP TRIGGER IF EXISTS update_consultas_updated_at ON public.consultas;
 
--- Insertar usuarios existentes
-INSERT INTO usuarios (usuario, nombre, especialidad) VALUES
-('dr.martinez', 'Dr. Martínez', 'Ginecología'),
-('dra.rodriguez', 'Dra. Rodríguez', 'Obstetricia'),
-('dr.garcia', 'Dr. García', 'Medicina de Emergencias'),
-('dra.lopez', 'Dra. López', 'Ginecología'),
-('admin', 'Administrador', 'Administración'),
-('Christopher', 'Christopher', 'Desarrollo');
+CREATE TRIGGER update_consultas_updated_at
+BEFORE UPDATE ON public.consultas
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- 4. Activar Row Level Security (opcional)
+ALTER TABLE public.consultas ENABLE ROW LEVEL SECURITY;

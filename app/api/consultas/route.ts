@@ -23,32 +23,25 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    // IMPORTANTE: Usar un UUID real o generar uno válido
-    // Para pruebas, usamos un UUID fijo. En producción deberías usar auth.uid()
-    const testUUID = "550e8400-e29b-41d4-a716-446655440000"
-
     const payload = {
-      id: (body.id ?? "ID-" + Math.random().toString(36).slice(2, 7).toUpperCase()).slice(0, 20),
-      created_by: testUUID, // Tu esquema requiere UUID real
-      medico_nombre: body.usuarioCreador || body.medico_nombre || "Dr. Sistema", // Nuevo campo
-      nombre_paciente: body.nombre_paciente ?? "N/A",
-      edad_paciente: body.edad_paciente != null ? Number(body.edad_paciente) : null,
-      frecuencia_cardiaca: body.frecuencia_cardiaca != null ? Number(body.frecuencia_cardiaca) : null,
-      presion_sistolica: body.presion_sistolica != null ? Number(body.presion_sistolica) : null,
-      presion_diastolica: body.presion_diastolica != null ? Number(body.presion_diastolica) : null,
-      estado_conciencia: body.estado_conciencia ?? null,
-      prueba_embarazo_realizada: body.prueba_embarazo_realizada ?? null,
-      resultado_prueba_embarazo: body.resultado_prueba_embarazo ?? null,
-      hallazgos_exploracion: body.hallazgos_exploracion ?? null,
-      tiene_eco_transabdominal: body.tiene_eco_transabdominal ?? null,
-      resultado_eco_transabdominal: body.resultado_eco_transabdominal ?? null,
-      sintomas_seleccionados: Array.isArray(body.sintomas_seleccionados) ? body.sintomas_seleccionados : [],
-      factores_seleccionados: Array.isArray(body.factores_seleccionados) ? body.factores_seleccionados : [],
-      tvus: body.tvus ?? null,
-      hcg_valor: body.hcg_valor != null ? Number(body.hcg_valor) : null,
-      variacion_hcg: body.variacion_hcg ?? null,
-      hcg_anterior: body.hcg_anterior != null ? Number(body.hcg_anterior) : null,
-      resultado: body.resultado != null ? Number(body.resultado) : null,
+      Dr: body.usuario_creador || body.medico_nombre || "Dr. Sistema",
+      Px: body.nombre_paciente ?? "N/A",
+      Edad_Px: body.edad_paciente != null ? Number(body.edad_paciente) : null,
+      FC: body.frecuencia_cardiaca != null ? Number(body.frecuencia_cardiaca) : null,
+      PS: body.presion_sistolica != null ? Number(body.presion_sistolica) : null,
+      PD: body.presion_diastolica != null ? Number(body.presion_diastolica) : null,
+      EC: body.estado_conciencia ?? null,
+      Prueba_Emb: body.prueba_embarazo_realizada ?? null,
+      Resultado_Emb: body.resultado_prueba_embarazo ?? null,
+      Hallazgos: body.hallazgos_exploracion ?? null,
+      Eco_abdominal: body.tiene_eco_transabdominal ?? null,
+      Resultado_EcoAbd: body.resultado_eco_transabdominal ?? null,
+      Sintomas: Array.isArray(body.sintomas_seleccionados) ? body.sintomas_seleccionados.join(", ") : null,
+      Fac_Riesg: Array.isArray(body.factores_seleccionados) ? body.factores_seleccionados.join(", ") : null,
+      TVUS_1: body.tvus ?? null,
+      hCG_1: body.hcg_valor != null ? Number(body.hcg_valor) : null,
+      Pronostico_1: body.resultado != null ? `${(body.resultado * 100).toFixed(1)}%` : null,
+      Consulta_1_Date: new Date().toISOString(),
     }
 
     console.log("Enviando payload adaptado a tu esquema:", payload)

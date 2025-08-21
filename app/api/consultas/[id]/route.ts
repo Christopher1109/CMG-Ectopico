@@ -8,7 +8,50 @@ export async function GET(_req: Request, { params }: Params) {
     const { data, error } = await supabaseAdmin.from("consultas").select("*").eq("id", params.id).single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 404 })
-    return NextResponse.json({ data })
+
+    // Mapear del esquema de base de datos al formato frontend
+    const consultaNormalizada = {
+      id: data.id,
+      fecha_creacion: data.created_at,
+      fecha_ultima_actualizacion: data.updated_at,
+      usuario_creador: data.Dr,
+      nombre_paciente: data.Px,
+      edad_paciente: data.Edad_Px,
+      frecuencia_cardiaca: data.FC,
+      presion_sistolica: data.PS,
+      presion_diastolica: data.PD,
+      estado_conciencia: data.EC,
+      prueba_embarazo_realizada: data.Prueba_Emb,
+      resultado_prueba_embarazo: data.Resultado_Emb,
+      hallazgos_exploracion: data.Hallazgos,
+      tiene_eco_transabdominal: data.Eco_abdominal,
+      resultado_eco_transabdominal: data.Resultado_EcoAbd,
+
+      // Primera consulta
+      sintomas_seleccionados: data.Sintomas ? data.Sintomas.split(", ") : [],
+      factores_seleccionados: data.Fac_Riesg ? data.Fac_Riesg.split(", ") : [],
+      tvus: data.TVUS_1,
+      hcg_valor: data.hCG_1,
+      resultado: data.Pronostico_1 ? Number.parseFloat(data.Pronostico_1.replace("%", "")) / 100 : null,
+
+      // Segunda consulta
+      sintomas_seleccionados_2: data.Sintomas_2 ? data.Sintomas_2.split(", ") : null,
+      factores_seleccionados_2: data.Factores_2 ? data.Factores_2.split(", ") : null,
+      tvus_2: data.TVUS_2,
+      hcg_valor_2: data.hCG_2,
+      variacion_hcg_2: data.Variacion_hCG_2,
+      resultado_2: data.Pronostico_2 ? Number.parseFloat(data.Pronostico_2.replace("%", "")) / 100 : null,
+
+      // Tercera consulta
+      sintomas_seleccionados_3: data.Sintomas_3 ? data.Sintomas_3.split(", ") : null,
+      factores_seleccionados_3: data.Factores_3 ? data.Factores_3.split(", ") : null,
+      tvus_3: data.TVUS_3,
+      hcg_valor_3: data.hCG_3,
+      variacion_hcg_3: data.Variacion_hCG_3,
+      resultado_3: data.Pronostico_3 ? Number.parseFloat(data.Pronostico_3.replace("%", "")) / 100 : null,
+    }
+
+    return NextResponse.json({ data: consultaNormalizada })
   } catch (e: any) {
     return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
@@ -22,61 +65,34 @@ export async function PATCH(req: Request, { params }: Params) {
 
     console.log("PATCH recibido:", { id: params.id, visita, body })
 
-    const testUUID = "550e8400-e29b-41d4-a716-446655440000"
-
     // Preparar el objeto de actualización usando TU esquema
-    const updateData: Record<string, any> = {
-      updated_at: new Date().toISOString(), // Tu trigger se encarga de esto
-    }
+    const updateData: Record<string, any> = {}
 
     // Si es consulta de seguimiento (visita 2 o 3), mapear campos con sufijo
-    if (visita === "2" || visita === "3") {
-      const suffix = `_${visita}`
-
-      if (body.sintomas_seleccionados !== undefined) {
-        updateData[`sintomas_seleccionados${suffix}`] = Array.isArray(body.sintomas_seleccionados)
-          ? body.sintomas_seleccionados
-          : []
-      }
-
-      if (body.factores_seleccionados !== undefined) {
-        updateData[`factores_seleccionados${suffix}`] = Array.isArray(body.factores_seleccionados)
-          ? body.factores_seleccionados
-          : []
-      }
-
-      if (body.tvus !== undefined) {
-        updateData[`tvus${suffix}`] = body.tvus
-      }
-
-      if (body.hcg_valor !== undefined) {
-        updateData[`hcg_valor${suffix}`] = body.hcg_valor != null ? Number(body.hcg_valor) : null
-      }
-
-      if (body.hcg_anterior !== undefined) {
-        updateData[`hcg_anterior${suffix}`] = body.hcg_anterior != null ? Number(body.hcg_anterior) : null
-      }
-
-      if (body.variacion_hcg !== undefined) {
-        updateData[`variacion_hcg${suffix}`] = body.variacion_hcg
-      }
-
-      if (body.resultado !== undefined) {
-        updateData[`resultado${suffix}`] = body.resultado != null ? Number(body.resultado) : null
-      }
-
-      if (body.usuario_editor !== undefined) {
-        updateData[`usuario_visita${suffix}`] = testUUID // UUID para tu esquema
-      }
-
-      updateData[`fecha_visita${suffix}`] = new Date().toISOString()
-    } else {
-      // Para consulta inicial, actualizar campos normales
-      Object.keys(body).forEach((key) => {
-        if (key !== "id" && key !== "created_by") {
-          updateData[key] = body[key]
-        }
-      })
+    if (visita === "2") {
+      updateData.Sintomas_2 = Array.isArray(body.sintomas_seleccionados)
+        ? body.sintomas_seleccionados.join(", ")
+        : body.sintomas_seleccionados || null
+      updateData.Factores_2 = Array.isArray(body.factores_seleccionados)
+        ? body.factores_seleccionados.join(", ")
+        : body.factores_seleccionados || null
+      updateData.TVUS_2 = body.tvus || null
+      updateData.hCG_2 = body.hcg_valor != null ? Number(body.hcg_valor) : null
+      updateData.Variacion_hCG_2 = body.variacion_hcg || null
+      updateData.Pronostico_2 = body.resultado ? `${(body.resultado * 100).toFixed(1)}%` : null
+      updateData.Consulta_2_Date = new Date().toISOString()
+    } else if (visita === "3") {
+      updateData.Sintomas_3 = Array.isArray(body.sintomas_seleccionados)
+        ? body.sintomas_seleccionados.join(", ")
+        : body.sintomas_seleccionados || null
+      updateData.Factores_3 = Array.isArray(body.factores_seleccionados)
+        ? body.factores_seleccionados.join(", ")
+        : body.factores_seleccionados || null
+      updateData.TVUS_3 = body.tvus || null
+      updateData.hCG_3 = body.hcg_valor != null ? Number(body.hcg_valor) : null
+      updateData.Variacion_hCG_3 = body.variacion_hcg || null
+      updateData.Pronostico_3 = body.resultado ? `${(body.resultado * 100).toFixed(1)}%` : null
+      updateData.Consulta_3_Date = new Date().toISOString()
     }
 
     console.log("Datos a actualizar:", updateData)

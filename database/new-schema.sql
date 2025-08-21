@@ -73,7 +73,3 @@ EXECUTE FUNCTION update_updated_at_column();
 
 -- 4. Activar Row Level Security (opcional)
 ALTER TABLE public.consultas ENABLE ROW LEVEL SECURITY;
-
--- 5. Política básica para permitir todas las operaciones (ajustar según necesidades)
-CREATE POLICY "Allow all operations" ON public.consultas
-FOR ALL USING (true) WITH CHECK (true);

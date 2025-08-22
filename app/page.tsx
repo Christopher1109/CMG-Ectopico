@@ -1921,18 +1921,27 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <Label className="text-base font-medium text-slate-700">
                         ¿Se realizó prueba de embarazo cualitativa?
                       </Label>
+
                       <div className="grid grid-cols-2 gap-4">
+                        {/* Sí */}
                         <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
                           <input
                             type="radio"
                             name="pruebaEmbarazo"
                             value="si"
                             checked={pruebaEmbarazoRealizada === "si"}
-                            onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
+                            onChange={(e) => {
+                              setPruebaEmbarazoRealizada(e.target.value)
+                              // Limpia alerta si venía de "No"
+                              setMostrarAlerta(false)
+                              setMensajeAlerta("")
+                            }}
                             className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
                           <span className="text-base font-medium text-slate-700">Sí</span>
                         </label>
+
+                        {/* No */}
                         <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
                           <input
                             type="radio"
@@ -1941,23 +1950,27 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             checked={pruebaEmbarazoRealizada === "no"}
                             onChange={async (e) => {
                               setPruebaEmbarazoRealizada(e.target.value)
-                              if (e.target.value === "no") {
-                                // Validación inmediata cuando selecciona "No"
-                                try {
-                                  const respuesta = await calcularRiesgo({
-                                    pruebaEmbarazoRealizada: "no",
-                                    resultadoPruebaEmbarazo: "",
-                                    tvus: "normal", // valor dummy
-                                    hcgValor: "1000", // valor dummy
-                                  })
-                                  if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo_no_realizada") {
-                                    await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
-                                    setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-                                    setProtocoloFinalizado(true)
-                                  }
-                                } catch (error) {
-                                  console.warn("Error en validación inmediata:", error)
+
+                              // Muestra alerta de recomendación como las de Signos Vitales
+                              setMostrarAlerta(true)
+                              setMensajeAlerta("Se recomienda realizar una prueba de embarazo antes de proseguir.")
+
+                              // Bloqueo inmediato del flujo (concluye evaluación)
+                              try {
+                                const respuesta = await calcularRiesgo({
+                                  pruebaEmbarazoRealizada: "no",
+                                  resultadoPruebaEmbarazo: "",
+                                  tvus: "normal", // dummy para validación
+                                  hcgValor: "1000", // dummy para validación
+                                })
+                                // Si tu backend marca el motivo específico, se finaliza
+                                if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo_no_realizada") {
+                                  await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
+                                  setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+                                  setProtocoloFinalizado(true)
                                 }
+                              } catch (error) {
+                                console.warn("Error en validación inmediata:", error)
                               }
                             }}
                             className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
@@ -1967,6 +1980,18 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
                     </div>
 
+                    {/* Alerta visible cuando eligen "No" (mismo estilo que usas en Signos Vitales) */}
+                    {pruebaEmbarazoRealizada === "no" && mostrarAlerta && (
+                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                          <span className="font-medium text-yellow-900">Sugerencia</span>
+                        </div>
+                        <p className="text-yellow-800 text-sm">{mensajeAlerta}</p>
+                      </div>
+                    )}
+
+                    {/* Si es "Sí", despliega opciones de resultado como ya tienes */}
                     {pruebaEmbarazoRealizada === "si" && (
                       <div className="space-y-3">
                         <Label className="text-base font-medium text-slate-700">Resultado de la prueba</Label>
@@ -1982,6 +2007,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             />
                             <span className="text-base font-medium text-slate-700">Positiva</span>
                           </label>
+
                           <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
                             <input
                               type="radio"
@@ -1991,13 +2017,13 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                               onChange={async (e) => {
                                 setResultadoPruebaEmbarazo(e.target.value)
                                 if (e.target.value === "negativa") {
-                                  // Validación inmediata
+                                  // Validación inmediata ya presente en tu código
                                   try {
                                     const respuesta = await calcularRiesgo({
                                       pruebaEmbarazoRealizada: "si",
                                       resultadoPruebaEmbarazo: "negativa",
-                                      tvus: "normal", // valor dummy
-                                      hcgValor: "1000", // valor dummy
+                                      tvus: "normal", // dummy
+                                      hcgValor: "1000", // dummy
                                     })
                                     if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo_negativa") {
                                       await guardarDatosIncompletos("prueba_embarazo_negativa", 3)
@@ -2025,17 +2051,21 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       >
                         Anterior
                       </Button>
+
                       <div className="text-center">
                         <Button
+                          // El validador ya bloquea si seleccionaron "No"
                           onClick={async () => {
                             if (await validarPruebaEmbarazo()) completarSeccion(3)
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                          disabled={pruebaEmbarazoRealizada === "no"} // opcional: desactiva el botón por UX
                         >
                           Continuar
                         </Button>
                       </div>
                     </div>
+
                     <CMGFooter />
                   </div>
                 )}

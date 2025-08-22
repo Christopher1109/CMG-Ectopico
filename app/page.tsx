@@ -1928,7 +1928,27 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             name="pruebaEmbarazo"
                             value="si"
                             checked={pruebaEmbarazoRealizada === "si"}
-                            onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
+                            onChange={async (e) => {
+                              setPruebaEmbarazoRealizada(e.target.value)
+                              if (e.target.value === "no") {
+                                // Validación inmediata
+                                try {
+                                  const respuesta = await calcularRiesgo({
+                                    pruebaEmbarazoRealizada: "no",
+                                    resultadoPruebaEmbarazo: "",
+                                    tvus: "normal", // valor dummy
+                                    hcgValor: "1000", // valor dummy
+                                  })
+                                  if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo_no_realizada") {
+                                    await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
+                                    setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+                                    setProtocoloFinalizado(true)
+                                  }
+                                } catch (error) {
+                                  console.warn("Error en validación inmediata:", error)
+                                }
+                              }
+                            }}
                             className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
                           <span className="text-base font-medium text-slate-700">Sí</span>
@@ -1939,7 +1959,27 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             name="pruebaEmbarazo"
                             value="no"
                             checked={pruebaEmbarazoRealizada === "no"}
-                            onChange={(e) => setPruebaEmbarazoRealizada(e.target.value)}
+                            onChange={async (e) => {
+                              setPruebaEmbarazoRealizada(e.target.value)
+                              if (e.target.value === "no") {
+                                // Validación inmediata
+                                try {
+                                  const respuesta = await calcularRiesgo({
+                                    pruebaEmbarazoRealizada: "no",
+                                    resultadoPruebaEmbarazo: "",
+                                    tvus: "normal", // valor dummy
+                                    hcgValor: "1000", // valor dummy
+                                  })
+                                  if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo_no_realizada") {
+                                    await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
+                                    setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+                                    setProtocoloFinalizado(true)
+                                  }
+                                } catch (error) {
+                                  console.warn("Error en validación inmediata:", error)
+                                }
+                              }
+                            }}
                             className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
                           <span className="text-base font-medium text-slate-700">No</span>
@@ -1957,7 +1997,27 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                               name="resultadoPrueba"
                               value="positiva"
                               checked={resultadoPruebaEmbarazo === "positiva"}
-                              onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
+                              onChange={async (e) => {
+                                setResultadoPruebaEmbarazo(e.target.value)
+                                if (e.target.value === "negativa") {
+                                  // Validación inmediata
+                                  try {
+                                    const respuesta = await calcularRiesgo({
+                                      pruebaEmbarazoRealizada: "si",
+                                      resultadoPruebaEmbarazo: "negativa",
+                                      tvus: "normal", // valor dummy
+                                      hcgValor: "1000", // valor dummy
+                                    })
+                                    if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo_negativa") {
+                                      await guardarDatosIncompletos("prueba_embarazo_negativa", 3)
+                                      setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+                                      setProtocoloFinalizado(true)
+                                    }
+                                  } catch (error) {
+                                    console.warn("Error en validación inmediata:", error)
+                                  }
+                                }
+                              }}
                               className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
                             <span className="text-base font-medium text-slate-700">Positiva</span>
@@ -1968,7 +2028,27 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                               name="resultadoPrueba"
                               value="negativa"
                               checked={resultadoPruebaEmbarazo === "negativa"}
-                              onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
+                              onChange={async (e) => {
+                                setResultadoPruebaEmbarazo(e.target.value)
+                                if (e.target.value === "negativa") {
+                                  // Validación inmediata
+                                  try {
+                                    const respuesta = await calcularRiesgo({
+                                      pruebaEmbarazoRealizada: "si",
+                                      resultadoPruebaEmbarazo: "negativa",
+                                      tvus: "normal", // valor dummy
+                                      hcgValor: "1000", // valor dummy
+                                    })
+                                    if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo_negativa") {
+                                      await guardarDatosIncompletos("prueba_embarazo_negativa", 3)
+                                      setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+                                      setProtocoloFinalizado(true)
+                                    }
+                                  } catch (error) {
+                                    console.warn("Error en validación inmediata:", error)
+                                  }
+                                }
+                              }}
                               className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
                             <span className="text-base font-medium text-slate-700">Negativa</span>

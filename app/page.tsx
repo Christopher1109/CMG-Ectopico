@@ -122,7 +122,7 @@ function normalizarDesdeLocal(d: any) {
     resultado_prueba_embarazo: d.resultadoPruebaEmbarazo ?? d.resultado_prueba_embarazo ?? null,
     hallazgos_exploracion: d.hallazgosExploracion ?? d.hallazgos_exploracion ?? null,
     tiene_eco_transabdominal: d.tieneEcoTransabdominal ?? d.tiene_eco_transabdominal ?? null,
-    resultado_eco_transabdominal: d.resultadoEcoTransabdominal ?? d.resultado_eco_transabdominal ?? null,
+    resultado_eco_transabdominal: d.resultadoEcoTransabdominal ?? (d.resultado_eco_transabdominal || null),
     sintomas_seleccionados: d.sintomasSeleccionados ?? d.sintomas_seleccionados ?? [],
     factores_seleccionados: d.factoresSeleccionados ?? d.factores_seleccionados ?? [],
     tvus: d.tvus ?? null,
@@ -629,7 +629,7 @@ export default function CalculadoraEctopico() {
         edadPaciente: Number.parseInt(edadPaciente),
         frecuenciaCardiaca: Number.parseInt(frecuenciaCardiaca),
         presionSistolica: Number.parseInt(presionSistolica),
-        presionDiastolica: presionDiastolica,
+        presionDiastolica: Number.parseInt(presionDiastolica),
         estadoConciencia,
         pruebaEmbarazoRealizada,
         resultadoPruebaEmbarazo,
@@ -1977,27 +1977,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                               name="resultadoPrueba"
                               value="positiva"
                               checked={resultadoPruebaEmbarazo === "positiva"}
-                              onChange={async (e) => {
-                                setResultadoPruebaEmbarazo(e.target.value)
-                                if (e.target.value === "negativa") {
-                                  // Validación inmediata
-                                  try {
-                                    const respuesta = await calcularRiesgo({
-                                      pruebaEmbarazoRealizada: "si",
-                                      resultadoPruebaEmbarazo: "negativa",
-                                      tvus: "normal", // valor dummy
-                                      hcgValor: "1000", // valor dummy
-                                    })
-                                    if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo_negativa") {
-                                      await guardarDatosIncompletos("prueba_embarazo_negativa", 3)
-                                      setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-                                      setProtocoloFinalizado(true)
-                                    }
-                                  } catch (error) {
-                                    console.warn("Error en validación inmediata:", error)
-                                  }
-                                }
-                              }}
+                              onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
                               className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
                             <span className="text-base font-medium text-slate-700">Positiva</span>

@@ -1986,30 +1986,23 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                               checked={resultadoPruebaEmbarazo === "negativa"}
                               onChange={async (e) => {
                                 setResultadoPruebaEmbarazo(e.target.value)
-                                if (e.target.value === "negativa") {
-                                  // Validación inmediata ya presente en tu código
-                                  try {
-                                    const respuesta = await calcularRiesgo({
-                                      pruebaEmbarazoRealizada: "si",
-                                      resultadoPruebaEmbarazo: "negativa",
-                                      tvus: "normal", // dummy
-                                      hcgValor: "1000", // dummy
-                                    })
-                                    if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo_negativa") {
-                                      await guardarDatosIncompletos("prueba_embarazo_negativa", 3)
-                                      setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-                                      setProtocoloFinalizado(true)
-                                    }
-                                  } catch (error) {
-                                    console.warn("Error en validación inmediata:", error)
-                                  }
-                                }
                               }}
                               className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
                             <span className="text-base font-medium text-slate-700">Negativa</span>
                           </label>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Alerta visible cuando se presiona continuar con "No" */}
+                    {mostrarAlerta && (
+                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                          <span className="font-medium text-yellow-900">Recomendación Clínica</span>
+                        </div>
+                        <p className="text-yellow-800 text-sm">{mensajeAlerta}</p>
                       </div>
                     )}
 
@@ -2024,7 +2017,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                       <div className="text-center">
                         <Button
-                          // El validador ya bloquea si seleccionaron "No"
                           onClick={async () => {
                             if (pruebaEmbarazoRealizada === "no") {
                               // Mostrar alerta amarilla inmediatamente

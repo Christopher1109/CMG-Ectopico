@@ -1932,7 +1932,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             checked={pruebaEmbarazoRealizada === "si"}
                             onChange={(e) => {
                               setPruebaEmbarazoRealizada(e.target.value)
-                              // Limpia alerta si venía de "No"
+                              // Limpia cualquier alerta previa
                               setMostrarAlerta(false)
                               setMensajeAlerta("")
                             }}
@@ -1948,45 +1948,9 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             name="pruebaEmbarazo"
                             value="no"
                             checked={pruebaEmbarazoRealizada === "no"}
-                            onChange={async (e) => {
+                            onChange={(e) => {
                               setPruebaEmbarazoRealizada(e.target.value)
-
-                              if (e.target.value === "no") {
-                                // Primero muestra la alerta inmediatamente
-                                setMostrarAlerta(true)
-                                setMensajeAlerta(
-                                  "Se requiere realizar una prueba de embarazo cualitativa antes de continuar con la evaluación.",
-                                )
-
-                                // Pequeño delay para que el usuario vea la alerta antes del bloqueo
-                                setTimeout(async () => {
-                                  try {
-                                    const respuesta = await calcularRiesgo({
-                                      pruebaEmbarazoRealizada: "no",
-                                      resultadoPruebaEmbarazo: "",
-                                      tvus: "normal", // dummy para validación
-                                      hcgValor: "1000", // dummy para validación
-                                    })
-
-                                    if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo_no_realizada") {
-                                      await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
-                                      setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-                                      setProtocoloFinalizado(true)
-                                    }
-                                  } catch (error) {
-                                    console.warn("Error en validación inmediata:", error)
-                                    // Si hay error en el backend, aún así bloquea con mensaje genérico
-                                    await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
-                                    setMensajeFinal(
-                                      <div className="text-center">
-                                        Se requiere realizar una prueba de embarazo cualitativa antes de continuar con
-                                        la evaluación de riesgo de embarazo ectópico.
-                                      </div>,
-                                    )
-                                    setProtocoloFinalizado(true)
-                                  }
-                                }, 1500) // 1.5 segundos para que vean la alerta
-                              }
+                              setResultadoPruebaEmbarazo("")
                             }}
                             className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
@@ -1995,16 +1959,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
                     </div>
 
-                    {/* Alerta visible cuando eligen "No" (mismo estilo que usas en Signos Vitales) */}
-                    {pruebaEmbarazoRealizada === "no" && mostrarAlerta && (
-                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                          <span className="font-medium text-yellow-900">Recomendación Clínica</span>
-                        </div>
-                        <p className="text-yellow-800 text-sm">{mensajeAlerta}</p>
-                      </div>
-                    )}
 
                     {/* Si es "Sí", despliega opciones de resultado como ya tienes */}
                     {pruebaEmbarazoRealizada === "si" && (
@@ -2069,12 +2023,20 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                       <div className="text-center">
                         <Button
-                          // El validador ya bloquea si seleccionaron "No"
                           onClick={async () => {
-                            if (await validarPruebaEmbarazo()) completarSeccion(3)
+                            if (pruebaEmbarazoRealizada === "no") {
+                              await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
+                              setMensajeFinal(
+                                <div className="text-center">
+                                  Se recomienda realizar una prueba de embarazo antes de proseguir.
+                                </div>,
+                              )
+                              setProtocoloFinalizado(true)
+                            } else {
+                              if (await validarPruebaEmbarazo()) completarSeccion(3)
+                            }
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
-                          disabled={pruebaEmbarazoRealizada === "no"} // opcional: desactiva el botón por UX
                         >
                           Continuar
                         </Button>

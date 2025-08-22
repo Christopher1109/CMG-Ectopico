@@ -1,0 +1,99 @@
+// Funciones utilitarias para la aplicación
+
+interface CalculoRiesgoRequest {
+  sintomas?: string[]
+  factoresRiesgo?: string[]
+  tvus?: string
+  hcgValor?: string
+  hcgAnterior?: string
+  esConsultaSeguimiento?: boolean
+  resultadoAnterior?: number
+  edadPaciente?: string | number
+  frecuenciaCardiaca?: string | number
+  presionSistolica?: string | number
+  presionDiastolica?: string | number
+  estadoConciencia?: string
+  pruebaEmbarazoRealizada?: string
+  resultadoPruebaEmbarazo?: string
+  tieneEcoTransabdominal?: string
+  resultadoEcoTransabdominal?: string
+}
+
+interface CalculoRiesgoResponse {
+  bloqueado: boolean
+  resultado?: number
+  porcentaje?: number
+  clasificacion?: "alto" | "bajo" | "intermedio"
+  textoApoyo?: string
+  tipoResultado?: "finalizado" | "seguimiento"
+  variacionHcg?: string
+  mensaje?: string
+  motivo?: string
+  error?: string
+}
+
+export async function calcularRiesgo(datos: CalculoRiesgoRequest): Promise<CalculoRiesgoResponse> {
+  try {
+    const response = await fetch("/api/calculos/riesgo", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(datos),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      return { bloqueado: false, error: errorData.error || "Error en la solicitud" }
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Error en calcularRiesgo:", error)
+    return { bloqueado: false, error: "Error de conexión" }
+  }
+}
+
+export async function guardarDatosIncompletos(motivo: string, seccion: number): Promise<void> {
+  try {
+    // Guardar en localStorage como fallback
+    const datosIncompletos = {
+      motivo,
+      seccion,
+      timestamp: new Date().toISOString(),
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("datos_incompletos", JSON.stringify(datosIncompletos))
+    }
+
+    console.log("Datos incompletos guardados:", datosIncompletos)
+  } catch (error) {
+    console.error("Error guardando datos incompletos:", error)
+  }
+}
+
+export async function validarPruebaEmbarazo(): Promise<boolean> {
+  try {
+    const response = await fetch("/api/validaciones/embarazo", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        pruebaEmbarazoRealizada: "si",
+        resultadoPruebaEmbarazo: "positiva",
+      }),
+    })
+
+    if (!response.ok) {
+      return false
+    }
+
+    const resultado = await response.json()
+    return !resultado.debeDetener
+  } catch (error) {
+    console.error("Error en validarPruebaEmbarazo:", error)
+    return false
+  }
+}

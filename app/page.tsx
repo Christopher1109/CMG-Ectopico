@@ -1951,26 +1951,41 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             onChange={async (e) => {
                               setPruebaEmbarazoRealizada(e.target.value)
 
-                              // Muestra alerta de recomendación como las de Signos Vitales
-                              setMostrarAlerta(true)
-                              setMensajeAlerta("Se recomienda realizar una prueba de embarazo antes de proseguir.")
+                              if (e.target.value === "no") {
+                                // Primero muestra la alerta inmediatamente
+                                setMostrarAlerta(true)
+                                setMensajeAlerta(
+                                  "Se requiere realizar una prueba de embarazo cualitativa antes de continuar con la evaluación.",
+                                )
 
-                              // Bloqueo inmediato del flujo (concluye evaluación)
-                              try {
-                                const respuesta = await calcularRiesgo({
-                                  pruebaEmbarazoRealizada: "no",
-                                  resultadoPruebaEmbarazo: "",
-                                  tvus: "normal", // dummy para validación
-                                  hcgValor: "1000", // dummy para validación
-                                })
-                                // Si tu backend marca el motivo específico, se finaliza
-                                if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo_no_realizada") {
-                                  await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
-                                  setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-                                  setProtocoloFinalizado(true)
-                                }
-                              } catch (error) {
-                                console.warn("Error en validación inmediata:", error)
+                                // Pequeño delay para que el usuario vea la alerta antes del bloqueo
+                                setTimeout(async () => {
+                                  try {
+                                    const respuesta = await calcularRiesgo({
+                                      pruebaEmbarazoRealizada: "no",
+                                      resultadoPruebaEmbarazo: "",
+                                      tvus: "normal", // dummy para validación
+                                      hcgValor: "1000", // dummy para validación
+                                    })
+
+                                    if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo_no_realizada") {
+                                      await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
+                                      setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+                                      setProtocoloFinalizado(true)
+                                    }
+                                  } catch (error) {
+                                    console.warn("Error en validación inmediata:", error)
+                                    // Si hay error en el backend, aún así bloquea con mensaje genérico
+                                    await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
+                                    setMensajeFinal(
+                                      <div className="text-center">
+                                        Se requiere realizar una prueba de embarazo cualitativa antes de continuar con
+                                        la evaluación de riesgo de embarazo ectópico.
+                                      </div>,
+                                    )
+                                    setProtocoloFinalizado(true)
+                                  }
+                                }, 1500) // 1.5 segundos para que vean la alerta
                               }
                             }}
                             className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
@@ -1985,7 +2000,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                         <div className="flex items-center space-x-2 mb-2">
                           <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                          <span className="font-medium text-yellow-900">Sugerencia</span>
+                          <span className="font-medium text-yellow-900">Recomendación Clínica</span>
                         </div>
                         <p className="text-yellow-800 text-sm">{mensajeAlerta}</p>
                       </div>

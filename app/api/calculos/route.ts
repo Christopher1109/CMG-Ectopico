@@ -45,6 +45,9 @@ const VARIACION_HCG_LR_MAP = {
 // Umbral para β-hCG alto/bajo
 const HCG_UMBRAL_ALTO = 2000
 
+// Edad mínima para embarazo
+const EDAD_MINIMA_EMBARAZO = 10
+
 // ==================== FUNCIONES DE CÁLCULO ====================
 
 function calcularProbabilidadBayesiana(pretestProb: number, LRs: number[]): number {
@@ -75,6 +78,18 @@ function determinarClaveSintoma(sintomas: string[]): "asintomatica" | "sangrado"
   return "asintomatica"
 }
 
+function validarEdadPaciente(edad: number): { bloqueado: boolean; mensaje?: string; motivo?: string } {
+  if (edad < EDAD_MINIMA_EMBARAZO) {
+    return {
+      bloqueado: true,
+      mensaje:
+        "La edad de la paciente no es compatible con embarazo. Se sugiere considerar otras causas de los síntomas.",
+      motivo: "edad_incompatible_embarazo",
+    }
+  }
+  return { bloqueado: false }
+}
+
 function validarSignosVitalesCriticos(
   frecuenciaCardiaca: number,
   presionSistolica: number,
@@ -84,15 +99,23 @@ function validarSignosVitalesCriticos(
   if (presionSistolica >= 180 || presionDiastolica >= 110) {
     return {
       bloqueado: true,
-      mensaje: "🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.",
+      mensaje: "🚨 ALERTA MÉDICA: Hipertensión severa detectada. Se requiere atención médica inmediata.",
       motivo: "signos_vitales_hipertension_severa",
+    }
+  }
+
+  if (presionSistolica <= 90 || presionDiastolica <= 60) {
+    return {
+      bloqueado: true,
+      mensaje: "🚨 ALERTA MÉDICA: Hipotensión detectada. Se requiere evaluación médica inmediata.",
+      motivo: "signos_vitales_hipotension",
     }
   }
 
   if (frecuenciaCardiaca > 100 && (presionSistolica <= 90 || presionDiastolica <= 60)) {
     return {
       bloqueado: true,
-      mensaje: "🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.",
+      mensaje: "🚨 ALERTA MÉDICA: Taquicardia con hipotensión. Se requiere atención médica urgente.",
       motivo: "signos_vitales_taquicardia_hipotension",
     }
   }
@@ -100,7 +123,7 @@ function validarSignosVitalesCriticos(
   if (frecuenciaCardiaca > 120) {
     return {
       bloqueado: true,
-      mensaje: "🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.",
+      mensaje: "🚨 ALERTA MÉDICA: Taquicardia severa detectada. Se requiere atención médica inmediata.",
       motivo: "signos_vitales_taquicardia_severa",
     }
   }
@@ -108,7 +131,7 @@ function validarSignosVitalesCriticos(
   if (frecuenciaCardiaca < 50) {
     return {
       bloqueado: true,
-      mensaje: "🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.",
+      mensaje: "🚨 ALERTA MÉDICA: Bradicardia severa detectada. Se requiere evaluación médica inmediata.",
       motivo: "signos_vitales_bradicardia_severa",
     }
   }
@@ -116,7 +139,7 @@ function validarSignosVitalesCriticos(
   if (estadoConciencia === "estuporosa" || estadoConciencia === "comatosa") {
     return {
       bloqueado: true,
-      mensaje: "🚨 ALERTA MÉDICA: posible urgencia. Atención inmediata.",
+      mensaje: "🚨 ALERTA MÉDICA: Alteración del estado de conciencia. Se requiere atención médica urgente.",
       motivo: "signos_vitales_alteracion_conciencia",
     }
   }
@@ -131,7 +154,8 @@ function validarPruebaEmbarazo(
   if (pruebaRealizada === "no") {
     return {
       bloqueado: true,
-      mensaje: "Se sugiere realizar una prueba de embarazo cualitativa antes de continuar con la evaluación.",
+      mensaje:
+        "Se requiere realizar una prueba de embarazo cualitativa antes de continuar con la evaluación de riesgo de embarazo ectópico.",
       motivo: "prueba_embarazo_no_realizada",
     }
   }
@@ -139,7 +163,8 @@ function validarPruebaEmbarazo(
   if (resultadoPrueba === "negativa") {
     return {
       bloqueado: true,
-      mensaje: "Con prueba de embarazo negativa, es poco probable un embarazo ectópico. Valore otras causas.",
+      mensaje:
+        "Con prueba de embarazo negativa, es poco probable un embarazo ectópico. Se sugiere considerar otras causas de los síntomas presentados.",
       motivo: "prueba_embarazo_negativa",
     }
   }
@@ -162,7 +187,8 @@ function validarEcoTransabdominal(
   if (tieneEco === "si" && opcionesConfirmatorias.includes(resultadoEco)) {
     return {
       bloqueado: true,
-      mensaje: "Hallazgos ecográficos compatibles con embarazo intrauterino. Seguimiento médico apropiado.",
+      mensaje:
+        "Los hallazgos ecográficos son compatibles con embarazo intrauterino. Se sugiere seguimiento obstétrico apropiado.",
       motivo: "embarazo_intrauterino_confirmado",
     }
   }
@@ -205,6 +231,8 @@ export async function POST(request: NextRequest) {
       hcgAnterior,
       esConsultaSeguimiento = false,
       resultadoAnterior,
+      // Datos para validaciones
+      edadPaciente,
       frecuenciaCardiaca,
       presionSistolica,
       presionDiastolica,
@@ -215,9 +243,22 @@ export async function POST(request: NextRequest) {
       resultadoEcoTransabdominal,
     } = body
 
-    // Validaciones de bloqueo por reglas clínicas
+    // ==================== VALIDACIONES DE BLOQUEO ====================
 
-    // 1. Signos vitales críticos
+    // 1. Validar edad mínima para embarazo
+    if (edadPaciente !== undefined && edadPaciente !== null) {
+      const validacionEdad = validarEdadPaciente(Number(edadPaciente))
+      if (validacionEdad.bloqueado) {
+        return NextResponse.json({
+          bloqueado: true,
+          mensaje: validacionEdad.mensaje,
+          motivo: validacionEdad.motivo,
+          tipoResultado: "finalizado",
+        })
+      }
+    }
+
+    // 2. Validar signos vitales críticos
     if (frecuenciaCardiaca && presionSistolica && presionDiastolica && estadoConciencia) {
       const validacionSignos = validarSignosVitalesCriticos(
         Number(frecuenciaCardiaca),
@@ -235,7 +276,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. Prueba de embarazo
+    // 3. Validar prueba de embarazo
     if (pruebaEmbarazoRealizada && resultadoPruebaEmbarazo) {
       const validacionEmbarazo = validarPruebaEmbarazo(pruebaEmbarazoRealizada, resultadoPruebaEmbarazo)
       if (validacionEmbarazo.bloqueado) {
@@ -248,7 +289,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 3. Ecografía transabdominal
+    // 4. Validar ecografía transabdominal
     if (tieneEcoTransabdominal && resultadoEcoTransabdominal) {
       const validacionEco = validarEcoTransabdominal(tieneEcoTransabdominal, resultadoEcoTransabdominal)
       if (validacionEco.bloqueado) {

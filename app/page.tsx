@@ -452,9 +452,56 @@ export default function CalculadoraEctopico() {
     setSeccionActual(seccion + 1)
   }
 
+  // ==================== VALIDACIONES CON BACKEND ====================
+  const validarEdadPaciente = async () => {
+    if (!edadPaciente) return true
+
+    try {
+      const respuesta = await calcularRiesgo({
+        edadPaciente: edadPaciente,
+        tvus: "normal", // valor dummy para pasar validación
+        hcgValor: "1000", // valor dummy para pasar validación
+      })
+
+      if (respuesta.bloqueado && respuesta.motivo === "edad_incompatible_embarazo") {
+        await guardarDatosIncompletos("edad_incompatible_embarazo", 1)
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+        setProtocoloFinalizado(true)
+        return false
+      }
+    } catch (error) {
+      console.warn("Error en validación de edad:", error)
+    }
+    return true
+  }
+
   const validarSignosVitales = async () => {
     setMostrarAlerta(false)
     setMensajeAlerta("")
+
+    if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
+      return true
+    }
+
+    try {
+      const respuesta = await calcularRiesgo({
+        frecuenciaCardiaca: frecuenciaCardiaca,
+        presionSistolica: presionSistolica,
+        presionDiastolica: presionDiastolica,
+        estadoConciencia: estadoConciencia,
+        tvus: "normal", // valor dummy para pasar validación
+        hcgValor: "1000", // valor dummy para pasar validación
+      })
+
+      if (respuesta.bloqueado && respuesta.motivo?.startsWith("signos_vitales")) {
+        await guardarDatosIncompletos(respuesta.motivo, 2)
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+        setProtocoloFinalizado(true)
+        return false
+      }
+    } catch (error) {
+      console.warn("Error en validación de signos vitales:", error)
+    }
 
     // Validaciones de alerta (no bloquean) - solo para mostrar sugerencias
     const fc = Number.parseFloat(frecuenciaCardiaca)
@@ -463,16 +510,13 @@ export default function CalculadoraEctopico() {
 
     let hayAlerta = false
     let mensajeAlertaTemp = ""
-    if (sistolica < 90 || diastolica < 60) {
-      hayAlerta = true
-      mensajeAlertaTemp = "Se sugiere considerar hipotensión arterial. Se recomienda evaluación médica."
-    } else if (sistolica >= 140 || diastolica >= 90) {
+    if ((sistolica >= 140 && sistolica < 180) || (diastolica >= 90 && diastolica < 110)) {
       hayAlerta = true
       mensajeAlertaTemp = "Se sugiere considerar hipertensión arterial. Se recomienda seguimiento médico."
-    } else if (fc > 100) {
+    } else if (fc > 100 && fc <= 120) {
       hayAlerta = true
       mensajeAlertaTemp = "Se sugiere considerar taquicardia. Se recomienda monitoreo médico."
-    } else if (fc < 60) {
+    } else if (fc < 60 && fc >= 50) {
       hayAlerta = true
       mensajeAlertaTemp = "Se sugiere considerar bradicardia. Se recomienda evaluación médica."
     }
@@ -484,10 +528,48 @@ export default function CalculadoraEctopico() {
   }
 
   const validarPruebaEmbarazo = async () => {
+    if (!pruebaEmbarazoRealizada) return true
+
+    try {
+      const respuesta = await calcularRiesgo({
+        pruebaEmbarazoRealizada: pruebaEmbarazoRealizada,
+        resultadoPruebaEmbarazo: resultadoPruebaEmbarazo,
+        tvus: "normal", // valor dummy para pasar validación
+        hcgValor: "1000", // valor dummy para pasar validación
+      })
+
+      if (respuesta.bloqueado && respuesta.motivo?.startsWith("prueba_embarazo")) {
+        await guardarDatosIncompletos(respuesta.motivo, 3)
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+        setProtocoloFinalizado(true)
+        return false
+      }
+    } catch (error) {
+      console.warn("Error en validación de prueba de embarazo:", error)
+    }
     return true
   }
 
   const validarEcoTransabdominal = async () => {
+    if (!tieneEcoTransabdominal || !resultadoEcoTransabdominal) return true
+
+    try {
+      const respuesta = await calcularRiesgo({
+        tieneEcoTransabdominal: tieneEcoTransabdominal,
+        resultadoEcoTransabdominal: resultadoEcoTransabdominal,
+        tvus: "normal", // valor dummy para pasar validación
+        hcgValor: "1000", // valor dummy para pasar validación
+      })
+
+      if (respuesta.bloqueado && respuesta.motivo === "embarazo_intrauterino_confirmado") {
+        await guardarDatosIncompletos("embarazo_intrauterino_confirmado", 4)
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+        setProtocoloFinalizado(true)
+        return false
+      }
+    } catch (error) {
+      console.warn("Error en validación de ecografía transabdominal:", error)
+    }
     return true
   }
 
@@ -507,6 +589,7 @@ export default function CalculadoraEctopico() {
         hcgAnterior: hcgAnterior,
         esConsultaSeguimiento: esConsultaSeguimiento,
         resultadoAnterior: consultaCargada?.resultado,
+        edadPaciente: edadPaciente,
         frecuenciaCardiaca: frecuenciaCardiaca,
         presionSistolica: presionSistolica,
         presionDiastolica: presionDiastolica,
@@ -1715,7 +1798,9 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     </div>
                     <div className="flex justify-end">
                       <Button
-                        onClick={() => completarSeccion(1)}
+                        onClick={async () => {
+                          if (await validarEdadPaciente()) completarSeccion(1)
+                        }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
                       >
                         Continuar
@@ -1804,7 +1889,14 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
                     </div>
 
-                    <div className="text-center">
+                    <div className="flex justify-between">
+                      <Button
+                        onClick={() => setSeccionActual(1)}
+                        variant="outline"
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
+                        Anterior
+                      </Button>
                       <Button
                         onClick={async () => {
                           if (await validarSignosVitales()) completarSeccion(2)

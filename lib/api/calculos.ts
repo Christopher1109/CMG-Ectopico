@@ -1,11 +1,13 @@
-interface CalculoRequest {
+interface CalculoRiesgoRequest {
   sintomas?: string[]
   factoresRiesgo?: string[]
-  tvus: string
-  hcgValor: string | number
-  hcgAnterior?: string | number
+  tvus?: string
+  hcgValor?: string
+  hcgAnterior?: string
   esConsultaSeguimiento?: boolean
   resultadoAnterior?: number
+  // Datos para validaciones
+  edadPaciente?: string | number
   frecuenciaCardiaca?: string | number
   presionSistolica?: string | number
   presionDiastolica?: string | number
@@ -16,36 +18,37 @@ interface CalculoRequest {
   resultadoEcoTransabdominal?: string
 }
 
-interface CalculoResponse {
+interface CalculoRiesgoResponse {
   bloqueado: boolean
-  mensaje?: string
-  motivo?: string
-  tipoResultado?: "finalizado" | "seguimiento"
   resultado?: number
   porcentaje?: number
   clasificacion?: "alto" | "bajo" | "intermedio"
   textoApoyo?: string
+  tipoResultado?: "finalizado" | "seguimiento"
   variacionHcg?: string
+  mensaje?: string
+  motivo?: string
   error?: string
 }
 
-export async function calcularRiesgo(params: CalculoRequest): Promise<CalculoResponse> {
+export async function calcularRiesgo(datos: CalculoRiesgoRequest): Promise<CalculoRiesgoResponse> {
   try {
     const response = await fetch("/api/calculos", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify(datos),
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      const errorData = await response.json()
+      return { bloqueado: false, error: errorData.error || "Error en la solicitud" }
     }
 
     return await response.json()
   } catch (error) {
     console.error("Error en calcularRiesgo:", error)
-    throw error
+    return { bloqueado: false, error: "Error de conexión" }
   }
 }

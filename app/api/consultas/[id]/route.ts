@@ -1,6 +1,5 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
-import { obtenerConsulta, actualizarConsulta } from "@/lib/api/consultas"
 
 type Params = { params: { id: string } }
 
@@ -34,43 +33,167 @@ function asNumOrNull(x: unknown): number | null {
 // ==================================================
 // GET: Obtiene una consulta por ID o folio
 // ==================================================
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: Params) {
   try {
-    const resultado = await obtenerConsulta(params.id)
-
-    if (resultado.error) {
-      return NextResponse.json({ error: resultado.error }, { status: 404 })
+    const idNum = toNumericId(params.id)
+    if (idNum === null) {
+      return NextResponse.json({ error: "ID inválido" }, { status: 400 })
     }
 
-    return NextResponse.json({ data: resultado.data })
-  } catch (error) {
-    console.error("Error en GET /api/consultas/[id]:", error)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    // Buscar por folio primero, luego por id si no se encuentra
+    let data = null
+    let error = null
+
+    // Intentar buscar por folio
+    const folioResult = await supabaseAdmin.from("consultas").select("*").eq("folio", idNum).single()
+
+    if (folioResult.data) {
+      data = folioResult.data
+    } else {
+      // Si no se encuentra por folio, buscar por id
+      const idResult = await supabaseAdmin.from("consultas").select("*").eq("id", idNum).single()
+
+      data = idResult.data
+      error = idResult.error
+    }
+
+    if (error || !data) return NextResponse.json({ error: error?.message || "Consulta no encontrada" }, { status: 404 })
+
+    // Normaliza campos hacia el formato que usa tu frontend
+    const consultaNormalizada = {
+      id: data.id,
+      folio: data.folio,
+      id_publico: toPublicId(data.folio), // Usar folio para el ID público
+
+      fecha_creacion: data.created_at,
+      fecha_ultima_actualizacion: data.updated_at,
+
+      usuario_creador: data.Dr,
+      nombre_paciente: data.Px,
+      edad_paciente: data.Edad_Px,
+
+      frecuencia_cardiaca: data.FC,
+      presion_sistolica: data.PS,
+      presion_diastolica: data.PD,
+      estado_conciencia: data.EC,
+
+      prueba_embarazo_realizada: data.Prueba_Emb,
+      resultado_prueba_embarazo: data.Resultado_Emb,
+
+      hallazgos_exploracion: data.Hallazgos,
+      tiene_eco_transabdominal: data.Eco_abdominal,
+      resultado_eco_transabdominal: data.Resultado_EcoAbd,
+
+      // 1ª consulta
+      sintomas_seleccionados: data.Sintomas ? String(data.Sintomas).split(", ").filter(Boolean) : [],
+      factores_seleccionados: data.Fac_Riesg ? String(data.Fac_Riesg).split(", ").filter(Boolean) : [],
+      tvus: data.TVUS_1 ?? null,
+      hcg_valor: asNumOrNull(data.hCG_1),
+      resultado: parsePctToProb(data.Pronostico_1),
+
+      // 2ª consulta
+      sintomas_seleccionados_2: data.Sintomas_2 ? String(data.Sintomas_2).split(", ").filter(Boolean) : null,
+      factores_seleccionados_2: data.Factores_2 ? String(data.Factores_2).split(", ").filter(Boolean) : null,
+      tvus_2: data.TVUS_2 ?? null,
+      hcg_valor_2: asNumOrNull(data.hCG_2),
+      variacion_hcg_2: data.Variacion_hCG_2 ?? null,
+      resultado_2: parsePctToProb(data.Pronostico_2),
+
+      // 3ª consulta
+      sintomas_seleccionados_3: data.Sintomas_3 ? String(data.Sintomas_3).split(", ").filter(Boolean) : null,
+      factores_seleccionados_3: data.Factores_3 ? String(data.Factores_3).split(", ").filter(Boolean) : null,
+      tvus_3: data.TVUS_3 ?? null,
+      hcg_valor_3: asNumOrNull(data.hCG_3),
+      variacion_hcg_3: data.Variacion_hCG_3 ?? null,
+      resultado_3: parsePctToProb(data.Pronostico_3),
+    }
+
+    return NextResponse.json({ data: consultaNormalizada })
+  } catch (e: any) {
+    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
 }
 
 // ==================================================
 // PATCH: Actualiza una consulta (visita 2 o 3)
 // ==================================================
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: Params) {
   try {
-    const datos = await request.json()
-    const { visitaNo, ...datosConsulta } = datos
-
-    if (!visitaNo || (visitaNo !== 2 && visitaNo !== 3)) {
-      return NextResponse.json({ error: "visitaNo debe ser 2 o 3" }, { status: 400 })
+    const idNum = toNumericId(params.id)
+    if (idNum === null) {
+      return NextResponse.json({ error: "ID inválido" }, { status: 400 })
     }
 
-    const resultado = await actualizarConsulta(params.id, visitaNo, datosConsulta)
+    const { searchParams } = new URL(req.url)
+    const visitaRaw = searchParams.get("visita") ?? ""
+    const visita = Number(visitaRaw)
 
-    if (resultado.error) {
-      return NextResponse.json({ error: resultado.error }, { status: 400 })
+    // Valida visita estrictamente como 2 o 3 (evita "2:1")
+    if (![2, 3].includes(visita)) {
+      return NextResponse.json({ error: "Parámetro 'visita' inválido (use 2 o 3)" }, { status: 400 })
     }
 
-    return NextResponse.json({ data: resultado.data })
-  } catch (error) {
-    console.error("Error en PATCH /api/consultas/[id]:", error)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    const body = await req.json()
+
+    const updateData: Record<string, any> = {}
+
+    if (visita === 2) {
+      updateData.Sintomas_2 = Array.isArray(body.sintomas_seleccionados)
+        ? body.sintomas_seleccionados.join(", ")
+        : (body.sintomas_seleccionados ?? null)
+
+      updateData.Factores_2 = Array.isArray(body.factores_seleccionados)
+        ? body.factores_seleccionados.join(", ")
+        : (body.factores_seleccionados ?? null)
+
+      updateData.TVUS_2 = body.tvus ?? null
+      updateData.hCG_2 = body.hcg_valor != null ? Number(body.hcg_valor) : null
+      updateData.Variacion_hCG_2 = body.variacion_hcg ?? null
+
+      // cuidado con 0: acepta 0 como valor válido
+      updateData.Pronostico_2 = body.resultado != null ? `${(Number(body.resultado) * 100).toFixed(1)}%` : null
+
+      updateData.Consulta_2_Date = new Date().toISOString()
+    } else if (visita === 3) {
+      updateData.Sintomas_3 = Array.isArray(body.sintomas_seleccionados)
+        ? body.sintomas_seleccionados.join(", ")
+        : (body.sintomas_seleccionados ?? null)
+
+      updateData.Factores_3 = Array.isArray(body.factores_seleccionados)
+        ? body.factores_seleccionados.join(", ")
+        : (body.factores_seleccionados ?? null)
+
+      updateData.TVUS_3 = body.tvus ?? null
+      updateData.hCG_3 = body.hcg_valor != null ? Number(body.hcg_valor) : null
+      updateData.Variacion_hCG_3 = body.variacion_hcg ?? null
+
+      updateData.Pronostico_3 = body.resultado != null ? `${(Number(body.resultado) * 100).toFixed(1)}%` : null
+
+      updateData.Consulta_3_Date = new Date().toISOString()
+    }
+
+    // Buscar por folio primero, luego por id
+    let targetId = null
+    const folioResult = await supabaseAdmin.from("consultas").select("id").eq("folio", idNum).single()
+
+    if (folioResult.data) {
+      targetId = folioResult.data.id
+    } else {
+      // Si no se encuentra por folio, usar el idNum como id directo
+      targetId = idNum
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("consultas")
+      .update(updateData)
+      .eq("id", targetId)
+      .select()
+      .single()
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ data })
+  } catch (e: any) {
+    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
 }
 

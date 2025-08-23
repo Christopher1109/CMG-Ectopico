@@ -275,187 +275,6 @@ export default function CalculadoraEctopico() {
     }
   }
 
-  // ====== FUNCIONES PRINCIPALES ======
-  const iniciarNuevaEvaluacion = async () => {
-    resetCalculadora()
-    setMostrarPantallaBienvenida(false)
-    setEsConsultaSeguimiento(false)
-    setNumeroConsultaActual(1)
-    // No generar ID local - se generará en la base de datos
-  }
-
-  const continuarConsultaCargada = async () => {
-    setIdSeguimiento(consultaCargada.id_publico || consultaCargada.folio?.toString() || consultaCargada.id?.toString())
-    // Mantener datos del paciente (NO cambiar)
-    setNombrePaciente(consultaCargada.nombre_paciente || "")
-    setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
-    setFrecuenciaCardiaca(consultaCargada.frecuencia_cardiaca?.toString() || "")
-    setPresionSistolica(consultaCargada.presion_sistolica?.toString() || "")
-    setPresionDiastolica(consultaCargada.presion_diastolica?.toString() || "")
-    setEstadoConciencia(consultaCargada.estado_conciencia || "")
-    setPruebaEmbarazoRealizada(consultaCargada.prueba_embarazo_realizada || "")
-    setResultadoPruebaEmbarazo(consultaCargada.resultado_prueba_embarazo || "")
-    setHallazgosExploracion(consultaCargada.hallazgos_exploracion || "")
-    setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
-    setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
-
-    // LIMPIAR campos para nueva consulta
-    setSintomasSeleccionados([])
-
-    // Mantener factores de riesgo
-    setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
-
-    setTvus("")
-    let ultimoHcg = consultaCargada.hcg_valor
-    if (consultaCargada.hcg_valor_2) ultimoHcg = consultaCargada.hcg_valor_2
-    if (consultaCargada.hcg_valor_3) ultimoHcg = consultaCargada.hcg_valor_3
-    setHcgAnterior(ultimoHcg?.toString() || "")
-    setHcgValor("")
-    setEsConsultaSeguimiento(true)
-
-    // Determinar número de consulta
-    const tieneC2 = consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2
-    const tieneC3 = consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3
-
-    if (tieneC3) {
-      alert("Esta consulta ya tiene 3 evaluaciones completadas.")
-      setMostrarResumenConsulta(true)
-      return
-    } else if (tieneC2) {
-      setNumeroConsultaActual(3)
-    } else {
-      setNumeroConsultaActual(2)
-    }
-
-    setSeccionesCompletadas([1, 2, 3, 4])
-    setMostrarResumenConsulta(false)
-    setModoCargarConsulta(false)
-    setMostrarPantallaBienvenida(false)
-    setSeccionActual(5)
-  }
-
-  // === BÚSQUEDA: usa SIEMPRE el backend ===
-  const buscarConsulta = async () => {
-    const id = idBusqueda.trim().toUpperCase()
-    if (!/^ID-\d{5}$/.test(id)) {
-      alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)")
-      return
-    }
-
-    let consultaEncontrada: any = null
-
-    // Cache local usando folio
-    const folioNumerico = Number.parseInt(id.replace(/^ID-0*/, ""), 10)
-    const datosLocal = localStorage.getItem(`ectopico_folio_${folioNumerico}`)
-    if (datosLocal) {
-      try {
-        consultaEncontrada = normalizarDesdeLocal(JSON.parse(datosLocal))
-      } catch (error) {
-        console.warn("Error al parsear datos de localStorage:", error)
-      }
-    }
-
-    // Backend
-    if (!consultaEncontrada) {
-      try {
-        const res = await leerDatosDesdeBackend(folioNumerico)
-        if (res) {
-          consultaEncontrada = res // ya viene normalizado desde el endpoint
-          localStorage.setItem(`ectopico_folio_${res.folio}`, JSON.stringify(consultaEncontrada))
-        }
-      } catch (error) {
-        console.error("Error al buscar en backend:", error)
-      }
-    }
-
-    if (consultaEncontrada) {
-      setConsultaCargada(consultaEncontrada)
-      setMostrarResumenConsulta(true)
-      setModoCargarConsulta(false)
-    } else {
-      alert("No se encontró ninguna consulta con ese ID")
-    }
-  }
-
-  const obtenerNombreSintoma = (sintomaId: string) => {
-    const sintoma = sintomas.find((s) => s.id === sintomaId)
-    return sintoma ? sintoma.label : sintomaId
-  }
-
-  const obtenerNombreFactorRiesgo = (factorId: string) => {
-    const factor = factoresRiesgo.find((f) => f.id === factorId)
-    return factor ? factor.label : factorId
-  }
-
-  const obtenerNombreTVUS = (tvusId: string) => {
-    if (!tvusId) return "No especificado"
-    switch (tvusId) {
-      case "normal":
-        return "Normal"
-      case "libre":
-        return "Líquido libre"
-      case "masa":
-        return "Masa anexial"
-      case "masa_libre":
-        return "Masa anexial + líquido libre"
-      default:
-        return tvusId
-    }
-  }
-
-  const resetCalculadora = () => {
-    setResultado(null)
-    setSeccionActual(1)
-    setSeccionesCompletadas([])
-    setNombrePaciente("")
-    setEdadPaciente("")
-    setFrecuenciaCardiaca("")
-    setPresionSistolica("")
-    setPresionDiastolica("")
-    setEstadoConciencia("")
-    setPruebaEmbarazoRealizada("")
-    setResultadoPruebaEmbarazo("")
-    setHallazgosExploracion("")
-    setTieneEcoTransabdominal("")
-    setResultadoEcoTransabdominal("")
-    setProtocoloFinalizado(false)
-    setMensajeFinal("")
-    setSintomasSeleccionados([])
-    setFactoresSeleccionados([])
-    setTvus("")
-    setHcgValor("")
-    setVariacionHcg("")
-    setHcgAnterior("")
-    setIdSeguimiento("")
-    setMostrarIdSeguimiento(false)
-    setModoCargarConsulta(false)
-    setIdBusqueda("")
-    setMostrarResumenConsulta(false)
-    setConsultaCargada(null)
-    setMostrarPantallaBienvenida(true)
-    setMostrarResultados(false)
-    setMostrarAlerta(false)
-    setMensajeAlerta("")
-    setEsConsultaSeguimiento(false)
-    setNumeroConsultaActual(1)
-  }
-
-  const copiarId = () => {
-    if (idSeguimiento) {
-      navigator.clipboard.writeText(idSeguimiento)
-      alert("ID copiado al portapapeles")
-    }
-  }
-
-  const volverAInicio = () => resetCalculadora()
-
-  const completarSeccion = (seccion: number) => {
-    if (!seccionesCompletadas.includes(seccion)) {
-      setSeccionesCompletadas([...seccionesCompletadas, seccion])
-    }
-    setSeccionActual(seccion + 1)
-  }
-
   // ==================== VALIDACIONES CON BACKEND ====================
   const validarEdadPaciente = async () => {
     if (!edadPaciente) return true
@@ -706,6 +525,188 @@ export default function CalculadoraEctopico() {
     }
   }
 
+  // ====== FUNCIONES PRINCIPALES ======
+  const iniciarNuevaEvaluacion = async () => {
+    resetCalculadora()
+    setMostrarPantallaBienvenida(false)
+    setEsConsultaSeguimiento(false)
+    setNumeroConsultaActual(1)
+    // No generar ID local - se generará en la base de datos
+  }
+
+  const continuarConsultaCargada = async () => {
+    setIdSeguimiento(consultaCargada.id_publico || consultaCargada.folio?.toString() || consultaCargada.id?.toString())
+    // Mantener datos del paciente (NO cambiar)
+    setNombrePaciente(consultaCargada.nombre_paciente || "")
+    setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
+    setFrecuenciaCardiaca(consultaCargada.frecuencia_cardiaca?.toString() || "")
+    setPresionSistolica(consultaCargada.presion_sistolica?.toString() || "")
+    setPresionDiastolica(consultaCargada.presion_diastolica?.toString() || "")
+    setEstadoConciencia(consultaCargada.estado_conciencia || "")
+    setPruebaEmbarazoRealizada(consultaCargada.prueba_embarazo_realizada || "")
+    setResultadoPruebaEmbarazo(consultaCargada.resultado_prueba_embarazo || "")
+    setHallazgosExploracion(consultaCargada.hallazgos_exploracion || "")
+    setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
+    setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
+
+    // LIMPIAR campos para nueva consulta
+    setSintomasSeleccionados([])
+
+    // Mantener factores de riesgo
+    setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
+
+    setTvus("")
+    let ultimoHcg = consultaCargada.hcg_valor
+    if (consultaCargada.hcg_valor_2) ultimoHcg = consultaCargada.hcg_valor_2
+    if (consultaCargada.hcg_valor_3) ultimoHcg = consultaCargada.hcg_valor_3
+    setHcgAnterior(ultimoHcg?.toString() || "")
+    setHcgValor("")
+    setEsConsultaSeguimiento(true)
+
+    // Determinar número de consulta
+    const tieneC2 = consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2
+    const tieneC3 = consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3
+
+    if (tieneC3) {
+      alert("Esta consulta ya tiene 3 evaluaciones completadas.")
+      setMostrarResumenConsulta(true)
+      return
+    } else if (tieneC2) {
+      setNumeroConsultaActual(3)
+    } else {
+      setNumeroConsultaActual(2)
+    }
+
+    setSeccionesCompletadas([1, 2, 3, 4])
+    setMostrarResumenConsulta(false)
+    setModoCargarConsulta(false)
+    setMostrarPantallaBienvenida(false)
+    setSeccionActual(5)
+  }
+
+  // === BÚSQUEDA: usa SIEMPRE el backend ===
+  const buscarConsulta = async () => {
+    const id = idBusqueda.trim().toUpperCase()
+    if (!/^ID-\d{5}$/.test(id)) {
+      alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)")
+      return
+    }
+
+    let consultaEncontrada: any = null
+
+    // Cache local usando folio
+    const folioNumerico = Number.parseInt(id.replace(/^ID-0*/, ""), 10)
+    const datosLocal = localStorage.getItem(`ectopico_folio_${folioNumerico}`)
+    if (datosLocal) {
+      try {
+        consultaEncontrada = normalizarDesdeLocal(JSON.parse(datosLocal))
+      } catch (error) {
+        console.warn("Error al parsear datos de localStorage:", error)
+      }
+    }
+
+    // Backend
+    if (!consultaEncontrada) {
+      try {
+        const res = await leerDatosDesdeBackend(folioNumerico)
+        if (res) {
+          consultaEncontrada = res // ya viene normalizado desde el endpoint
+          localStorage.setItem(`ectopico_folio_${res.folio}`, JSON.stringify(consultaEncontrada))
+        }
+      } catch (error) {
+        console.error("Error al buscar en backend:", error)
+      }
+    }
+
+    if (consultaEncontrada) {
+      setConsultaCargada(consultaEncontrada)
+      setMostrarResumenConsulta(true)
+      setModoCargarConsulta(false)
+    } else {
+      alert("No se encontró ninguna consulta con ese ID")
+    }
+  }
+
+  const obtenerNombreSintoma = (sintomaId: string) => {
+    const sintoma = sintomas.find((s) => s.id === sintomaId)
+    return sintoma ? sintoma.label : sintomaId
+  }
+
+  const obtenerNombreFactorRiesgo = (factorId: string) => {
+    const factor = factoresRiesgo.find((f) => f.id === factorId)
+    return factor ? factor.label : factorId
+  }
+
+  const obtenerNombreTVUS = (tvusId: string) => {
+    if (!tvusId) return "No especificado"
+    switch (tvusId) {
+      case "normal":
+        return "Normal"
+      case "libre":
+        return "Líquido libre"
+      case "masa":
+        return "Masa anexial"
+      case "masa_libre":
+        return "Masa anexial + líquido libre"
+      default:
+        return tvusId
+    }
+  }
+
+  const copiarId = () => {
+    if (idSeguimiento) {
+      navigator.clipboard.writeText(idSeguimiento)
+      alert("ID copiado al portapapeles")
+    }
+  }
+
+  const volverAInicio = () => resetCalculadora()
+
+  const completarSeccion = (seccion: number) => {
+    if (!seccionesCompletadas.includes(seccion)) {
+      setSeccionesCompletadas([...seccionesCompletadas, seccion])
+    }
+    setSeccionActual(seccion + 1)
+  }
+
+  // Actualizar la función resetCalculadora para limpiar el localStorage correctamente
+  const resetCalculadora = () => {
+    setResultado(null)
+    setSeccionActual(1)
+    setSeccionesCompletadas([])
+    setNombrePaciente("")
+    setEdadPaciente("")
+    setFrecuenciaCardiaca("")
+    setPresionSistolica("")
+    setPresionDiastolica("")
+    setEstadoConciencia("")
+    setPruebaEmbarazoRealizada("")
+    setResultadoPruebaEmbarazo("")
+    setHallazgosExploracion("")
+    setTieneEcoTransabdominal("")
+    setResultadoEcoTransabdominal("")
+    setProtocoloFinalizado(false)
+    setMensajeFinal("")
+    setSintomasSeleccionados([])
+    setFactoresSeleccionados([])
+    setTvus("")
+    setHcgValor("")
+    setVariacionHcg("")
+    setHcgAnterior("")
+    setIdSeguimiento("")
+    setMostrarIdSeguimiento(false)
+    setModoCargarConsulta(false)
+    setIdBusqueda("")
+    setMostrarResumenConsulta(false)
+    setConsultaCargada(null)
+    setMostrarPantallaBienvenida(true)
+    setMostrarResultados(false)
+    setMostrarAlerta(false)
+    setMensajeAlerta("")
+    setEsConsultaSeguimiento(false)
+    setNumeroConsultaActual(1)
+  }
+
   const generarInformePDF = () => {
     try {
       // Deriva texto de recomendación desde `resultado` (evitamos insertar un ReactNode)
@@ -873,90 +874,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
               className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-in-out"
               style={{ width: `${progreso}%` }}
             ></div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const renderBloqueConsultaIndividual = () => {
-    const colores = {
-      1: { bg: "bg-green-50", border: "border-green-200", text: "text-green-900", icon: "text-green-600" },
-      2: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-900", icon: "text-orange-600" },
-      3: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-900", icon: "text-purple-600" },
-    }
-    const color = colores[numeroConsultaActual]
-
-    return (
-      <div className={`${color.bg} p-6 rounded-lg ${color.border} border`}>
-        <div className="flex items-center space-x-2 mb-4">
-          <div className={`w-6 h-6 rounded text-white flex items-center justify-center text-sm font-bold`}>📋</div>
-          <h3 className={`text-lg font-semibold ${color.text}`}>
-            {numeroConsultaActual === 1
-              ? "Primera Consulta Realizada"
-              : numeroConsultaActual === 2
-                ? "Segunda Consulta Realizada"
-                : "Tercera Consulta Realizada"}
-          </h3>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <div>
-              <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>Síntomas</span>
-              {sintomasSeleccionados && sintomasSeleccionados.length > 0 ? (
-                sintomasSeleccionados.map((sintoma: string) => (
-                  <div key={sintoma} className={color.text.replace("900", "800")}>
-                    {obtenerNombreSintoma(sintoma)}
-                  </div>
-                ))
-              ) : (
-                <div className={color.text.replace("900", "800")}>Asintomática</div>
-              )}
-            </div>
-
-            <div>
-              <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>TVUS</span>
-              <div className={color.text.replace("900", "800")}>{obtenerNombreTVUS(tvus)}</div>
-            </div>
-
-            {numeroConsultaActual > 1 && variacionHcg && (
-              <div>
-                <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>Variación β-hCG</span>
-                <div className={`${color.text.replace("900", "800")} capitalize`}>
-                  {variacionHcg?.replace(/_/g, " ") || "No calculada"}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>Factores de Riesgo</span>
-              {factoresSeleccionados && factoresSeleccionados.length > 0 ? (
-                factoresSeleccionados.map((factor: string) => (
-                  <div key={factor} className={color.text.replace("900", "800")}>
-                    {obtenerNombreFactorRiesgo(factor)}
-                  </div>
-                ))
-              ) : (
-                <div className={color.text.replace("900", "800")}>Sin factores de riesgo</div>
-              )}
-            </div>
-
-            <div>
-              <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>β-hCG</span>
-              <div className={color.text.replace("900", "800")}>{hcgValor || "No especificado"} mUI/mL</div>
-            </div>
-          </div>
-        </div>
-
-        <div className={`mt-4 pt-4 border-t ${color.border}`}>
-          <span className={`font-medium ${color.text.replace("900", "700")} block mb-1`}>
-            Resultado de la Herramienta
-          </span>
-          <div className={`text-lg font-bold ${color.text}`}>
-            {resultado ? `${(resultado * 100).toFixed(1)}% estimación de riesgo` : "No calculado"}
           </div>
         </div>
       </div>
@@ -1260,9 +1177,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
                             <span className="text-white text-xs font-bold">ID</span>
                           </div>
-                          <span className="font-mono text-blue-600 font-bold">
-                            {consultaCargada.id_publico || `ID-${String(consultaCargada.folio).padStart(5, "0")}`}
-                          </span>
+                          <span className="font-mono text-blue-600 font-bold">{consultaCargada.id}</span>
                         </div>
                       </div>
                       <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">

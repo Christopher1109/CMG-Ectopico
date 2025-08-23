@@ -149,8 +149,6 @@ function normalizarDesdeLocal(d: any) {
   }
 }
 
-// Eliminar la función generarIdConsulta ya que ahora el ID lo genera la base de datos
-
 // ==================== COMPONENTE PRINCIPAL ====================
 export default function CalculadoraEctopico() {
   const [idBusqueda, setIdBusqueda] = useState("")
@@ -405,181 +403,6 @@ export default function CalculadoraEctopico() {
     }
   }
 
-  // Actualizar la función calcular para usar el nuevo sistema
-
-  // Actualizar la función resetCalculadora para limpiar el localStorage correctamente
-
-  const copiarId = () => {
-    if (idSeguimiento) {
-      navigator.clipboard.writeText(idSeguimiento)
-      alert("ID copiado al portapapeles")
-    }
-  }
-
-  const volverAInicio = () => resetCalculadora()
-
-  const completarSeccion = (seccion: number) => {
-    if (!seccionesCompletadas.includes(seccion)) {
-      setSeccionesCompletadas([...seccionesCompletadas, seccion])
-    }
-    setSeccionActual(seccion + 1)
-  }
-
-  // ==================== VALIDACIONES CON BACKEND ====================
-
-  const validarEcoTransabdominal = async () => {
-    if (!tieneEcoTransabdominal || !resultadoEcoTransabdominal) return true
-
-    try {
-      const respuesta = await calcularRiesgo({
-        tieneEcoTransabdominal: tieneEcoTransabdominal,
-        resultadoEcoTransabdominal: resultadoEcoTransabdominal,
-        tvus: "normal", // valor dummy para pasar validación
-        hcgValor: "1000", // valor dummy para pasar validación
-      })
-
-      if (respuesta.bloqueado && respuesta.motivo === "embarazo_intrauterino_confirmado") {
-        await guardarDatosIncompletos("embarazo_intrauterino_confirmado", 4)
-        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-        setProtocoloFinalizado(true)
-        return false
-      }
-    } catch (error) {
-      console.warn("Error en validación de ecografía transabdominal:", error)
-    }
-    return true
-  }
-
-  const calcular = async () => {
-    if (!tvus || !hcgValor) {
-      alert("Por favor complete todos los campos requeridos: TVUS y β-hCG")
-      return
-    }
-
-    try {
-      // Llamar al backend para el cálculo
-      const respuesta = await calcularRiesgo({
-        sintomas: sintomasSeleccionados,
-        factoresRiesgo: factoresSeleccionados,
-        tvus: tvus,
-        hcgValor: hcgValor,
-        hcgAnterior: hcgAnterior,
-        esConsultaSeguimiento: esConsultaSeguimiento,
-        resultadoAnterior: consultaCargada?.resultado,
-        edadPaciente: edadPaciente,
-        frecuenciaCardiaca: frecuenciaCardiaca,
-        presionSistolica: presionSistolica,
-        presionDiastolica: presionDiastolica,
-        estadoConciencia: estadoConciencia,
-        pruebaEmbarazoRealizada: pruebaEmbarazoRealizada,
-        resultadoPruebaEmbarazo: resultadoPruebaEmbarazo,
-        tieneEcoTransabdominal: tieneEcoTransabdominal,
-        resultadoEcoTransabdominal: resultadoEcoTransabdominal,
-      })
-
-      if (respuesta.error) {
-        alert(`Error: ${respuesta.error}`)
-        return
-      }
-
-      if (respuesta.bloqueado) {
-        await guardarDatosIncompletos(respuesta.motivo || "regla_clinica", 5)
-        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-        setProtocoloFinalizado(true)
-        return
-      }
-
-      // Usar el resultado del backend
-      const probPost = respuesta.resultado!
-      setResultado(probPost)
-      if (respuesta.variacionHcg) {
-        setVariacionHcg(respuesta.variacionHcg)
-      }
-
-      const fechaActual = new Date().toISOString()
-      const datosCompletos = {
-        fechaCreacion: fechaActual,
-        fechaUltimaActualizacion: fechaActual,
-        usuarioCreador: usuarioActual || "anon",
-        nombrePaciente,
-        edadPaciente: Number.parseInt(edadPaciente),
-        frecuenciaCardiaca: Number.parseInt(frecuenciaCardiaca),
-        presionSistolica: Number.parseInt(presionSistolica),
-        presionDiastolica: Number.parseInt(presionDiastolica),
-        estadoConciencia,
-        pruebaEmbarazoRealizada,
-        resultadoPruebaEmbarazo,
-        hallazgosExploracion,
-        tieneEcoTransabdominal,
-        resultadoEcoTransabdominal,
-        sintomasSeleccionados,
-        factoresSeleccionados,
-        tvus,
-        hcgValor: Number.parseFloat(hcgValor),
-        variacionHcg: respuesta.variacionHcg || null,
-        hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
-        resultado: probPost,
-      }
-
-      try {
-        let result = { success: false, data: null }
-        if (!esConsultaSeguimiento) {
-          result = await enviarDatosAlBackend(datosCompletos)
-          if (result.success && result.data) {
-            const folio = result.data.folio
-            const idPublico = `ID-${String(folio).padStart(5, "0")}`
-            setIdSeguimiento(idPublico)
-            localStorage.setItem(
-              `ectopico_folio_${folio}`,
-              JSON.stringify({
-                ...datosCompletos,
-                id: result.data.id,
-                folio: result.data.folio,
-                id_publico: idPublico,
-              }),
-            )
-          }
-        } else {
-          const tieneC2 =
-            consultaCargada &&
-            (consultaCargada.tvus_2 ||
-              consultaCargada.hcg_valor_2 ||
-              consultaCargada.resultado_2 ||
-              consultaCargada.sintomas_seleccionados_2?.length > 0)
-          const tieneC3 =
-            consultaCargada &&
-            (consultaCargada.tvus_3 ||
-              consultaCargada.hcg_valor_3 ||
-              consultaCargada.resultado_3 ||
-              consultaCargada.sintomas_seleccionados_3?.length > 0)
-
-          const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
-          const ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
-          result.success = ok
-        }
-        if (!result.success) {
-          alert("Advertencia: Falló la sincronización con la base de datos.")
-        }
-      } catch (e) {
-        console.error("Error al sincronizar con el backend:", e)
-        alert("Advertencia: Falló la sincronización con la base de datos.")
-      }
-
-      // Usar tipoResultado del backend para determinar el flujo
-      if (respuesta.tipoResultado === "finalizado") {
-        setMensajeFinal(<div className="text-center">{respuesta.textoApoyo}</div>)
-        setProtocoloFinalizado(true)
-      } else {
-        setMostrarResultados(true)
-        setMostrarIdSeguimiento(true)
-      }
-    } catch (error) {
-      console.error("Error en el cálculo:", error)
-      alert("Error al realizar el cálculo. Por favor, inténtelo de nuevo.")
-    }
-  }
-
-  // Actualizar la función resetCalculadora para limpiar el localStorage correctamente
   const resetCalculadora = () => {
     setResultado(null)
     setSeccionActual(1)
@@ -825,12 +648,24 @@ export default function CalculadoraEctopico() {
         resultado: probPost,
       }
 
-      localStorage.setItem(`ectopico_${idSeguimiento}`, JSON.stringify(datosCompletos))
-
       try {
-        let ok = false
+        let result = { success: false, data: null }
         if (!esConsultaSeguimiento) {
-          ok = await enviarDatosAlBackend(datosCompletos)
+          result = await enviarDatosAlBackend(datosCompletos)
+          if (result.success && result.data) {
+            const folio = result.data.folio
+            const idPublico = `ID-${String(folio).padStart(5, "0")}`
+            setIdSeguimiento(idPublico)
+            localStorage.setItem(
+              `ectopico_folio_${folio}`,
+              JSON.stringify({
+                ...datosCompletos,
+                id: result.data.id,
+                folio: result.data.folio,
+                id_publico: idPublico,
+              }),
+            )
+          }
         } else {
           const tieneC2 =
             consultaCargada &&
@@ -846,15 +681,15 @@ export default function CalculadoraEctopico() {
               consultaCargada.sintomas_seleccionados_3?.length > 0)
 
           const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
-          ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
+          const ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
+          result.success = ok
         }
-
-        if (!ok) {
-          alert("Advertencia: Guardado local OK, pero falló la sincronización con la base de datos.")
+        if (!result.success) {
+          alert("Advertencia: Falló la sincronización con la base de datos.")
         }
       } catch (e) {
         console.error("Error al sincronizar con el backend:", e)
-        alert("Advertencia: Guardado local OK, pero falló la sincronización con la base de datos.")
+        alert("Advertencia: Falló la sincronización con la base de datos.")
       }
 
       // Usar tipoResultado del backend para determinar el flujo
@@ -1425,7 +1260,9 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
                             <span className="text-white text-xs font-bold">ID</span>
                           </div>
-                          <span className="font-mono text-blue-600 font-bold">{consultaCargada.id}</span>
+                          <span className="font-mono text-blue-600 font-bold">
+                            {consultaCargada.id_publico || `ID-${String(consultaCargada.folio).padStart(5, "0")}`}
+                          </span>
                         </div>
                       </div>
                       <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">

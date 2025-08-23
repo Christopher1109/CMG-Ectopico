@@ -7,12 +7,12 @@ type Params = { params: { id: string } }
 function toNumericId(id: string): number | null {
   const s = String(id).trim()
   if (/^\d+$/.test(s)) return Number(s) // "98" -> 98
-  const m = s.match(/^ID-0*(\d+)$/i)    // "ID-00098" -> 98
+  const m = s.match(/^ID-0*(\d+)$/i) // "ID-00098" -> 98
   return m ? Number(m[1]) : null
 }
 
-function toPublicId(n: number): string {
-  return `ID-${String(n).padStart(5, "0")}`
+function toPublicId(folio: number): string {
+  return `ID-${String(folio).padStart(5, "0")}`
 }
 
 function parsePctToProb(x: unknown): number | null {
@@ -31,7 +31,7 @@ function asNumOrNull(x: unknown): number | null {
 }
 
 // ==================================================
-// GET: Obtiene una consulta por ID (acepta "ID-00098" o "98")
+// GET: Obtiene una consulta por ID o folio
 // ==================================================
 export async function GET(_req: Request, { params }: Params) {
   try {
@@ -40,19 +40,30 @@ export async function GET(_req: Request, { params }: Params) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 })
     }
 
-    // ¡Siempre consulta por numérico para no romper BIGINT!
-    const { data, error } = await supabaseAdmin
-      .from("consultas")
-      .select("*")
-      .eq("id", idNum)
-      .single()
+    // Buscar por folio primero, luego por id si no se encuentra
+    let data = null
+    let error = null
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 404 })
+    // Intentar buscar por folio
+    const folioResult = await supabaseAdmin.from("consultas").select("*").eq("folio", idNum).single()
+
+    if (folioResult.data) {
+      data = folioResult.data
+    } else {
+      // Si no se encuentra por folio, buscar por id
+      const idResult = await supabaseAdmin.from("consultas").select("*").eq("id", idNum).single()
+
+      data = idResult.data
+      error = idResult.error
+    }
+
+    if (error || !data) return NextResponse.json({ error: error?.message || "Consulta no encontrada" }, { status: 404 })
 
     // Normaliza campos hacia el formato que usa tu frontend
     const consultaNormalizada = {
-      id: idNum,
-      id_publico: toPublicId(idNum),
+      id: data.id,
+      folio: data.folio,
+      id_publico: toPublicId(data.folio), // Usar folio para el ID público
 
       fecha_creacion: data.created_at,
       fecha_ultima_actualizacion: data.updated_at,
@@ -129,44 +140,53 @@ export async function PATCH(req: Request, { params }: Params) {
     if (visita === 2) {
       updateData.Sintomas_2 = Array.isArray(body.sintomas_seleccionados)
         ? body.sintomas_seleccionados.join(", ")
-        : body.sintomas_seleccionados ?? null
+        : (body.sintomas_seleccionados ?? null)
 
       updateData.Factores_2 = Array.isArray(body.factores_seleccionados)
         ? body.factores_seleccionados.join(", ")
-        : body.factores_seleccionados ?? null
+        : (body.factores_seleccionados ?? null)
 
       updateData.TVUS_2 = body.tvus ?? null
       updateData.hCG_2 = body.hcg_valor != null ? Number(body.hcg_valor) : null
       updateData.Variacion_hCG_2 = body.variacion_hcg ?? null
 
       // cuidado con 0: acepta 0 como valor válido
-      updateData.Pronostico_2 =
-        body.resultado != null ? `${(Number(body.resultado) * 100).toFixed(1)}%` : null
+      updateData.Pronostico_2 = body.resultado != null ? `${(Number(body.resultado) * 100).toFixed(1)}%` : null
 
       updateData.Consulta_2_Date = new Date().toISOString()
     } else if (visita === 3) {
       updateData.Sintomas_3 = Array.isArray(body.sintomas_seleccionados)
         ? body.sintomas_seleccionados.join(", ")
-        : body.sintomas_seleccionados ?? null
+        : (body.sintomas_seleccionados ?? null)
 
       updateData.Factores_3 = Array.isArray(body.factores_seleccionados)
         ? body.factores_seleccionados.join(", ")
-        : body.factores_seleccionados ?? null
+        : (body.factores_seleccionados ?? null)
 
       updateData.TVUS_3 = body.tvus ?? null
       updateData.hCG_3 = body.hcg_valor != null ? Number(body.hcg_valor) : null
       updateData.Variacion_hCG_3 = body.variacion_hcg ?? null
 
-      updateData.Pronostico_3 =
-        body.resultado != null ? `${(Number(body.resultado) * 100).toFixed(1)}%` : null
+      updateData.Pronostico_3 = body.resultado != null ? `${(Number(body.resultado) * 100).toFixed(1)}%` : null
 
       updateData.Consulta_3_Date = new Date().toISOString()
+    }
+
+    // Buscar por folio primero, luego por id
+    let targetId = null
+    const folioResult = await supabaseAdmin.from("consultas").select("id").eq("folio", idNum).single()
+
+    if (folioResult.data) {
+      targetId = folioResult.data.id
+    } else {
+      // Si no se encuentra por folio, usar el idNum como id directo
+      targetId = idNum
     }
 
     const { data, error } = await supabaseAdmin
       .from("consultas")
       .update(updateData)
-      .eq("id", idNum) // usar SIEMPRE numérico
+      .eq("id", targetId)
       .select()
       .single()
 
@@ -178,7 +198,7 @@ export async function PATCH(req: Request, { params }: Params) {
 }
 
 // ==================================================
-// DELETE: Elimina una consulta por ID
+// DELETE: Elimina una consulta por ID o folio
 // ==================================================
 export async function DELETE(_req: Request, { params }: Params) {
   try {
@@ -187,7 +207,17 @@ export async function DELETE(_req: Request, { params }: Params) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 })
     }
 
-    const { error } = await supabaseAdmin.from("consultas").delete().eq("id", idNum)
+    // Buscar por folio primero, luego por id
+    let targetId = null
+    const folioResult = await supabaseAdmin.from("consultas").select("id").eq("folio", idNum).single()
+
+    if (folioResult.data) {
+      targetId = folioResult.data.id
+    } else {
+      targetId = idNum
+    }
+
+    const { error } = await supabaseAdmin.from("consultas").delete().eq("id", targetId)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })
   } catch (e: any) {

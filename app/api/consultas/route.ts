@@ -2,34 +2,13 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 
-// Convierte "ID-00098" -> 98 o "98" -> 98
-function extractNumericId(raw: any): number | null {
-  if (raw == null) return null
-  const s = String(raw).trim()
-  if (s.startsWith("ID-")) {
-    const n = Number.parseInt(s.slice(3), 10)
-    return Number.isFinite(n) ? n : null
-  }
-  const n = Number.parseInt(s, 10)
-  return Number.isFinite(n) ? n : null
-}
-
 export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    // ID numérico para la BD
-    const id = extractNumericId(body.id)
-    if (id == null) {
-      return NextResponse.json(
-        { error: "ID inválido. Use el formato ID-NNNNN o un número." },
-        { status: 400 },
-      )
-    }
-
-    // --- Mapeo a columnas REALES de tu tabla (sin Variacion_hCG_1) ---
+    // --- Mapeo a columnas REALES de tu tabla (SIN incluir id) ---
     const insertData: Record<string, any> = {
-      id,
+      // NO incluimos id - se genera automáticamente
       Dr: body.usuario_creador ?? null,
       Px: body.nombre_paciente ?? null,
       Edad_Px: body.edad_paciente ?? null,
@@ -51,13 +30,8 @@ export async function POST(req: Request) {
       Pronostico_1: typeof body.resultado === "number" ? `${(body.resultado * 100).toFixed(1)}%` : null,
       Consulta_1_Date: new Date().toISOString(),
     }
-    // IMPORTANTE: no incluimos Variacion_hCG_1 (esa columna no existe)
 
-    const { data, error } = await supabaseAdmin
-      .from("consultas")
-      .insert(insertData)
-      .select()
-      .single()
+    const { data, error } = await supabaseAdmin.from("consultas").insert(insertData).select("*").single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ data })

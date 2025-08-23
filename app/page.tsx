@@ -36,10 +36,10 @@ const USUARIOS_AUTORIZADOS = [
 ]
 
 // ==================== HELPERS API ====================
-async function enviarDatosAlBackend(datos: any): Promise<boolean> {
+async function enviarDatosAlBackend(datos: any): Promise<{ success: boolean; data?: any }> {
   try {
     const payload = {
-      id: datos.id,
+      // NO incluir id - se genera automáticamente
       usuario_creador: datos.usuarioCreador || null,
       nombre_paciente: datos.nombrePaciente || "N/A",
       edad_paciente: Number.isFinite(+datos.edadPaciente) ? +datos.edadPaciente : null,
@@ -63,16 +63,16 @@ async function enviarDatosAlBackend(datos: any): Promise<boolean> {
     const res = await crearConsulta(payload)
     if (res?.error) {
       console.error("API /api/consultas error:", res.error)
-      return false
+      return { success: false }
     }
-    return true
+    return { success: true, data: res.data }
   } catch (e) {
     console.error("Error llamando /api/consultas:", e)
-    return false
+    return { success: false }
   }
 }
 
-async function actualizarDatosEnBackend(id: string, visitaNo: 2 | 3, datos: any): Promise<boolean> {
+async function actualizarDatosEnBackend(folioOrId: string, visitaNo: 2 | 3, datos: any): Promise<boolean> {
   try {
     const patch = {
       sintomas_seleccionados: Array.isArray(datos.sintomasSeleccionados) ? datos.sintomasSeleccionados : [],
@@ -82,7 +82,7 @@ async function actualizarDatosEnBackend(id: string, visitaNo: 2 | 3, datos: any)
       variacion_hcg: datos.variacionHcg || null,
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
     }
-    const res = await actualizarConsulta(id, visitaNo, patch)
+    const res = await actualizarConsulta(folioOrId, visitaNo, patch)
     if (res?.error) {
       console.error("API PATCH /api/consultas error:", res.error)
       return false
@@ -94,9 +94,9 @@ async function actualizarDatosEnBackend(id: string, visitaNo: 2 | 3, datos: any)
   }
 }
 
-async function leerDatosDesdeBackend(id: string): Promise<any | null> {
+async function leerDatosDesdeBackend(folioOrId: string): Promise<any | null> {
   try {
-    const res = await obtenerConsulta(id)
+    const res = await obtenerConsulta(folioOrId)
     if (res?.error) return null
     return res?.data ?? null
   } catch (e) {
@@ -109,6 +109,8 @@ async function leerDatosDesdeBackend(id: string): Promise<any | null> {
 function normalizarDesdeLocal(d: any) {
   return {
     id: d.id,
+    folio: d.folio,
+    id_publico: d.id_publico,
     fecha_creacion: d.fechaCreacion ?? d.fecha_creacion ?? null,
     fecha_ultima_actualizacion: d.fechaUltimaActualizacion ?? d.fecha_ultima_actualizacion ?? null,
     usuario_creador: d.usuarioCreador ?? d.usuario_creador ?? null,
@@ -147,19 +149,7 @@ function normalizarDesdeLocal(d: any) {
   }
 }
 
-function generarIdConsulta(): string {
-  const idsExistentes: number[] = []
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key && key.startsWith("ectopico_ID-")) {
-      const idCompleto = key.replace("ectopico_", "")
-      const numeroId = Number.parseInt(idCompleto.replace("ID-", ""))
-      if (!isNaN(numeroId)) idsExistentes.push(numeroId)
-    }
-  }
-  const siguienteNumero = idsExistentes.length > 0 ? Math.max(...idsExistentes) + 1 : 1
-  return `ID-${siguienteNumero.toString().padStart(5, "0")}`
-}
+// Eliminar la función generarIdConsulta ya que ahora el ID lo genera la base de datos
 
 // ==================== COMPONENTE PRINCIPAL ====================
 export default function CalculadoraEctopico() {
@@ -234,7 +224,7 @@ export default function CalculadoraEctopico() {
     try {
       const fechaActual = new Date().toISOString()
       const datosIncompletos = {
-        id: idSeguimiento || generarIdConsulta(),
+        // NO incluir id - se genera automáticamente
         fechaCreacion: fechaActual,
         fechaUltimaActualizacion: fechaActual,
         usuarioCreador: usuarioActual || "anon",
@@ -261,10 +251,26 @@ export default function CalculadoraEctopico() {
         consultaCompleta: false,
       }
 
-      localStorage.setItem(`ectopico_${datosIncompletos.id}`, JSON.stringify(datosIncompletos))
-      const ok = await enviarDatosAlBackend(datosIncompletos)
-      if (!ok) console.warn("Datos guardados localmente, pero falló la sincronización con la base de datos")
-      return true
+      const result = await enviarDatosAlBackend(datosIncompletos)
+      if (result.success && result.data) {
+        // Guardar en localStorage usando el folio
+        const folio = result.data.folio
+        const idPublico = `ID-${String(folio).padStart(5, "0")}`
+        setIdSeguimiento(idPublico)
+        localStorage.setItem(
+          `ectopico_folio_${folio}`,
+          JSON.stringify({
+            ...datosIncompletos,
+            id: result.data.id,
+            folio: result.data.folio,
+            id_publico: idPublico,
+          }),
+        )
+        return true
+      } else {
+        console.warn("Falló el guardado en la base de datos")
+        return false
+      }
     } catch (error) {
       console.error("Error al guardar datos incompletos:", error)
       return false
@@ -273,16 +279,15 @@ export default function CalculadoraEctopico() {
 
   // ====== FUNCIONES PRINCIPALES ======
   const iniciarNuevaEvaluacion = async () => {
-    const nuevoId = generarIdConsulta()
     resetCalculadora()
-    setIdSeguimiento(nuevoId)
     setMostrarPantallaBienvenida(false)
     setEsConsultaSeguimiento(false)
     setNumeroConsultaActual(1)
+    // No generar ID local - se generará en la base de datos
   }
 
   const continuarConsultaCargada = async () => {
-    setIdSeguimiento(consultaCargada.id)
+    setIdSeguimiento(consultaCargada.id_publico || consultaCargada.folio?.toString() || consultaCargada.id?.toString())
     // Mantener datos del paciente (NO cambiar)
     setNombrePaciente(consultaCargada.nombre_paciente || "")
     setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
@@ -331,7 +336,7 @@ export default function CalculadoraEctopico() {
     setSeccionActual(5)
   }
 
-  // === BÚSQUEDA: usa SIEMPRE el backend (arregla el error de BIGINT) ===
+  // === BÚSQUEDA: usa SIEMPRE el backend ===
   const buscarConsulta = async () => {
     const id = idBusqueda.trim().toUpperCase()
     if (!/^ID-\d{5}$/.test(id)) {
@@ -341,8 +346,9 @@ export default function CalculadoraEctopico() {
 
     let consultaEncontrada: any = null
 
-    // Cache local
-    const datosLocal = localStorage.getItem(`ectopico_${id}`)
+    // Cache local usando folio
+    const folioNumerico = Number.parseInt(id.replace(/^ID-0*/, ""), 10)
+    const datosLocal = localStorage.getItem(`ectopico_folio_${folioNumerico}`)
     if (datosLocal) {
       try {
         consultaEncontrada = normalizarDesdeLocal(JSON.parse(datosLocal))
@@ -354,10 +360,10 @@ export default function CalculadoraEctopico() {
     // Backend
     if (!consultaEncontrada) {
       try {
-        const res = await leerDatosDesdeBackend(id)
+        const res = await leerDatosDesdeBackend(folioNumerico)
         if (res) {
           consultaEncontrada = res // ya viene normalizado desde el endpoint
-          localStorage.setItem(`ectopico_${id}`, JSON.stringify(consultaEncontrada))
+          localStorage.setItem(`ectopico_folio_${res.folio}`, JSON.stringify(consultaEncontrada))
         }
       } catch (error) {
         console.error("Error al buscar en backend:", error)
@@ -399,6 +405,181 @@ export default function CalculadoraEctopico() {
     }
   }
 
+  // Actualizar la función calcular para usar el nuevo sistema
+
+  // Actualizar la función resetCalculadora para limpiar el localStorage correctamente
+
+  const copiarId = () => {
+    if (idSeguimiento) {
+      navigator.clipboard.writeText(idSeguimiento)
+      alert("ID copiado al portapapeles")
+    }
+  }
+
+  const volverAInicio = () => resetCalculadora()
+
+  const completarSeccion = (seccion: number) => {
+    if (!seccionesCompletadas.includes(seccion)) {
+      setSeccionesCompletadas([...seccionesCompletadas, seccion])
+    }
+    setSeccionActual(seccion + 1)
+  }
+
+  // ==================== VALIDACIONES CON BACKEND ====================
+
+  const validarEcoTransabdominal = async () => {
+    if (!tieneEcoTransabdominal || !resultadoEcoTransabdominal) return true
+
+    try {
+      const respuesta = await calcularRiesgo({
+        tieneEcoTransabdominal: tieneEcoTransabdominal,
+        resultadoEcoTransabdominal: resultadoEcoTransabdominal,
+        tvus: "normal", // valor dummy para pasar validación
+        hcgValor: "1000", // valor dummy para pasar validación
+      })
+
+      if (respuesta.bloqueado && respuesta.motivo === "embarazo_intrauterino_confirmado") {
+        await guardarDatosIncompletos("embarazo_intrauterino_confirmado", 4)
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+        setProtocoloFinalizado(true)
+        return false
+      }
+    } catch (error) {
+      console.warn("Error en validación de ecografía transabdominal:", error)
+    }
+    return true
+  }
+
+  const calcular = async () => {
+    if (!tvus || !hcgValor) {
+      alert("Por favor complete todos los campos requeridos: TVUS y β-hCG")
+      return
+    }
+
+    try {
+      // Llamar al backend para el cálculo
+      const respuesta = await calcularRiesgo({
+        sintomas: sintomasSeleccionados,
+        factoresRiesgo: factoresSeleccionados,
+        tvus: tvus,
+        hcgValor: hcgValor,
+        hcgAnterior: hcgAnterior,
+        esConsultaSeguimiento: esConsultaSeguimiento,
+        resultadoAnterior: consultaCargada?.resultado,
+        edadPaciente: edadPaciente,
+        frecuenciaCardiaca: frecuenciaCardiaca,
+        presionSistolica: presionSistolica,
+        presionDiastolica: presionDiastolica,
+        estadoConciencia: estadoConciencia,
+        pruebaEmbarazoRealizada: pruebaEmbarazoRealizada,
+        resultadoPruebaEmbarazo: resultadoPruebaEmbarazo,
+        tieneEcoTransabdominal: tieneEcoTransabdominal,
+        resultadoEcoTransabdominal: resultadoEcoTransabdominal,
+      })
+
+      if (respuesta.error) {
+        alert(`Error: ${respuesta.error}`)
+        return
+      }
+
+      if (respuesta.bloqueado) {
+        await guardarDatosIncompletos(respuesta.motivo || "regla_clinica", 5)
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+        setProtocoloFinalizado(true)
+        return
+      }
+
+      // Usar el resultado del backend
+      const probPost = respuesta.resultado!
+      setResultado(probPost)
+      if (respuesta.variacionHcg) {
+        setVariacionHcg(respuesta.variacionHcg)
+      }
+
+      const fechaActual = new Date().toISOString()
+      const datosCompletos = {
+        fechaCreacion: fechaActual,
+        fechaUltimaActualizacion: fechaActual,
+        usuarioCreador: usuarioActual || "anon",
+        nombrePaciente,
+        edadPaciente: Number.parseInt(edadPaciente),
+        frecuenciaCardiaca: Number.parseInt(frecuenciaCardiaca),
+        presionSistolica: Number.parseInt(presionSistolica),
+        presionDiastolica: Number.parseInt(presionDiastolica),
+        estadoConciencia,
+        pruebaEmbarazoRealizada,
+        resultadoPruebaEmbarazo,
+        hallazgosExploracion,
+        tieneEcoTransabdominal,
+        resultadoEcoTransabdominal,
+        sintomasSeleccionados,
+        factoresSeleccionados,
+        tvus,
+        hcgValor: Number.parseFloat(hcgValor),
+        variacionHcg: respuesta.variacionHcg || null,
+        hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
+        resultado: probPost,
+      }
+
+      try {
+        let result = { success: false, data: null }
+        if (!esConsultaSeguimiento) {
+          result = await enviarDatosAlBackend(datosCompletos)
+          if (result.success && result.data) {
+            const folio = result.data.folio
+            const idPublico = `ID-${String(folio).padStart(5, "0")}`
+            setIdSeguimiento(idPublico)
+            localStorage.setItem(
+              `ectopico_folio_${folio}`,
+              JSON.stringify({
+                ...datosCompletos,
+                id: result.data.id,
+                folio: result.data.folio,
+                id_publico: idPublico,
+              }),
+            )
+          }
+        } else {
+          const tieneC2 =
+            consultaCargada &&
+            (consultaCargada.tvus_2 ||
+              consultaCargada.hcg_valor_2 ||
+              consultaCargada.resultado_2 ||
+              consultaCargada.sintomas_seleccionados_2?.length > 0)
+          const tieneC3 =
+            consultaCargada &&
+            (consultaCargada.tvus_3 ||
+              consultaCargada.hcg_valor_3 ||
+              consultaCargada.resultado_3 ||
+              consultaCargada.sintomas_seleccionados_3?.length > 0)
+
+          const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
+          const ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
+          result.success = ok
+        }
+        if (!result.success) {
+          alert("Advertencia: Falló la sincronización con la base de datos.")
+        }
+      } catch (e) {
+        console.error("Error al sincronizar con el backend:", e)
+        alert("Advertencia: Falló la sincronización con la base de datos.")
+      }
+
+      // Usar tipoResultado del backend para determinar el flujo
+      if (respuesta.tipoResultado === "finalizado") {
+        setMensajeFinal(<div className="text-center">{respuesta.textoApoyo}</div>)
+        setProtocoloFinalizado(true)
+      } else {
+        setMostrarResultados(true)
+        setMostrarIdSeguimiento(true)
+      }
+    } catch (error) {
+      console.error("Error en el cálculo:", error)
+      alert("Error al realizar el cálculo. Por favor, inténtelo de nuevo.")
+    }
+  }
+
+  // Actualizar la función resetCalculadora para limpiar el localStorage correctamente
   const resetCalculadora = () => {
     setResultado(null)
     setSeccionActual(1)
@@ -621,7 +802,6 @@ export default function CalculadoraEctopico() {
 
       const fechaActual = new Date().toISOString()
       const datosCompletos = {
-        id: idSeguimiento,
         fechaCreacion: fechaActual,
         fechaUltimaActualizacion: fechaActual,
         usuarioCreador: usuarioActual || "anon",

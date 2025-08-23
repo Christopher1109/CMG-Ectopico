@@ -1,21 +1,13 @@
-// lib/api/consultas.ts
-import { normalizaId } from "@/lib/utils"
-
 /**
  * Crea una consulta.
- * Si llega un id con formato "ID-00098", se normaliza a 98 antes de enviarlo al backend.
+ * NO envía el campo id - se genera automáticamente en la base de datos.
  */
 export async function crearConsulta(payload: any) {
   try {
     const dbPayload = { ...payload }
 
-    if (dbPayload?.id !== undefined) {
-      try {
-        dbPayload.id = normalizaId(dbPayload.id)
-      } catch {
-        // si no aplica (id no viene o no es convertible), lo ignoramos
-      }
-    }
+    // Eliminar el campo id si existe - la base de datos lo genera automáticamente
+    delete dbPayload.id
 
     const res = await fetch("/api/consultas", {
       method: "POST",
@@ -34,17 +26,15 @@ export async function crearConsulta(payload: any) {
 
 /**
  * Actualiza la consulta (visita 2 o 3).
- * Convierte el id a numérico y arma la URL de forma segura (?visita=2 | 3).
+ * Usa el folio para identificar la consulta.
  */
-export async function actualizarConsulta(
-  id: string | number,
-  visitaNo: 2 | 3,
-  patch: any,
-) {
+export async function actualizarConsulta(folioOrId: string | number, visitaNo: 2 | 3, patch: any) {
   try {
-    const idNum = normalizaId(id)
+    // Convertir a número si es string
+    const numericId = typeof folioOrId === "string" ? Number.parseInt(folioOrId.replace(/^ID-0*/, ""), 10) : folioOrId
+
     const qs = new URLSearchParams({ visita: String(visitaNo) }).toString()
-    const url = `/api/consultas/${idNum}?${qs}`
+    const url = `/api/consultas/${numericId}?${qs}`
 
     console.log("Actualizando consulta:", { url, patch })
 
@@ -66,13 +56,14 @@ export async function actualizarConsulta(
 }
 
 /**
- * Obtiene una consulta por id.
- * Convierte "ID-00098" a 98 antes de consultar.
+ * Obtiene una consulta por folio o id.
  */
-export async function obtenerConsulta(id: string | number) {
+export async function obtenerConsulta(folioOrId: string | number) {
   try {
-    const idNum = normalizaId(id)
-    const res = await fetch(`/api/consultas/${idNum}`, { method: "GET" })
+    // Convertir a número si es string
+    const numericId = typeof folioOrId === "string" ? Number.parseInt(folioOrId.replace(/^ID-0*/, ""), 10) : folioOrId
+
+    const res = await fetch(`/api/consultas/${numericId}`, { method: "GET" })
     const json = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`)
     return json

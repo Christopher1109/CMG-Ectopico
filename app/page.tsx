@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { clienteSeguro } from "@/lib/api/clienteSeguro"
-import { calcularRiesgo } from "@/lib/api/calculos"
+import { calcularRiesgo, validarEmbarazo, validarEcografia } from "@/lib/api/calculos"
 import {
   Heart,
   Stethoscope,
@@ -21,25 +21,29 @@ import {
   Download,
   ArrowRight,
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type React from "react"
 import { crearConsulta, actualizarConsulta, obtenerConsulta } from "@/lib/api/consultas"
 
-// ==================== USUARIOS AUTORIZADOS ====================
-const USUARIOS_AUTORIZADOS = [
-  { usuario: "dr.martinez", contraseña: "CMG2024Med!", nombre: "Dr. Martínez" },
-  { usuario: "dra.rodriguez", contraseña: "Ectopico2024#", nombre: "Dra. Rodríguez" },
-  { usuario: "dr.garcia", contraseña: "MedCMG2024$", nombre: "Dr. García" },
-  { usuario: "Dra.Alma", contraseña: "Nuevoleon", nombre: "Secretaria de Salud NL" },
-  { usuario: "Dr.Francisco", contraseña: "Francisco", nombre: "Dr.Francisco" },
-  { usuario: "Christopher", contraseña: "Matutito22", nombre: "Christopher" },
+// ==================== SOLO CONFIGURACIÓN UI - SIN LÓGICA SENSIBLE ====================
+const factoresRiesgo = [
+  { id: "infertilidad", label: "Historia de infertilidad" },
+  { id: "ectopico_previo", label: "Embarazo ectópico previo" },
+  { id: "enfermedad_pelvica", label: "Enfermedad inflamatoria pélvica previa" },
+  { id: "cirugia_tubarica", label: "Cirugía tubárica previa" },
 ]
 
-// ==================== HELPERS API ====================
+const sintomas = [
+  { id: "sangrado", label: "Sangrado vaginal" },
+  { id: "dolor", label: "Dolor pélvico/abdominal" },
+  { id: "dolor_sangrado", label: "Sangrado + Dolor" },
+  { id: "sincope", label: "Síncope o mareo" },
+]
+
+// ==================== HELPERS API - SIN LÓGICA DE NEGOCIO ====================
 async function enviarDatosAlBackend(datos: any): Promise<{ success: boolean; data?: any }> {
   try {
     const payload = {
-      // NO incluir id - se genera automáticamente
       usuario_creador: datos.usuarioCreador || null,
       nombre_paciente: datos.nombrePaciente || "N/A",
       edad_paciente: Number.isFinite(+datos.edadPaciente) ? +datos.edadPaciente : null,
@@ -60,6 +64,7 @@ async function enviarDatosAlBackend(datos: any): Promise<{ success: boolean; dat
       hcg_anterior: Number.isFinite(+datos.hcgAnterior) ? +datos.hcgAnterior : null,
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
     }
+
     const res = await crearConsulta(payload)
     if (res?.error) {
       console.error("API /api/consultas error:", res.error)
@@ -105,7 +110,7 @@ async function leerDatosDesdeBackend(folioOrId: string): Promise<any | null> {
   }
 }
 
-// ==================== FUNCIONES AUXILIARES ====================
+// ==================== FUNCIONES AUXILIARES - SOLO UI ====================
 function normalizarDesdeLocal(d: any) {
   return {
     id: d.id,
@@ -151,24 +156,6 @@ function normalizarDesdeLocal(d: any) {
 
 // ==================== COMPONENTE PRINCIPAL ====================
 export default function CalculadoraEctopico() {
-  const [idBusqueda, setIdBusqueda] = useState("")
-  const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
-  const [consultaCargada, setConsultaCargada] = useState<any>(null)
-  const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
-
-  const factoresRiesgo = [
-    { id: "infertilidad", label: "Historia de infertilidad" },
-    { id: "ectopico_previo", label: "Embarazo ectópico previo" },
-    { id: "enfermedad_pelvica", label: "Enfermedad inflamatoria pélvica previa" },
-    { id: "cirugia_tubarica", label: "Cirugía tubárica previa" },
-  ]
-  const sintomas = [
-    { id: "sangrado", label: "Sangrado vaginal" },
-    { id: "dolor", label: "Dolor pélvico/abdominal" },
-    { id: "dolor_sangrado", label: "Sangrado + Dolor" },
-    { id: "sincope", label: "Síncope o mareo" },
-  ]
-
   // Estados de autenticación
   const [estaAutenticado, setEstaAutenticado] = useState(false)
   const [usuarioActual, setUsuarioActual] = useState("")
@@ -178,6 +165,7 @@ export default function CalculadoraEctopico() {
   const [mostrarContraseña, setMostrarContraseña] = useState(false)
   const [errorLogin, setErrorLogin] = useState("")
   const [intentosLogin, setIntentosLogin] = useState(0)
+  const [cargandoLogin, setCargandoLogin] = useState(false)
 
   // Estados principales
   const [nombrePaciente, setNombrePaciente] = useState("")
@@ -217,12 +205,35 @@ export default function CalculadoraEctopico() {
   const [variacionHcg, setVariacionHcg] = useState("")
   const [hcgAnterior, setHcgAnterior] = useState("")
 
+  // Búsqueda y carga
+  const [idBusqueda, setIdBusqueda] = useState("")
+  const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
+  const [consultaCargada, setConsultaCargada] = useState<any>(null)
+  const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
+
+  // ✅ Verificar autenticación al cargar
+  useEffect(() => {
+    const verificarAuth = async () => {
+      if (clienteSeguro.isAuthenticated()) {
+        const esValido = await clienteSeguro.verificarToken()
+        if (esValido) {
+          const usuario = clienteSeguro.getUsuario()
+          setEstaAutenticado(true)
+          setUsuarioActual(usuario.usuario)
+          setNombreUsuario(usuario.nombre)
+        } else {
+          clienteSeguro.logout()
+        }
+      }
+    }
+    verificarAuth()
+  }, [])
+
   // ==================== GUARDAR DATOS INCOMPLETOS ====================
   async function guardarDatosIncompletos(motivoFinalizacion: string, seccionCompletada: number): Promise<boolean> {
     try {
       const fechaActual = new Date().toISOString()
       const datosIncompletos = {
-        // NO incluir id - se genera automáticamente
         fechaCreacion: fechaActual,
         fechaUltimaActualizacion: fechaActual,
         usuarioCreador: usuarioActual || "anon",
@@ -251,7 +262,6 @@ export default function CalculadoraEctopico() {
 
       const result = await enviarDatosAlBackend(datosIncompletos)
       if (result.success && result.data) {
-        // Guardar en localStorage usando el folio
         const folio = result.data.folio
         const idPublico = `ID-${String(folio).padStart(5, "0")}`
         setIdSeguimiento(idPublico)
@@ -275,7 +285,7 @@ export default function CalculadoraEctopico() {
     }
   }
 
-  // ==================== VALIDACIONES CON BACKEND ====================
+  // ==================== VALIDACIONES VIA BACKEND ÚNICAMENTE ====================
   const validarEdadPaciente = async () => {
     if (!edadPaciente) return true
 
@@ -286,16 +296,21 @@ export default function CalculadoraEctopico() {
         hcgValor: "1000", // valor dummy para pasar validación
       })
 
-      if (respuesta.bloqueado && respuesta.motivo === "edad_incompatible_embarazo") {
-        await guardarDatosIncompletos("edad_incompatible_embarazo", 1)
-        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-        setProtocoloFinalizado(true)
-        return false
+      if (respuesta.error) {
+        throw new Error(respuesta.error)
       }
+
+      // El backend maneja toda la lógica de validación
+      return true
     } catch (error) {
-      console.warn("Error en validación de edad:", error)
+      setMensajeFinal(
+        <div className="text-center">
+          Error al validar la edad del paciente. Por favor, verifique su conexión e intente nuevamente.
+        </div>,
+      )
+      setProtocoloFinalizado(true)
+      return false
     }
-    return true
   }
 
   const validarSignosVitales = async () => {
@@ -307,93 +322,91 @@ export default function CalculadoraEctopico() {
     }
 
     try {
-      const respuesta = await calcularRiesgo({
+      const respuesta = await clienteSeguro.validarSignosVitales({
         frecuenciaCardiaca: frecuenciaCardiaca,
         presionSistolica: presionSistolica,
         presionDiastolica: presionDiastolica,
         estadoConciencia: estadoConciencia,
-        tvus: "normal", // valor dummy para pasar validación
-        hcgValor: "1000", // valor dummy para pasar validación
       })
 
-      if (respuesta.bloqueado && respuesta.motivo?.startsWith("signos_vitales")) {
-        await guardarDatosIncompletos(respuesta.motivo, 2)
+      if (respuesta.esEmergencia) {
+        await guardarDatosIncompletos("signos_vitales_criticos", 2)
         setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
         setProtocoloFinalizado(true)
         return false
       }
+
+      if (respuesta.hayAlerta) {
+        setMostrarAlerta(true)
+        setMensajeAlerta(respuesta.mensajeAlerta)
+      }
+
+      return true
     } catch (error) {
-      console.warn("Error en validación de signos vitales:", error)
+      setMensajeFinal(
+        <div className="text-center">
+          Error al validar signos vitales. Por favor, verifique su conexión e intente nuevamente.
+        </div>,
+      )
+      setProtocoloFinalizado(true)
+      return false
     }
-
-    // Validaciones de alerta (no bloquean) - solo para mostrar sugerencias
-    const fc = Number.parseFloat(frecuenciaCardiaca)
-    const sistolica = Number.parseFloat(presionSistolica)
-    const diastolica = Number.parseFloat(presionDiastolica)
-
-    let hayAlerta = false
-    let mensajeAlertaTemp = ""
-    if ((sistolica >= 140 && sistolica < 180) || (diastolica >= 90 && diastolica < 110)) {
-      hayAlerta = true
-      mensajeAlertaTemp = "Se sugiere considerar hipertensión arterial. Se recomienda seguimiento médico."
-    } else if (fc > 100 && fc <= 120) {
-      hayAlerta = true
-      mensajeAlertaTemp = "Se sugiere considerar taquicardia. Se recomienda monitoreo médico."
-    } else if (fc < 60 && fc >= 50) {
-      hayAlerta = true
-      mensajeAlertaTemp = "Se sugiere considerar bradicardia. Se recomienda evaluación médica."
-    }
-    if (hayAlerta) {
-      setMostrarAlerta(true)
-      setMensajeAlerta(mensajeAlertaTemp)
-    }
-    return true
   }
 
   const validarPruebaEmbarazo = async () => {
     if (!pruebaEmbarazoRealizada) return true
 
     try {
-      const respuesta = await calcularRiesgo({
+      const respuesta = await validarEmbarazo({
         pruebaEmbarazoRealizada: pruebaEmbarazoRealizada,
         resultadoPruebaEmbarazo: resultadoPruebaEmbarazo,
-        tvus: "normal", // valor dummy para pasar validación
-        hcgValor: "1000", // valor dummy para pasar validación
       })
 
-      if (respuesta.bloqueado && respuesta.motivo?.startsWith("prueba_embarazo")) {
+      if (respuesta.debeDetener) {
         await guardarDatosIncompletos(respuesta.motivo, 3)
         setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
         setProtocoloFinalizado(true)
         return false
       }
+
+      return true
     } catch (error) {
-      console.warn("Error en validación de prueba de embarazo:", error)
+      setMensajeFinal(
+        <div className="text-center">
+          Error al validar la prueba de embarazo. Por favor, verifique su conexión e intente nuevamente.
+        </div>,
+      )
+      setProtocoloFinalizado(true)
+      return false
     }
-    return true
   }
 
   const validarEcoTransabdominal = async () => {
     if (!tieneEcoTransabdominal || !resultadoEcoTransabdominal) return true
 
     try {
-      const respuesta = await calcularRiesgo({
+      const respuesta = await validarEcografia({
         tieneEcoTransabdominal: tieneEcoTransabdominal,
         resultadoEcoTransabdominal: resultadoEcoTransabdominal,
-        tvus: "normal", // valor dummy para pasar validación
-        hcgValor: "1000", // valor dummy para pasar validación
       })
 
-      if (respuesta.bloqueado && respuesta.motivo === "embarazo_intrauterino_confirmado") {
-        await guardarDatosIncompletos("embarazo_intrauterino_confirmado", 4)
+      if (respuesta.debeDetener) {
+        await guardarDatosIncompletos(respuesta.motivo, 4)
         setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
         setProtocoloFinalizado(true)
         return false
       }
+
+      return true
     } catch (error) {
-      console.warn("Error en validación de ecografía transabdominal:", error)
+      setMensajeFinal(
+        <div className="text-center">
+          Error al validar la ecografía. Por favor, verifique su conexión e intente nuevamente.
+        </div>,
+      )
+      setProtocoloFinalizado(true)
+      return false
     }
-    return true
   }
 
   const calcular = async () => {
@@ -403,15 +416,18 @@ export default function CalculadoraEctopico() {
     }
 
     try {
-      // Llamar al backend para el cálculo
-      const respuesta = await calcularRiesgo({
-        sintomas: sintomasSeleccionados,
-        factoresRiesgo: factoresSeleccionados,
+      // ✅ TODA la lógica está en el backend
+      const respuesta = await clienteSeguro.calcularRiesgo({
+        sintomasSeleccionados: sintomasSeleccionados,
+        factoresSeleccionados: factoresSeleccionados,
         tvus: tvus,
         hcgValor: hcgValor,
         hcgAnterior: hcgAnterior,
         esConsultaSeguimiento: esConsultaSeguimiento,
-        resultadoAnterior: consultaCargada?.resultado,
+        numeroConsultaActual: numeroConsultaActual,
+        resultadoV1b: consultaCargada?.resultado,
+        resultadoV2c: consultaCargada?.resultado_2,
+        hcgValorVisita1: consultaCargada?.hcg_valor,
         edadPaciente: edadPaciente,
         frecuenciaCardiaca: frecuenciaCardiaca,
         presionSistolica: presionSistolica,
@@ -425,13 +441,6 @@ export default function CalculadoraEctopico() {
 
       if (respuesta.error) {
         alert(`Error: ${respuesta.error}`)
-        return
-      }
-
-      if (respuesta.bloqueado) {
-        await guardarDatosIncompletos(respuesta.motivo || "regla_clinica", 5)
-        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-        setProtocoloFinalizado(true)
         return
       }
 
@@ -512,8 +521,8 @@ export default function CalculadoraEctopico() {
       }
 
       // Usar tipoResultado del backend para determinar el flujo
-      if (respuesta.tipoResultado === "finalizado") {
-        setMensajeFinal(<div className="text-center">{respuesta.textoApoyo}</div>)
+      if (respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo") {
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
         setProtocoloFinalizado(true)
       } else {
         setMostrarResultados(true)
@@ -531,7 +540,6 @@ export default function CalculadoraEctopico() {
     setMostrarPantallaBienvenida(false)
     setEsConsultaSeguimiento(false)
     setNumeroConsultaActual(1)
-    // No generar ID local - se generará en la base de datos
   }
 
   const continuarConsultaCargada = async () => {
@@ -669,7 +677,6 @@ export default function CalculadoraEctopico() {
     setSeccionActual(seccion + 1)
   }
 
-  // Actualizar la función resetCalculadora para limpiar el localStorage correctamente
   const resetCalculadora = () => {
     setResultado(null)
     setSeccionActual(1)
@@ -709,7 +716,6 @@ export default function CalculadoraEctopico() {
 
   const generarInformePDF = () => {
     try {
-      // Deriva texto de recomendación desde `resultado` (evitamos insertar un ReactNode)
       const recomendacionTexto =
         resultado != null
           ? resultado >= 0.95
@@ -778,11 +784,15 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
     }
   }
 
+  // ✅ LOGIN SEGURO - Solo via backend
   const manejarLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorLogin("")
+    setCargandoLogin(true)
+
     if (intentosLogin >= 5) {
       setErrorLogin("Demasiados intentos fallidos. Contacte al administrador.")
+      setCargandoLogin(false)
       return
     }
 
@@ -798,30 +808,20 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
         setContraseña("")
       } else {
         setIntentosLogin((prev) => prev + 1)
-        setErrorLogin(`Credenciales incorrectas. Intento ${intentosLogin + 1} de 5.`)
+        setErrorLogin(resultado.error || `Credenciales incorrectas. Intento ${intentosLogin + 1} de 5.`)
         setContraseña("")
       }
     } catch (error) {
-      const usuarioEncontrado = USUARIOS_AUTORIZADOS.find(
-        (u) => u.usuario.toLowerCase() === usuario.toLowerCase() && u.contraseña === contraseña,
-      )
-      if (usuarioEncontrado) {
-        setEstaAutenticado(true)
-        setUsuarioActual(usuarioEncontrado.usuario)
-        setNombreUsuario(usuarioEncontrado.nombre)
-        setErrorLogin("")
-        setIntentosLogin(0)
-        setUsuario("")
-        setContraseña("")
-      } else {
-        setIntentosLogin((prev) => prev + 1)
-        setErrorLogin(`Credenciales incorrectas. Intento ${intentosLogin + 1} de 5.`)
-        setContraseña("")
-      }
+      setIntentosLogin((prev) => prev + 1)
+      setErrorLogin(`Error de conexión. Intento ${intentosLogin + 1} de 5.`)
+      setContraseña("")
+    } finally {
+      setCargandoLogin(false)
     }
   }
 
   const cerrarSesion = () => {
+    clienteSeguro.logout()
     setEstaAutenticado(false)
     setUsuarioActual("")
     setNombreUsuario("")
@@ -921,7 +921,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     onChange={(e) => setUsuario(e.target.value)}
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                     required
-                    disabled={intentosLogin >= 5}
+                    disabled={intentosLogin >= 5 || cargandoLogin}
                   />
                 </div>
 
@@ -935,7 +935,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       onChange={(e) => setContraseña(e.target.value)}
                       className="w-full px-4 py-3 pr-12 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                       required
-                      disabled={intentosLogin >= 5}
+                      disabled={intentosLogin >= 5 || cargandoLogin}
                     />
                     <Button
                       type="button"
@@ -943,7 +943,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       size="sm"
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
                       onClick={() => setMostrarContraseña(!mostrarContraseña)}
-                      disabled={intentosLogin >= 5}
+                      disabled={intentosLogin >= 5 || cargandoLogin}
                     >
                       {mostrarContraseña ? (
                         <EyeOff className="h-4 w-4 text-slate-500" />
@@ -963,9 +963,14 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 text-base"
-                  disabled={intentosLogin >= 5}
+                  disabled={intentosLogin >= 5 || cargandoLogin}
                 >
-                  {intentosLogin >= 5 ? (
+                  {cargandoLogin ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Verificando...
+                    </>
+                  ) : intentosLogin >= 5 ? (
                     <>
                       <Lock className="mr-2 h-4 w-4" />
                       Acceso Bloqueado
@@ -1177,7 +1182,9 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
                             <span className="text-white text-xs font-bold">ID</span>
                           </div>
-                          <span className="font-mono text-blue-600 font-bold">{consultaCargada.id}</span>
+                          <span className="font-mono text-blue-600 font-bold">
+                            {consultaCargada.id_publico || consultaCargada.folio}
+                          </span>
                         </div>
                       </div>
                       <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
@@ -1228,270 +1235,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                {/* PRIMERA CONSULTA */}
-                {(consultaCargada.tvus || consultaCargada.hcg_valor || consultaCargada.resultado) && (
-                  <div className="bg-green-50 p-6 rounded-xl border border-green-200 shadow-sm">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-green-900">Evaluación inicial</h3>
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div className="bg-white p-4 rounded-lg border border-green-200">
-                          <span className="font-semibold text-green-700 block mb-2">Síntomas</span>
-                          {consultaCargada.sintomas_seleccionados &&
-                          consultaCargada.sintomas_seleccionados.length > 0 ? (
-                            <div className="space-y-1">
-                              {consultaCargada.sintomas_seleccionados.map((sintoma: string) => (
-                                <div key={sintoma} className="text-green-800 text-sm flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                  <span>{obtenerNombreSintoma(sintoma)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-green-800 text-sm">Asintomática</div>
-                          )}
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-green-200">
-                          <span className="font-semibold text-green-700 block mb-2">TVUS</span>
-                          <div className="text-green-800 font-medium">{obtenerNombreTVUS(consultaCargada.tvus)}</div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="bg-white p-4 rounded-lg border border-green-200">
-                          <span className="font-semibold text-green-700 block mb-2">Factores de Riesgo</span>
-                          {consultaCargada.factores_seleccionados &&
-                          consultaCargada.factores_seleccionados.length > 0 ? (
-                            <div className="space-y-1">
-                              {consultaCargada.factores_seleccionados.map((factor: string) => (
-                                <div key={factor} className="text-green-800 text-sm flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                  <span>{obtenerNombreFactorRiesgo(factor)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-green-800 text-sm">Sin factores de riesgo</div>
-                          )}
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-green-200">
-                          <span className="font-semibold text-green-700 block mb-2">β-hCG</span>
-                          <div className="text-green-800 font-bold text-lg">
-                            {consultaCargada.hcg_valor || "No especificado"} mUI/mL
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 pt-4 border-t border-green-200 bg-green-100 p-4 rounded-lg">
-                      <span className="font-semibold text-green-700 block mb-2">Resultado de la Herramienta</span>
-                      <div className="text-2xl font-bold text-green-900">
-                        {consultaCargada.resultado
-                          ? `${(consultaCargada.resultado * 100).toFixed(1)}% estimación de riesgo`
-                          : "No calculado"}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* SEGUNDA CONSULTA */}
-                {(consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2) && (
-                  <div className="bg-orange-50 p-6 rounded-xl border border-orange-200 shadow-sm">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-orange-900">Segunda Evaluación</h3>
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div className="bg-white p-4 rounded-lg border border-orange-200">
-                          <span className="font-semibold text-orange-700 block mb-2">Síntomas</span>
-                          {consultaCargada.sintomas_seleccionados_2 &&
-                          consultaCargada.sintomas_seleccionados_2.length > 0 ? (
-                            <div className="space-y-1">
-                              {consultaCargada.sintomas_seleccionados_2.map((sintoma: string) => (
-                                <div key={sintoma} className="text-orange-800 text-sm flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                                  <span>{obtenerNombreSintoma(sintoma)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-orange-800 text-sm">Asintomática</div>
-                          )}
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-orange-200">
-                          <span className="font-semibold text-orange-700 block mb-2">TVUS</span>
-                          <div className="text-orange-800 font-medium">{obtenerNombreTVUS(consultaCargada.tvus_2)}</div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-orange-200">
-                          <span className="font-semibold text-orange-700 block mb-2">Variación β-hCG</span>
-                          <div className="text-orange-800 font-medium capitalize">
-                            {consultaCargada.variacion_hcg_2?.replace(/_/g, " ") || "No calculada"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="bg-white p-4 rounded-lg border border-orange-200">
-                          <span className="font-semibold text-orange-700 block mb-2">Factores de Riesgo</span>
-                          {consultaCargada.factores_seleccionados_2 &&
-                          consultaCargada.factores_seleccionados_2.length > 0 ? (
-                            <div className="space-y-1">
-                              {consultaCargada.factores_seleccionados_2.map((factor: string) => (
-                                <div key={factor} className="text-orange-800 text-sm flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                                  <span>{obtenerNombreFactorRiesgo(factor)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-orange-800 text-sm">Sin factores de riesgo</div>
-                          )}
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-orange-200">
-                          <span className="font-semibold text-orange-700 block mb-2">β-hCG Actual</span>
-                          <div className="text-orange-800 font-bold text-lg">
-                            {consultaCargada.hcg_valor_2 || "No especificado"} mUI/mL
-                          </div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-orange-200">
-                          <span className="font-semibold text-orange-700 block mb-2">β-hCG Anterior</span>
-                          <div className="text-orange-800 font-medium">
-                            {consultaCargada.hcg_anterior_2 || consultaCargada.hcg_valor || "No especificado"} mUI/mL
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 pt-4 border-t border-orange-200 bg-orange-100 p-4 rounded-lg">
-                      <span className="font-semibold text-orange-700 block mb-2">Resultado de la Herramienta</span>
-                      <div className="text-2xl font-bold text-orange-900">
-                        {consultaCargada.resultado_2
-                          ? `${(consultaCargada.resultado_2 * 100).toFixed(1)}% estimación de riesgo`
-                          : "No calculado"}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* TERCERA CONSULTA */}
-                {(consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3) && (
-                  <div className="bg-purple-50 p-6 rounded-xl border border-purple-200 shadow-sm">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-purple-900">Tercera Evaluación</h3>
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div className="bg-white p-4 rounded-lg border border-purple-200">
-                          <span className="font-semibold text-purple-700 block mb-2">Síntomas</span>
-                          {consultaCargada.sintomas_seleccionados_3 &&
-                          consultaCargada.sintomas_seleccionados_3.length > 0 ? (
-                            <div className="space-y-1">
-                              {consultaCargada.sintomas_seleccionados_3.map((sintoma: string) => (
-                                <div key={sintoma} className="text-purple-800 text-sm flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                                  <span>{obtenerNombreSintoma(sintoma)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-purple-800 text-sm">Asintomática</div>
-                          )}
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-purple-200">
-                          <span className="font-semibold text-purple-700 block mb-2">TVUS</span>
-                          <div className="text-purple-800 font-medium">{obtenerNombreTVUS(consultaCargada.tvus_3)}</div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-purple-200">
-                          <span className="font-semibold text-purple-700 block mb-2">Variación β-hCG</span>
-                          <div className="text-purple-800 font-medium capitalize">
-                            {consultaCargada.variacion_hcg_3?.replace(/_/g, " ") || "No calculada"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="bg-white p-4 rounded-lg border border-purple-200">
-                          <span className="font-semibold text-purple-700 block mb-2">Factores de Riesgo</span>
-                          {consultaCargada.factores_seleccionados_3 &&
-                          consultaCargada.factores_seleccionados_3.length > 0 ? (
-                            <div className="space-y-1">
-                              {consultaCargada.factores_seleccionados_3.map((factor: string) => (
-                                <div key={factor} className="text-purple-800 text-sm flex items-center space-x-2">
-                                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                                  <span>{obtenerNombreFactorRiesgo(factor)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-purple-800 text-sm">Sin factores de riesgo</div>
-                          )}
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-purple-200">
-                          <span className="font-semibold text-purple-700 block mb-2">β-hCG Actual</span>
-                          <div className="text-purple-800 font-bold text-lg">
-                            {consultaCargada.hcg_valor_3 || "No especificado"} mUI/mL
-                          </div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-purple-200">
-                          <span className="font-semibold text-purple-700 block mb-2">β-hCG Anterior</span>
-                          <div className="text-purple-800 font-medium">
-                            {consultaCargada.hcg_anterior_3 ||
-                              consultaCargada.hcg_valor_2 ||
-                              consultaCargada.hcg_valor ||
-                              "No especificado"}{" "}
-                            mUI/mL
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 pt-4 border-t border-purple-200 bg-purple-100 p-4 rounded-lg">
-                      <span className="font-semibold text-purple-700 block mb-2">Resultado de la Herramienta</span>
-                      <div className="text-2xl font-bold text-purple-900">
-                        {consultaCargada.resultado_3
-                          ? `${(consultaCargada.resultado_3 * 100).toFixed(1)}% estimación de riesgo`
-                          : "No calculado"}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Información de seguimiento */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg">
-                      <AlertTriangle className="h-6 w-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-slate-800">Consulta de Seguimiento</h3>
-                  </div>
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                    <p className="text-blue-800 text-sm">
-                      Al continuar, se cargará automáticamente la información de la consulta previa. Ingrese nuevamente
-                      TVUS y el nuevo valor de β-hCG para la siguiente evaluación de apoyo.
-                    </p>
                   </div>
                 </div>
 
@@ -1855,7 +1598,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </Label>
 
                       <div className="grid grid-cols-2 gap-4">
-                        {/* Sí */}
                         <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
                           <input
                             type="radio"
@@ -1864,7 +1606,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             checked={pruebaEmbarazoRealizada === "si"}
                             onChange={(e) => {
                               setPruebaEmbarazoRealizada(e.target.value)
-                              // Limpia cualquier alerta previa
                               setMostrarAlerta(false)
                               setMensajeAlerta("")
                             }}
@@ -1873,7 +1614,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           <span className="text-base font-medium text-slate-700">Sí</span>
                         </label>
 
-                        {/* No */}
                         <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
                           <input
                             type="radio"
@@ -1891,7 +1631,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
                     </div>
 
-                    {/* Si es "Sí", despliega opciones de resultado como ya tienes */}
                     {pruebaEmbarazoRealizada === "si" && (
                       <div className="space-y-3">
                         <Label className="text-base font-medium text-slate-700">Resultado de la prueba</Label>
@@ -1917,16 +1656,13 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                               onChange={async (e) => {
                                 setResultadoPruebaEmbarazo(e.target.value)
                                 if (e.target.value === "negativa") {
-                                  // Validación inmediata ya presente en tu código
                                   try {
-                                    const respuesta = await calcularRiesgo({
+                                    const respuesta = await validarEmbarazo({
                                       pruebaEmbarazoRealizada: "si",
                                       resultadoPruebaEmbarazo: "negativa",
-                                      tvus: "normal", // dummy
-                                      hcgValor: "1000", // dummy
                                     })
-                                    if (respuesta.bloqueado && respuesta.motivo === "prueba_embarazo_negativa") {
-                                      await guardarDatosIncompletos("prueba_embarazo_negativa", 3)
+                                    if (respuesta.debeDetener) {
+                                      await guardarDatosIncompletos(respuesta.motivo, 3)
                                       setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
                                       setProtocoloFinalizado(true)
                                     }
@@ -1956,13 +1692,11 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         <Button
                           onClick={async () => {
                             if (pruebaEmbarazoRealizada === "no") {
-                              // Mostrar alerta amarilla inmediatamente
                               setMostrarAlerta(true)
                               setMensajeAlerta(
                                 "Se recomienda realizar una prueba de embarazo cualitativa antes de continuar con la evaluación.",
                               )
 
-                              // Después de 2 segundos, proceder con validación backend
                               setTimeout(async () => {
                                 await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
                                 setMensajeFinal(

@@ -1,20 +1,26 @@
-// Cliente que usa las nuevas APIs seguras con fallback al comportamiento original
-
+// Cliente seguro - SIN información sensible, SIN fallbacks
 export class ClienteSeguro {
   private token: string | null = null
   private usuarioActual: any = null
 
   constructor() {
-    // Recuperar token del localStorage si existe
     if (typeof window !== "undefined") {
       this.token = localStorage.getItem("cmg_token")
+      const usuarioGuardado = localStorage.getItem("cmg_usuario")
+      if (usuarioGuardado) {
+        try {
+          this.usuarioActual = JSON.parse(usuarioGuardado)
+        } catch (error) {
+          console.warn("Error al parsear usuario guardado")
+          localStorage.removeItem("cmg_usuario")
+        }
+      }
     }
   }
 
-  // Autenticación mejorada con fallback
+  // ✅ SOLO autenticación via backend - SIN fallbacks
   async login(usuario: string, contraseña: string) {
     try {
-      // Intentar login seguro primero
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -31,35 +37,17 @@ export class ClienteSeguro {
           localStorage.setItem("cmg_usuario", JSON.stringify(data.usuario))
         }
 
-        return { success: true, usuario: data.usuario, metodo: "seguro" }
+        return { success: true, usuario: data.usuario }
+      } else {
+        const errorData = await response.json()
+        return { success: false, error: errorData.error || "Credenciales incorrectas" }
       }
     } catch (error) {
-      console.warn("Login seguro falló, usando método original:", error)
+      return { success: false, error: "Error de conexión con el servidor" }
     }
-
-    // Fallback al método original (MANTIENE COMPATIBILIDAD)
-    const USUARIOS_ORIGINALES = [
-      { usuario: "dr.martinez", contraseña: "CMG2024Med!", nombre: "Dr. Martínez" },
-      { usuario: "dra.rodriguez", contraseña: "Ectopico2024#", nombre: "Dra. Rodríguez" },
-      { usuario: "dr.garcia", contraseña: "MedCMG2024$", nombre: "Dr. García" },
-      { usuario: "Dra.Alma", contraseña: "Nuevoleon", nombre: "Secretaria de Salud NL" },
-      { usuario: "Dr.Francisco", contraseña: "Francisco", nombre: "Dr.Francisco" },
-      { usuario: "Christopher", contraseña: "Matutito22", nombre: "Christopher" },
-    ]
-
-    const usuarioEncontrado = USUARIOS_ORIGINALES.find(
-      (u) => u.usuario.toLowerCase() === usuario.toLowerCase() && u.contraseña === contraseña,
-    )
-
-    if (usuarioEncontrado) {
-      this.usuarioActual = usuarioEncontrado
-      return { success: true, usuario: usuarioEncontrado, metodo: "original" }
-    }
-
-    return { success: false, error: "Credenciales incorrectas" }
   }
 
-  // Validación de signos vitales con fallback
+  // ✅ SOLO validación via backend - SIN lógica local
   async validarSignosVitales(datos: any) {
     try {
       const response = await fetch("/api/validaciones/signos-vitales", {
@@ -72,18 +60,16 @@ export class ClienteSeguro {
       })
 
       if (response.ok) {
-        const resultado = await response.json()
-        return { ...resultado, metodo: "servidor" }
+        return await response.json()
+      } else {
+        throw new Error("Error en validación de signos vitales")
       }
     } catch (error) {
-      console.warn("Validación servidor falló, usando método original:", error)
+      throw new Error("No se pudo validar los signos vitales. Verifique su conexión.")
     }
-
-    // Fallback a validación original (MANTIENE COMPATIBILIDAD)
-    return this.validarSignosVitalesOriginal(datos)
   }
 
-  // Cálculo de riesgo con fallback
+  // ✅ SOLO cálculo via backend - SIN lógica local
   async calcularRiesgo(datos: any) {
     try {
       const response = await fetch("/api/calculos/riesgo", {
@@ -96,43 +82,35 @@ export class ClienteSeguro {
       })
 
       if (response.ok) {
-        const resultado = await response.json()
-        return { ...resultado, metodo: "servidor" }
+        return await response.json()
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Error en el cálculo")
       }
     } catch (error) {
-      console.warn("Cálculo servidor falló, usando método original:", error)
+      throw new Error("No se pudo realizar el cálculo. Verifique su conexión.")
     }
-
-    // Fallback a cálculo original (MANTIENE COMPATIBILIDAD)
-    return this.calcularRiesgoOriginal(datos)
   }
 
-  // Métodos originales como fallback
-  private validarSignosVitalesOriginal(datos: any) {
-    const { frecuenciaCardiaca, presionSistolica, presionDiastolica, estadoConciencia } = datos
-    const fc = Number.parseFloat(frecuenciaCardiaca)
-    const sistolica = Number.parseFloat(presionSistolica)
-    const diastolica = Number.parseFloat(presionDiastolica)
+  // ✅ Verificación de token via backend
+  async verificarToken() {
+    if (!this.token) return false
 
-    // Misma lógica original...
-    if (sistolica >= 180 || diastolica >= 110) {
-      return {
-        esEmergencia: true,
-        mensaje:
-          "🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin demora.",
-        puedeContnuar: false,
-        metodo: "cliente",
+    try {
+      const response = await fetch("/api/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: this.token }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        return data.valid
       }
+      return false
+    } catch (error) {
+      return false
     }
-    // ... resto de validaciones originales
-
-    return { esEmergencia: false, puedeContnuar: true, metodo: "cliente" }
-  }
-
-  private calcularRiesgoOriginal(datos: any) {
-    // Lógica original del frontend como fallback
-    // ... implementación original
-    return { resultado: 0.5, mensaje: "Cálculo realizado localmente", metodo: "cliente" }
   }
 
   logout() {
@@ -149,7 +127,11 @@ export class ClienteSeguro {
   }
 
   isAuthenticated() {
-    return !!this.token || !!this.usuarioActual
+    return !!this.token && !!this.usuarioActual
+  }
+
+  getToken() {
+    return this.token
   }
 }
 

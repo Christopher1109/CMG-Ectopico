@@ -1238,6 +1238,190 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                 </div>
 
+                {/* Consulta 1 - Siempre se muestra si existe */}
+                {(consultaCargada.tvus || consultaCargada.hcg_valor || consultaCargada.resultado) && (
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-lg">
+                        <FileText className="h-6 w-6 text-white" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-slate-800">📋 Consulta 1 - Evaluación Inicial</h3>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-3">
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold text-slate-700 block mb-1">Síntomas Presentes</span>
+                          <div className="text-slate-600">
+                            {consultaCargada.sintomas_seleccionados && consultaCargada.sintomas_seleccionados.length > 0
+                              ? consultaCargada.sintomas_seleccionados
+                                  .map((s: string) => obtenerNombreSintoma(s))
+                                  .join(", ")
+                              : "Ninguno"}
+                          </div>
+                        </div>
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold text-slate-700 block mb-1">Factores de Riesgo</span>
+                          <div className="text-slate-600">
+                            {consultaCargada.factores_seleccionados && consultaCargada.factores_seleccionados.length > 0
+                              ? consultaCargada.factores_seleccionados
+                                  .map((f: string) => obtenerNombreFactorRiesgo(f))
+                                  .join(", ")
+                              : "Ninguno"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold text-slate-700 block mb-1">TVUS</span>
+                          <div className="text-slate-600">{obtenerNombreTVUS(consultaCargada.tvus)}</div>
+                        </div>
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold text-slate-700 block mb-1">β-hCG</span>
+                          <div className="text-slate-600">{consultaCargada.hcg_valor || "N/A"} mUI/mL</div>
+                        </div>
+                        {consultaCargada.resultado != null && (
+                          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
+                            <span className="font-semibold text-blue-700 block mb-1">Resultado</span>
+                            <div className="text-blue-900 font-bold text-lg">
+                              {(consultaCargada.resultado * 100).toFixed(1)}%
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Consulta 2 - Solo se muestra si existe */}
+                {(consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2) && (
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-amber-100">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full shadow-lg">
+                        <FileText className="h-6 w-6 text-white" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-slate-800">📋 Consulta 2 - Seguimiento</h3>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-3">
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold text-slate-700 block mb-1">Síntomas Presentes</span>
+                          <div className="text-slate-600">
+                            {consultaCargada.sintomas_seleccionados_2 &&
+                            consultaCargada.sintomas_seleccionados_2.length > 0
+                              ? consultaCargada.sintomas_seleccionados_2
+                                  .map((s: string) => obtenerNombreSintoma(s))
+                                  .join(", ")
+                              : "Ninguno"}
+                          </div>
+                        </div>
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold text-slate-700 block mb-1">Factores de Riesgo</span>
+                          <div className="text-slate-600">
+                            {consultaCargada.factores_seleccionados_2 &&
+                            consultaCargada.factores_seleccionados_2.length > 0
+                              ? consultaCargada.factores_seleccionados_2
+                                  .map((f: string) => obtenerNombreFactorRiesgo(f))
+                                  .join(", ")
+                              : "Mantenidos de consulta anterior"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold text-slate-700 block mb-1">TVUS</span>
+                          <div className="text-slate-600">{obtenerNombreTVUS(consultaCargada.tvus_2)}</div>
+                        </div>
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold text-slate-700 block mb-1">β-hCG</span>
+                          <div className="text-slate-600">{consultaCargada.hcg_valor_2 || "N/A"} mUI/mL</div>
+                        </div>
+                        {consultaCargada.variacion_hcg_2 && (
+                          <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                            <span className="font-semibold text-slate-700 block mb-1">Variación β-hCG</span>
+                            <div className="text-slate-600">{consultaCargada.variacion_hcg_2}</div>
+                          </div>
+                        )}
+                        {consultaCargada.resultado_2 != null && (
+                          <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-3 rounded-lg border border-amber-200">
+                            <span className="font-semibold text-amber-700 block mb-1">Resultado</span>
+                            <div className="text-amber-900 font-bold text-lg">
+                              {(consultaCargada.resultado_2 * 100).toFixed(1)}%
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Consulta 3 - Solo se muestra si existe */}
+                {(consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3) && (
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full shadow-lg">
+                        <FileText className="h-6 w-6 text-white" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-slate-800">📋 Consulta 3 - Seguimiento Final</h3>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-3">
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold text-slate-700 block mb-1">Síntomas Presentes</span>
+                          <div className="text-slate-600">
+                            {consultaCargada.sintomas_seleccionados_3 &&
+                            consultaCargada.sintomas_seleccionados_3.length > 0
+                              ? consultaCargada.sintomas_seleccionados_3
+                                  .map((s: string) => obtenerNombreSintoma(s))
+                                  .join(", ")
+                              : "Ninguno"}
+                          </div>
+                        </div>
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold text-slate-700 block mb-1">Factores de Riesgo</span>
+                          <div className="text-slate-600">
+                            {consultaCargada.factores_seleccionados_3 &&
+                            consultaCargada.factores_seleccionados_3.length > 0
+                              ? consultaCargada.factores_seleccionados_3
+                                  .map((f: string) => obtenerNombreFactorRiesgo(f))
+                                  .join(", ")
+                              : "Mantenidos de consulta anterior"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold text-slate-700 block mb-1">TVUS</span>
+                          <div className="text-slate-600">{obtenerNombreTVUS(consultaCargada.tvus_3)}</div>
+                        </div>
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold text-slate-700 block mb-1">β-hCG</span>
+                          <div className="text-slate-600">{consultaCargada.hcg_valor_3 || "N/A"} mUI/mL</div>
+                        </div>
+                        {consultaCargada.variacion_hcg_3 && (
+                          <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                            <span className="font-semibold text-slate-700 block mb-1">Variación β-hCG</span>
+                            <div className="text-slate-600">{consultaCargada.variacion_hcg_3}</div>
+                          </div>
+                        )}
+                        {consultaCargada.resultado_3 != null && (
+                          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-3 rounded-lg border border-purple-200">
+                            <span className="font-semibold text-purple-700 block mb-1">Resultado</span>
+                            <div className="text-purple-900 font-bold text-lg">
+                              {(consultaCargada.resultado_3 * 100).toFixed(1)}%
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Botones de acción */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
                   <div className="flex space-x-4 justify-center">

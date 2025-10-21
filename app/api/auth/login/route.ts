@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import jwt from "jsonwebtoken"
+import bcrypt from "bcryptjs"
 
 // Usuarios con contraseñas hasheadas (más seguro que texto plano)
 const USUARIOS_SEGUROS = [
@@ -54,20 +55,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Credenciales incorrectas" }, { status: 401 })
     }
 
-    // Por ahora, comparación directa (manteniendo compatibilidad)
-    // TODO: Implementar bcrypt cuando migremos completamente
-    const contraseñasOriginales = {
-      "dr.martinez": "CMG2024Med!",
-      "dra.rodriguez": "Ectopico2024#",
-      "dr.garcia": "MedCMG2024$",
-      "Dra.Alma": "Nuevoleon",
-      "Dr.Francisco": "Francisco",
-      Christopher: "Matutito22",
-    }
+    // Comparar contraseña usando bcrypt
+    const contraseñaCorrecta = await bcrypt.compare(contraseña, usuarioEncontrado.hash)
 
-    const contraseñaCorrecta = contraseñasOriginales[usuarioEncontrado.usuario as keyof typeof contraseñasOriginales]
-
-    if (contraseña !== contraseñaCorrecta) {
+    if (!contraseñaCorrecta) {
       return NextResponse.json({ error: "Credenciales incorrectas" }, { status: 401 })
     }
 

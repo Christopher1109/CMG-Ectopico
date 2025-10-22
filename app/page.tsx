@@ -219,6 +219,7 @@ export default function CalculadoraEctopico() {
   const [mostrarIdSeguimiento, setMostrarIdSeguimiento] = useState(false)
   const [esConsultaSeguimiento, setEsConsultaSeguimiento] = useState(false)
   const [numeroConsultaActual, setNumeroConsultaActual] = useState<1 | 2 | 3>(1)
+  const [consultaAnteriorParaMostrar, setConsultaAnteriorParaMostrar] = useState<1 | 2 | 3 | null>(null)
 
   // Secciones
   const [seccionActual, setSeccionActual] = useState(1)
@@ -659,47 +660,48 @@ export default function CalculadoraEctopico() {
     const tieneC2 = existeConsulta(consultaCargada, 2)
     const tieneC3 = existeConsulta(consultaCargada, 3)
 
-    let ultimoHcg = consultaCargada.hcg_valor
-    let ultimoResultado = consultaCargada.resultado
+    let consultaAnteriorNumero: 1 | 2 | 3 = 1
+    let ultimoHcg: number | null = null
+    let ultimoResultado: number | null = null
 
     if (tieneC3) {
-      // If C3 exists, use C3 data
-      ultimoHcg = consultaCargada.hcg_valor_3
-      ultimoResultado = consultaCargada.resultado_3
+      // If C3 exists, we cannot continue (max 3 consultations)
+      alert("Esta consulta ya tiene 3 evaluaciones completadas.")
+      setMostrarResumenConsulta(true)
+      return
     } else if (tieneC2) {
-      // If only C2 exists, use C2 data
+      // If C2 exists, use C2 as previous (will create C3)
+      consultaAnteriorNumero = 2
       ultimoHcg = consultaCargada.hcg_valor_2
       ultimoResultado = consultaCargada.resultado_2
+      setNumeroConsultaActual(3)
+      console.log("➡️ Será consulta 3, usando C2 como anterior")
+    } else {
+      // If only C1 exists, use C1 as previous (will create C2)
+      consultaAnteriorNumero = 1
+      ultimoHcg = consultaCargada.hcg_valor
+      ultimoResultado = consultaCargada.resultado
+      setNumeroConsultaActual(2)
+      console.log("➡️ Será consulta 2, usando C1 como anterior")
     }
+
+    // Check if can continue
+    if (ultimoResultado != null && (ultimoResultado >= 0.95 || ultimoResultado < 0.01)) {
+      alert("La última consulta ya tiene una decisión final (confirmar o descartar). No se puede continuar.")
+      setMostrarResumenConsulta(true)
+      return
+    }
+
+    setConsultaAnteriorParaMostrar(consultaAnteriorNumero)
 
     setHcgAnterior(ultimoHcg?.toString() || "")
     setHcgValor("")
     setEsConsultaSeguimiento(true)
 
-    console.log("🔍 Análisis de consultas existentes:")
-    console.log("Tiene consulta 2:", tieneC2)
-    console.log("Tiene consulta 3:", tieneC3)
+    console.log("🔍 Análisis de consultas:")
+    console.log("Consulta anterior a mostrar:", consultaAnteriorNumero)
     console.log("Último hCG:", ultimoHcg)
     console.log("Último resultado:", ultimoResultado)
-
-    // Check if can continue
-    if (ultimoResultado != null && (ultimoResultado >= 0.95 || ultimoResultado < 0.01)) {
-      alert("Esta consulta ya tiene una decisión final (confirmar o descartar). No se puede continuar.")
-      setMostrarResumenConsulta(true)
-      return
-    }
-
-    if (tieneC3) {
-      alert("Esta consulta ya tiene 3 evaluaciones completadas.")
-      setMostrarResumenConsulta(true)
-      return
-    } else if (tieneC2) {
-      console.log("➡️ Será consulta 3")
-      setNumeroConsultaActual(3)
-    } else {
-      console.log("➡️ Será consulta 2")
-      setNumeroConsultaActual(2)
-    }
 
     setSeccionesCompletadas([1, 2, 3, 4])
     setMostrarResumenConsulta(false)
@@ -827,6 +829,7 @@ export default function CalculadoraEctopico() {
     setMensajeAlerta("")
     setEsConsultaSeguimiento(false)
     setNumeroConsultaActual(1)
+    setConsultaAnteriorParaMostrar(1) // Reset new state
   }
 
   const generarInformePDF = () => {
@@ -890,7 +893,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
       a.href = URL.createObjectURL(archivo)
       a.download = `Reporte_Apoyo_Ectopico_${idSeguimiento}_${new Date().toISOString().split("T")[0]}.txt`
       document.body.appendChild(a)
-      a.click()
       document.body.removeChild(a)
       alert("Reporte de apoyo generado y descargado exitosamente")
     } catch (error) {

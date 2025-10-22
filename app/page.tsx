@@ -21,6 +21,8 @@ import {
   Download,
   ArrowRight,
   X,
+  Save,
+  ClipboardList,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type React from "react"
@@ -707,7 +709,7 @@ export default function CalculadoraEctopico() {
       resetFormulario()
       setModoSeguimiento(false)
       setMostrarResumenConsulta(true)
-      setStep(0)
+      setStep(0) // Reset step to allow reopening the calculator
     } catch (error: any) {
       console.error("[v0] Error capturado:", error)
       alert(`Error: ${error.message}`)
@@ -1447,94 +1449,120 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
             </div>
           )}
 
-          {consultasSeguimiento.map((consulta, index) => {
-            const numeroConsulta = consulta.numero_consulta
-            const colores = [
-              {
-                border: "border-amber-100",
-                bg: "from-amber-500 to-orange-600",
-                result: "from-amber-50 to-orange-50 border-amber-200",
-                text: "text-amber-700",
-                textBold: "text-amber-900",
-              },
-              {
-                border: "border-purple-100",
-                bg: "from-purple-500 to-indigo-600",
-                result: "from-purple-50 to-indigo-50 border-purple-200",
-                text: "text-purple-700",
-                textBold: "text-purple-900",
-              },
-              {
-                border: "border-pink-100",
-                bg: "from-pink-500 to-rose-600",
-                result: "from-pink-50 to-rose-50 border-pink-200",
-                text: "text-pink-700",
-                textBold: "text-pink-900",
-              },
-              {
-                border: "border-teal-100",
-                bg: "from-teal-500 to-cyan-600",
-                result: "from-teal-50 to-cyan-50 border-teal-200",
-                text: "text-teal-700",
-                textBold: "text-teal-900",
-              },
-            ]
-            const color = colores[index % colores.length]
+          {consultasSeguimiento.map((seguimiento, index) => {
+            const numeroConsulta = index + 2 // La primera es 2, luego 3, 4, etc.
+            const colorClase = index % 2 === 0 ? "bg-blue-50" : "bg-green-50"
+            const borderClase = index % 2 === 0 ? "border-blue-200" : "border-green-200"
+
+            // Calcular interpretación del resultado
+            let interpretacion = ""
+            let colorInterpretacion = ""
+            if (seguimiento.resultado !== null && seguimiento.resultado !== undefined) {
+              const porcentaje = (seguimiento.resultado * 100).toFixed(1)
+              if (seguimiento.resultado >= 0.95) {
+                interpretacion = `Probabilidad ALTA (${porcentaje}%) - Evaluación médica urgente`
+                colorInterpretacion = "text-red-600 font-bold"
+              } else if (seguimiento.resultado < 0.01) {
+                interpretacion = `Probabilidad BAJA (${porcentaje}%) - Seguimiento clínico`
+                colorInterpretacion = "text-green-600 font-bold"
+              } else {
+                interpretacion = `Probabilidad INTERMEDIA (${porcentaje}%) - Reevaluar en 48-72h`
+                colorInterpretacion = "text-yellow-600 font-bold"
+              }
+            }
+
+            // Interpretar variación de hCG
+            let variacionTexto = ""
+            if (seguimiento.variacion_hcg) {
+              switch (seguimiento.variacion_hcg) {
+                case "reduccion_mayor_50":
+                  variacionTexto = "Reducción ≥50% (LR: 0.0)"
+                  break
+                case "reduccion_35_50":
+                  variacionTexto = "Reducción 35-50% (LR: 0.8)"
+                  break
+                case "reduccion_1_35":
+                  variacionTexto = "Reducción 1-35% (LR: 16.6)"
+                  break
+                case "aumento":
+                  variacionTexto = "Aumento (LR: 3.3)"
+                  break
+                default:
+                  variacionTexto = "No disponible (LR: 1.0)"
+              }
+            }
 
             return (
-              <div key={consulta.id} className={`bg-white p-6 rounded-xl shadow-sm border ${color.border}`}>
+              <div key={seguimiento.id} className={`p-6 rounded-lg border-2 ${borderClase} ${colorClase}`}>
                 <div className="flex items-center space-x-3 mb-4">
-                  <div className={`p-2 bg-gradient-to-br ${color.bg} rounded-full shadow-lg`}>
-                    <FileText className="h-6 w-6 text-white" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-slate-800">
-                    📋 Consulta {numeroConsulta} - Seguimiento {numeroConsulta - 1}
-                  </h3>
+                  <ClipboardList className="h-6 w-6 text-blue-600" />
+                  <h2 className="text-2xl font-bold text-slate-800">Seguimiento: Consulta {numeroConsulta}</h2>
                 </div>
+                <p className="text-sm text-slate-600 mb-4">Actualización de datos para la evaluación de seguimiento</p>
 
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  <div className="space-y-3">
-                    <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                      <span className="font-semibold text-slate-700 block mb-1">Síntomas Presentes</span>
-                      <div className="text-slate-600">
-                        {consulta.sintomas_seleccionados && consulta.sintomas_seleccionados.length > 0
-                          ? consulta.sintomas_seleccionados.map((s: string) => obtenerNombreSintoma(s)).join(", ")
-                          : "Ninguno"}
-                      </div>
+                <div className="space-y-4">
+                  {/* Síntomas y Factores */}
+                  {seguimiento.sintomas_seleccionados && seguimiento.sintomas_seleccionados.length > 0 && (
+                    <div>
+                      <strong className="text-slate-700">Síntomas:</strong>{" "}
+                      <span className="text-slate-600">
+                        {seguimiento.sintomas_seleccionados.map(obtenerNombreSintoma).join(", ")}
+                      </span>
                     </div>
-                    <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                      <span className="font-semibold text-slate-700 block mb-1">Factores de Riesgo</span>
-                      <div className="text-slate-600">
-                        {consulta.factores_seleccionados && consulta.factores_seleccionados.length > 0
-                          ? consulta.factores_seleccionados.map((f: string) => obtenerNombreFactorRiesgo(f)).join(", ")
-                          : "Mantenidos de consulta anterior"}
-                      </div>
+                  )}
+
+                  {seguimiento.factores_seleccionados && seguimiento.factores_seleccionados.length > 0 && (
+                    <div>
+                      <strong className="text-slate-700">Factores de Riesgo:</strong>{" "}
+                      <span className="text-slate-600">
+                        {seguimiento.factores_seleccionados.map(obtenerNombreFactorRiesgo).join(", ")}
+                      </span>
                     </div>
+                  )}
+
+                  {/* TVUS */}
+                  {seguimiento.tvus && (
+                    <div>
+                      <strong className="text-slate-700">TVUS:</strong>{" "}
+                      <span className="text-slate-600">{obtenerNombreTVUS(seguimiento.tvus)}</span>
+                    </div>
+                  )}
+
+                  {/* β-hCG */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {seguimiento.hcg_anterior && (
+                      <div>
+                        <strong className="text-slate-700">β-hCG Anterior:</strong>{" "}
+                        <span className="text-slate-600">{seguimiento.hcg_anterior} mUI/mL</span>
+                      </div>
+                    )}
+                    {seguimiento.hcg_valor && (
+                      <div>
+                        <strong className="text-slate-700">β-hCG Actual:</strong>{" "}
+                        <span className="text-slate-600">{seguimiento.hcg_valor} mUI/mL</span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                      <span className="font-semibold text-slate-700 block mb-1">TVUS</span>
-                      <div className="text-slate-600">{obtenerNombreTVUS(consulta.tvus)}</div>
+                  {/* Variación de hCG */}
+                  {variacionTexto && (
+                    <div className="bg-white p-3 rounded border border-slate-200">
+                      <strong className="text-slate-700">Variación de β-hCG (48h):</strong>{" "}
+                      <span className="text-slate-600">{variacionTexto}</span>
                     </div>
-                    <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                      <span className="font-semibold text-slate-700 block mb-1">β-hCG</span>
-                      <div className="text-slate-600">{consulta.hcg_valor || "N/A"} mUI/mL</div>
+                  )}
+
+                  {/* Resultado */}
+                  {seguimiento.resultado !== null && seguimiento.resultado !== undefined && (
+                    <div className="bg-white p-4 rounded-lg border-2 border-slate-300 mt-4">
+                      <h3 className="font-bold text-lg text-slate-800 mb-2">Resultado del Cálculo:</h3>
+                      <p className={`text-lg ${colorInterpretacion}`}>{interpretacion}</p>
                     </div>
-                    {consulta.variacion_hcg && (
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Variación β-hCG</span>
-                        <div className="text-slate-600">{consulta.variacion_hcg}</div>
-                      </div>
-                    )}
-                    {consulta.resultado != null && (
-                      <div className={`bg-gradient-to-r ${color.result} p-3 rounded-lg border`}>
-                        <span className={`font-semibold ${color.text} block mb-1`}>Resultado</span>
-                        <div className={`${color.textBold} font-bold text-lg`}>
-                          {(consulta.resultado * 100).toFixed(1)}%
-                        </div>
-                      </div>
-                    )}
+                  )}
+
+                  {/* Fecha */}
+                  <div className="text-xs text-slate-500 mt-2">
+                    Fecha: {new Date(seguimiento.fecha_creacion).toLocaleString("es-MX")}
                   </div>
                 </div>
               </div>
@@ -1994,7 +2022,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       >
                         Anterior
                       </Button>
-
                       <div className="text-center">
                         <Button
                           onClick={async () => {
@@ -2325,14 +2352,23 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         >
                           Anterior
                         </Button>
-                        <Button
-                          onClick={calcular}
-                          className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg"
-                          disabled={!tvus || !hcgValor} // Disable if required fields are not filled
-                        >
-                          <Calculator className="h-5 w-5 mr-2" />
-                          Calcular Riesgo
-                        </Button>
+                        {esConsultaSeguimiento ? (
+                          <Button
+                            onClick={guardarSeguimiento}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 text-lg"
+                          >
+                            <Save className="mr-2 h-5 w-5" />
+                            Guardar Seguimiento
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={calcular}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-lg"
+                          >
+                            <Calculator className="mr-2 h-5 w-5" />
+                            Calcular Riesgo
+                          </Button>
+                        )}
                       </div>
                     </div>
 
@@ -2524,10 +2560,9 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           </Button>
                           <Button
                             onClick={guardarSeguimiento} // Use the new save function
-                            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg"
-                            disabled={!tvus || !hcgValor} // Disable if required fields are not filled
+                            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 text-lg"
                           >
-                            <Calculator className="h-5 w-5 mr-2" />
+                            <Save className="mr-2 h-5 w-5" />
                             Guardar Seguimiento
                           </Button>
                         </div>

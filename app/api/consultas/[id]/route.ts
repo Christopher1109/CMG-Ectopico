@@ -40,6 +40,8 @@ export async function GET(_req: Request, { params }: Params) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 })
     }
 
+    console.log("[v0 API] GET /api/consultas/[id] - Buscando consulta:", { idNum })
+
     // Buscar por folio primero, luego por id si no se encuentra
     let data = null
     let error = null
@@ -47,17 +49,36 @@ export async function GET(_req: Request, { params }: Params) {
     // Intentar buscar por folio
     const folioResult = await supabaseAdmin.from("consultas").select("*").eq("folio", idNum).single()
 
+    console.log("[v0 API] Búsqueda por folio:", { folio: idNum, found: !!folioResult.data, error: folioResult.error })
+
     if (folioResult.data) {
       data = folioResult.data
+      console.log("[v0 API] Datos encontrados por folio:", {
+        folio: data.folio,
+        TVUS_1: data.TVUS_1,
+        hCG_1: data.hCG_1,
+        Pronostico_1: data.Pronostico_1,
+        TVUS_2: data.TVUS_2,
+        hCG_2: data.hCG_2,
+        Pronostico_2: data.Pronostico_2,
+        TVUS_3: data.TVUS_3,
+        hCG_3: data.hCG_3,
+        Pronostico_3: data.Pronostico_3,
+      })
     } else {
       // Si no se encuentra por folio, buscar por id
       const idResult = await supabaseAdmin.from("consultas").select("*").eq("id", idNum).single()
+
+      console.log("[v0 API] Búsqueda por id:", { id: idNum, found: !!idResult.data, error: idResult.error })
 
       data = idResult.data
       error = idResult.error
     }
 
-    if (error || !data) return NextResponse.json({ error: error?.message || "Consulta no encontrada" }, { status: 404 })
+    if (error || !data) {
+      console.log("[v0 API] No se encontró consulta:", { error: error?.message })
+      return NextResponse.json({ error: error?.message || "Consulta no encontrada" }, { status: 404 })
+    }
 
     // Normaliza campos hacia el formato que usa tu frontend
     const consultaNormalizada = {
@@ -108,8 +129,22 @@ export async function GET(_req: Request, { params }: Params) {
       resultado_3: parsePctToProb(data.Pronostico_3),
     }
 
+    console.log("[v0 API] Consulta normalizada:", {
+      folio: consultaNormalizada.folio,
+      tvus: consultaNormalizada.tvus,
+      hcg_valor: consultaNormalizada.hcg_valor,
+      resultado: consultaNormalizada.resultado,
+      tvus_2: consultaNormalizada.tvus_2,
+      hcg_valor_2: consultaNormalizada.hcg_valor_2,
+      resultado_2: consultaNormalizada.resultado_2,
+      tvus_3: consultaNormalizada.tvus_3,
+      hcg_valor_3: consultaNormalizada.hcg_valor_3,
+      resultado_3: consultaNormalizada.resultado_3,
+    })
+
     return NextResponse.json({ data: consultaNormalizada })
   } catch (e: any) {
+    console.error("[v0 API] Error en GET /api/consultas/[id]:", e)
     return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
 }
@@ -128,12 +163,15 @@ export async function PATCH(req: Request, { params }: Params) {
     const visitaRaw = searchParams.get("visita") ?? ""
     const visita = Number(visitaRaw)
 
+    console.log("[v0 API] PATCH /api/consultas/[id] - Actualizando consulta:", { idNum, visita })
+
     // Valida visita estrictamente como 2 o 3 (evita "2:1")
     if (![2, 3].includes(visita)) {
       return NextResponse.json({ error: "Parámetro 'visita' inválido (use 2 o 3)" }, { status: 400 })
     }
 
     const body = await req.json()
+    console.log("[v0 API] Body recibido:", body)
 
     const updateData: Record<string, any> = {}
 
@@ -154,6 +192,8 @@ export async function PATCH(req: Request, { params }: Params) {
       updateData.Pronostico_2 = body.resultado != null ? `${(Number(body.resultado) * 100).toFixed(1)}%` : null
 
       updateData.Consulta_2_Date = new Date().toISOString()
+
+      console.log("[v0 API] Update data para visita 2:", updateData)
     } else if (visita === 3) {
       updateData.Sintomas_3 = Array.isArray(body.sintomas_seleccionados)
         ? body.sintomas_seleccionados.join(", ")
@@ -170,6 +210,8 @@ export async function PATCH(req: Request, { params }: Params) {
       updateData.Pronostico_3 = body.resultado != null ? `${(Number(body.resultado) * 100).toFixed(1)}%` : null
 
       updateData.Consulta_3_Date = new Date().toISOString()
+
+      console.log("[v0 API] Update data para visita 3:", updateData)
     }
 
     // Buscar por folio primero, luego por id
@@ -178,9 +220,11 @@ export async function PATCH(req: Request, { params }: Params) {
 
     if (folioResult.data) {
       targetId = folioResult.data.id
+      console.log("[v0 API] Encontrado por folio, usando id:", targetId)
     } else {
       // Si no se encuentra por folio, usar el idNum como id directo
       targetId = idNum
+      console.log("[v0 API] No encontrado por folio, usando idNum como id:", targetId)
     }
 
     const { data, error } = await supabaseAdmin
@@ -190,9 +234,22 @@ export async function PATCH(req: Request, { params }: Params) {
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error("[v0 API] Error al actualizar:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    console.log("[v0 API] Consulta actualizada exitosamente:", {
+      id: data.id,
+      folio: data.folio,
+      TVUS_2: data.TVUS_2,
+      hCG_2: data.hCG_2,
+      Pronostico_2: data.Pronostico_2,
+    })
+
     return NextResponse.json({ data })
   } catch (e: any) {
+    console.error("[v0 API] Error en PATCH /api/consultas/[id]:", e)
     return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
 }

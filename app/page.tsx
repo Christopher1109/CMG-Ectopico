@@ -676,9 +676,15 @@ export default function CalculadoraEctopico() {
         resultado: resultado,
       }
 
+      console.log("[v0] Guardando seguimiento para folio:", consultaCargada.folio)
+      console.log("[v0] Payload:", payload)
+
       const resp = await crearConsultaSeguimiento(consultaCargada.folio, payload)
 
+      console.log("[v0] Respuesta del servidor:", resp)
+
       if (resp.error) {
+        console.error("[v0] Error al guardar:", resp.error)
         alert(`Error al guardar seguimiento: ${resp.error}`)
         return
       }
@@ -698,11 +704,12 @@ export default function CalculadoraEctopico() {
       }
 
       // Resetear formulario
-      resetFormulario() // Assuming resetFormulario exists and clears relevant states
+      resetFormulario()
       setModoSeguimiento(false)
       setMostrarResumenConsulta(true)
-      setStep(0) // Reset step or go to a summary view
+      setStep(0)
     } catch (error: any) {
+      console.error("[v0] Error capturado:", error)
       alert(`Error: ${error.message}`)
     } finally {
       setIsLoading(false)

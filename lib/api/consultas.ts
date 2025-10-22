@@ -82,17 +82,24 @@ export async function crearConsultaSeguimiento(folioOrId: string | number, paylo
   try {
     const numericId = typeof folioOrId === "string" ? Number.parseInt(folioOrId.replace(/^ID-0*/, ""), 10) : folioOrId
 
+    console.log("[v0] crearConsultaSeguimiento - folio:", numericId)
+    console.log("[v0] crearConsultaSeguimiento - payload:", payload)
+
     const res = await fetch(`/api/consultas/${numericId}/seguimiento`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
 
+    console.log("[v0] crearConsultaSeguimiento - status:", res.status)
+
     const json = await res.json().catch(() => ({}))
+    console.log("[v0] crearConsultaSeguimiento - response:", json)
+
     if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`)
     return json
   } catch (error: any) {
-    console.error("API crearConsultaSeguimiento:", error)
+    console.error("[v0] API crearConsultaSeguimiento - Error:", error)
     return { error: error?.message ?? "Error al crear consulta de seguimiento" }
   }
 }

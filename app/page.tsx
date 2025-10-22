@@ -20,10 +20,17 @@ import {
   CheckCircle,
   Download,
   ArrowRight,
+  X,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type React from "react"
-import { crearConsulta, actualizarConsulta, obtenerConsulta } from "@/lib/api/consultas"
+import {
+  crearConsulta,
+  actualizarConsulta,
+  obtenerConsulta,
+  crearConsultaSeguimiento,
+  obtenerConsultasSeguimiento,
+} from "@/lib/api/consultas" // Updated import
 
 // ==================== SOLO CONFIGURACIÓN UI - SIN LÓGICA SENSIBLE ====================
 const factoresRiesgo = [
@@ -218,13 +225,18 @@ export default function CalculadoraEctopico() {
   // Seguimiento
   const [idSeguimiento, setIdSeguimiento] = useState("")
   const [mostrarIdSeguimiento, setMostrarIdSeguimiento] = useState(false)
-  const [esConsultaSeguimiento, setEsConsultaSeguimiento] = useState(false)
+  const [esConsultaSeguimiento, setEsConsultaSeguimiento] = useState(false) // Updated name to reflect general follow-up nature
   const [numeroConsultaActual, setNumeroConsultaActual] = useState<1 | 2 | 3>(1)
 
   // Secciones
   const [seccionActual, setSeccionActual] = useState(1)
   const [seccionesCompletadas, setSeccionesCompletadas] = useState<number[]>([])
   const [mostrarPantallaBienvenida, setMostrarPantallaBienvenida] = useState(true)
+  const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
+  const [idConsultaCargar, setIdConsultaCargar] = useState("") // For loading a consultation by ID
+  const [isLoading, setIsLoading] = useState(false) // For loading states
+  const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
+  const [consultaCargada, setConsultaCargada] = useState<any>(null)
 
   // Consultas
   const [sintomasSeleccionados, setSintomasSeleccionados] = useState<string[]>([])
@@ -233,12 +245,12 @@ export default function CalculadoraEctopico() {
   const [hcgValor, setHcgValor] = useState("")
   const [variacionHcg, setVariacionHcg] = useState("")
   const [hcgAnterior, setHcgAnterior] = useState("")
+  const [consultasSeguimiento, setConsultasSeguimiento] = useState<any[]>([]) // New state for dynamic follow-ups
+  const [modoSeguimiento, setModoSeguimiento] = useState(false) // To differentiate between initial and follow-up
+  const [step, setStep] = useState(1) // For multi-step form navigation
 
   // Búsqueda y carga
-  const [idBusqueda, setIdBusqueda] = useState("")
-  const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
-  const [consultaCargada, setConsultaCargada] = useState<any>(null)
-  const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
+  const [idBusqueda, setIdBusqueda] = useState("") // This seems redundant with idConsultaCargar, consider consolidating
 
   // ✅ Verificar autenticación al cargar
   useEffect(() => {
@@ -289,7 +301,7 @@ export default function CalculadoraEctopico() {
         consultaCompleta: false,
       }
 
-      const result = await enviarDatosAlBackend(datosIncompletos)
+      const result = await crearConsulta(datosIncompletos) // Using crearConsulta for initial save
       if (result.success && result.data) {
         const folio = result.data.folio
         const idPublico = `ID-${String(folio).padStart(5, "0")}`
@@ -561,69 +573,151 @@ export default function CalculadoraEctopico() {
   const iniciarNuevaEvaluacion = async () => {
     resetCalculadora()
     setMostrarPantallaBienvenida(false)
-    setEsConsultaSeguimiento(false)
+    setEsConsultaSeguimiento(false) // Indicate this is an initial evaluation
     setNumeroConsultaActual(1)
+    setStep(1) // Start from the first step
   }
 
-  const continuarConsultaCargada = async () => {
-    console.log("🔄 Continuando consulta cargada:", consultaCargada)
-
-    setIdSeguimiento(consultaCargada.id_publico || consultaCargada.folio?.toString() || consultaCargada.id?.toString())
-
-    // Mantener datos del paciente
-    setNombrePaciente(consultaCargada.nombre_paciente || "")
-    setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
-    setFrecuenciaCardiaca(consultaCargada.frecuencia_cardiaca?.toString() || "")
-    setPresionSistolica(consultaCargada.presion_sistolica?.toString() || "")
-    setPresionDiastolica(consultaCargada.presion_diastolica?.toString() || "")
-    setEstadoConciencia(consultaCargada.estado_conciencia || "")
-    setPruebaEmbarazoRealizada(consultaCargada.prueba_embarazo_realizada || "")
-    setResultadoPruebaEmbarazo(consultaCargada.resultado_prueba_embarazo || "")
-    setHallazgosExploracion(consultaCargada.hallazgos_exploracion || "")
-    setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
-    setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
-
-    // Limpiar campos para nueva consulta
-    setSintomasSeleccionados([])
-    setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
-    setTvus("")
-
-    // Determinar último hCG
-    let ultimoHcg = consultaCargada.hcg_valor
-    if (consultaCargada.hcg_valor_2) ultimoHcg = consultaCargada.hcg_valor_2
-    if (consultaCargada.hcg_valor_3) ultimoHcg = consultaCargada.hcg_valor_3
-    setHcgAnterior(ultimoHcg?.toString() || "")
-    setHcgValor("")
-    setEsConsultaSeguimiento(true)
-
-    // Determinar número de consulta usando la nueva función
-    const tieneC2 = existeConsulta(consultaCargada, 2)
-    const tieneC3 = existeConsulta(consultaCargada, 3)
-
-    console.log("🔍 Análisis de consultas existentes:")
-    console.log("Tiene consulta 2:", tieneC2)
-    console.log("Tiene consulta 3:", tieneC3)
-
-    if (tieneC3) {
-      alert("Esta consulta ya tiene 3 evaluaciones completadas.")
-      setMostrarResumenConsulta(true)
+  async function cargarConsultaPorId() {
+    if (!idConsultaCargar.trim()) {
+      alert("Por favor ingresa un ID de consulta")
       return
-    } else if (tieneC2) {
-      console.log("➡️ Será consulta 3")
-      setNumeroConsultaActual(3)
-    } else {
-      console.log("➡️ Será consulta 2")
-      setNumeroConsultaActual(2)
     }
 
-    setSeccionesCompletadas([1, 2, 3, 4])
-    setMostrarResumenConsulta(false)
-    setModoCargarConsulta(false)
-    setMostrarPantallaBienvenida(false)
-    setSeccionActual(5)
+    setIsLoading(true)
+    try {
+      // Cargar consulta principal
+      const resp = await obtenerConsulta(idConsultaCargar)
+      if (resp.error) {
+        alert(`Error: ${resp.error}`)
+        return
+      }
+
+      const consultaData = resp.data
+      setConsultaCargada(consultaData)
+
+      // Cargar consultas de seguimiento dinámicas
+      const respSeguimiento = await obtenerConsultasSeguimiento(consultaData.folio)
+      if (!respSeguimiento.error && respSeguimiento.data) {
+        setConsultasSeguimiento(respSeguimiento.data)
+      } else {
+        setConsultasSeguimiento([])
+      }
+
+      // Guardar en localStorage
+      if (consultaData.folio) {
+        localStorage.setItem(`ectopico_folio_${consultaData.folio}`, JSON.stringify(consultaData))
+      }
+
+      setModoCargarConsulta(false)
+      setMostrarResumenConsulta(true)
+    } catch (error: any) {
+      alert(`Error al cargar consulta: ${error.message}`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  // === BÚSQUEDA: usa SIEMPRE el backend ===
+  function continuarConsultaCargada() {
+    if (!consultaCargada) return
+
+    // Calcular el número de consulta siguiente
+    const numeroConsultaSiguiente = consultasSeguimiento.length + 2 // +2 porque la primera es la consulta inicial
+
+    // Cargar datos de la consulta anterior para prellenar
+    let datosAnteriores: any = {}
+
+    if (consultasSeguimiento.length > 0) {
+      // Usar la última consulta de seguimiento
+      const ultimaConsulta = consultasSeguimiento[consultasSeguimiento.length - 1]
+      datosAnteriores = {
+        sintomas_seleccionados: ultimaConsulta.sintomas_seleccionados || [],
+        factores_seleccionados: ultimaConsulta.factores_seleccionados || [],
+        hcg_anterior: ultimaConsulta.hcg_valor,
+      }
+    } else {
+      // Usar la consulta inicial
+      datosAnteriores = {
+        sintomas_seleccionados: consultaCargada.sintomas_seleccionados || [],
+        factores_seleccionados: consultaCargada.factores_seleccionados || [],
+        hcg_anterior: consultaCargada.hcg_valor,
+      }
+    }
+
+    // Prellenar formulario
+    setSintomasSeleccionados(datosAnteriores.sintomas_seleccionados)
+    setFactoresSeleccionados(datosAnteriores.factores_seleccionados)
+    setHcgAnterior(datosAnteriores.hcg_anterior || null)
+
+    // Cambiar a modo seguimiento
+    setModoSeguimiento(true)
+    setNumeroConsultaActual(numeroConsultaSiguiente)
+    setMostrarResumenConsulta(false)
+    setStep(6) // Ir directamente al paso de seguimiento
+  }
+
+  async function guardarSeguimiento() {
+    if (!consultaCargada?.folio) {
+      alert("No hay consulta cargada")
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const payload = {
+        sintomas_seleccionados: sintomasSeleccionados,
+        factores_seleccionados: factoresSeleccionados,
+        tvus: tvus,
+        hcg_valor: hcgValor,
+        variacion_hcg: variacionHcg,
+        resultado: resultado,
+      }
+
+      const resp = await crearConsultaSeguimiento(consultaCargada.folio, payload)
+
+      if (resp.error) {
+        alert(`Error al guardar seguimiento: ${resp.error}`)
+        return
+      }
+
+      alert(`✅ Consulta ${resp.numero_consulta} guardada exitosamente`)
+
+      // Recargar consulta completa
+      const respActualizada = await obtenerConsulta(consultaCargada.folio)
+      if (!respActualizada.error) {
+        setConsultaCargada(respActualizada.data)
+
+        // Recargar seguimientos
+        const respSeguimiento = await obtenerConsultasSeguimiento(consultaCargada.folio)
+        if (!respSeguimiento.error && respSeguimiento.data) {
+          setConsultasSeguimiento(respSeguimiento.data)
+        }
+      }
+
+      // Resetear formulario
+      resetFormulario() // Assuming resetFormulario exists and clears relevant states
+      setModoSeguimiento(false)
+      setMostrarResumenConsulta(true)
+      setStep(0) // Reset step or go to a summary view
+    } catch (error: any) {
+      alert(`Error: ${error.message}`)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Placeholder for resetFormulario, needs to be implemented to clear relevant states
+  const resetFormulario = () => {
+    setSintomasSeleccionados([])
+    setFactoresSeleccionados([])
+    setTvus("")
+    setHcgValor("")
+    setVariacionHcg("")
+    setHcgAnterior("")
+    setResultado(null)
+    // Add other relevant states if needed
+  }
+
   const buscarConsulta = async () => {
     const id = idBusqueda.trim().toUpperCase()
     if (!/^ID-\d{5}$/.test(id)) {
@@ -742,6 +836,9 @@ export default function CalculadoraEctopico() {
     setMensajeAlerta("")
     setEsConsultaSeguimiento(false)
     setNumeroConsultaActual(1)
+    setConsultasSeguimiento([]) // Reset dynamic follow-ups
+    setModoSeguimiento(false)
+    setStep(1) // Reset to first step
   }
 
   const generarInformePDF = () => {
@@ -1146,19 +1243,29 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     <input
                       type="text"
                       placeholder="Ej: ID-00001"
-                      value={idBusqueda}
-                      onChange={(e) => setIdBusqueda(e.target.value)}
+                      value={idConsultaCargar} // Use idConsultaCargar state
+                      onChange={(e) => setIdConsultaCargar(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     />
                     <p className="text-xs text-slate-500">Formato: ID-NNNNN (Ej: ID-00001)</p>
                   </div>
                   <div className="flex space-x-4">
                     <Button
-                      onClick={buscarConsulta}
+                      onClick={cargarConsultaPorId} // Use the new loading function
                       className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-6"
+                      disabled={isLoading} // Disable button while loading
                     >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Buscar Consulta
+                      {isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Cargando...
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Buscar Consulta
+                        </>
+                      )}
                     </Button>
                     <Button
                       onClick={() => {
@@ -1178,309 +1285,265 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
           </Card>
         </div>
       ) : mostrarResumenConsulta && consultaCargada ? (
-        <div className="max-w-4xl mx-auto p-6">
-          <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                {/* Header */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg">
-                      <FileText className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-bold text-slate-800">📋 Historial Clínico Completo</h2>
-                      <p className="text-slate-600">Registro completo de todas las consultas</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Información del Paciente */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg">
-                      <User className="h-6 w-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-slate-800">Información del Paciente</h3>
-                  </div>
-
-                  <div className="grid md:grid-cols-3 gap-6 text-sm">
-                    <div className="space-y-3">
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg">
-                        <span className="font-semibold text-blue-700 block mb-1">ID de Seguimiento</span>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
-                            <span className="text-white text-xs font-bold">ID</span>
-                          </div>
-                          <span className="font-mono text-blue-600 font-bold">
-                            {consultaCargada.id_publico || consultaCargada.folio}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Última Actualización</span>
-                        <div className="text-slate-600 text-xs">
-                          {consultaCargada.fecha_ultima_actualizacion || consultaCargada.fechaUltimaActualizacion
-                            ? new Date(
-                                consultaCargada.fecha_ultima_actualizacion || consultaCargada.fechaUltimaActualizacion,
-                              ).toLocaleString()
-                            : "No disponible"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Paciente</span>
-                        <div className="font-semibold text-slate-800">
-                          {consultaCargada.nombre_paciente || "No especificado"},{" "}
-                          {consultaCargada.edad_paciente || "N/A"} años
-                        </div>
-                      </div>
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Signos Vitales</span>
-                        <div className="text-slate-600 text-sm">
-                          FC: {consultaCargada.frecuencia_cardiaca || "N/A"} lpm | PA:{" "}
-                          {consultaCargada.presion_sistolica || "N/A"}/{consultaCargada.presion_diastolica || "N/A"}{" "}
-                          mmHg
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Fecha de Creación</span>
-                        <div className="text-slate-600 text-sm">
-                          {consultaCargada.fecha_creacion || consultaCargada.fechaCreacion
-                            ? new Date(
-                                consultaCargada.fecha_creacion || consultaCargada.fechaCreacion,
-                              ).toLocaleDateString()
-                            : "No disponible"}
-                        </div>
-                      </div>
-                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                        <span className="font-semibold text-slate-700 block mb-1">Estado de Conciencia</span>
-                        <div className="text-slate-600 capitalize text-sm">
-                          {consultaCargada.estado_conciencia || "No especificado"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Consulta 1 - Siempre se muestra si existe */}
-                {existeConsulta(consultaCargada, 1) && (
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-lg">
-                        <FileText className="h-6 w-6 text-white" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-slate-800">📋 Consulta 1 - Evaluación Inicial</h3>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4 text-sm">
-                      <div className="space-y-3">
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold text-slate-700 block mb-1">Síntomas Presentes</span>
-                          <div className="text-slate-600">
-                            {consultaCargada.sintomas_seleccionados && consultaCargada.sintomas_seleccionados.length > 0
-                              ? consultaCargada.sintomas_seleccionados
-                                  .map((s: string) => obtenerNombreSintoma(s))
-                                  .join(", ")
-                              : "Ninguno"}
-                          </div>
-                        </div>
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold text-slate-700 block mb-1">Factores de Riesgo</span>
-                          <div className="text-slate-600">
-                            {consultaCargada.factores_seleccionados && consultaCargada.factores_seleccionados.length > 0
-                              ? consultaCargada.factores_seleccionados
-                                  .map((f: string) => obtenerNombreFactorRiesgo(f))
-                                  .join(", ")
-                              : "Ninguno"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold text-slate-700 block mb-1">TVUS</span>
-                          <div className="text-slate-600">{obtenerNombreTVUS(consultaCargada.tvus)}</div>
-                        </div>
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold text-slate-700 block mb-1">β-hCG</span>
-                          <div className="text-slate-600">{consultaCargada.hcg_valor || "N/A"} mUI/mL</div>
-                        </div>
-                        {consultaCargada.resultado != null && (
-                          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
-                            <span className="font-semibold text-blue-700 block mb-1">Resultado</span>
-                            <div className="text-blue-900 font-bold text-lg">
-                              {(consultaCargada.resultado * 100).toFixed(1)}%
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Consulta 2 - Solo se muestra si existe */}
-                {existeConsulta(consultaCargada, 2) && (
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-amber-100">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full shadow-lg">
-                        <FileText className="h-6 w-6 text-white" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-slate-800">📋 Consulta 2 - Seguimiento</h3>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4 text-sm">
-                      <div className="space-y-3">
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold text-slate-700 block mb-1">Síntomas Presentes</span>
-                          <div className="text-slate-600">
-                            {consultaCargada.sintomas_seleccionados_2 &&
-                            consultaCargada.sintomas_seleccionados_2.length > 0
-                              ? consultaCargada.sintomas_seleccionados_2
-                                  .map((s: string) => obtenerNombreSintoma(s))
-                                  .join(", ")
-                              : "Ninguno"}
-                          </div>
-                        </div>
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold text-slate-700 block mb-1">Factores de Riesgo</span>
-                          <div className="text-slate-600">
-                            {consultaCargada.factores_seleccionados_2 &&
-                            consultaCargada.factores_seleccionados_2.length > 0
-                              ? consultaCargada.factores_seleccionados_2
-                                  .map((f: string) => obtenerNombreFactorRiesgo(f))
-                                  .join(", ")
-                              : "Mantenidos de consulta anterior"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold text-slate-700 block mb-1">TVUS</span>
-                          <div className="text-slate-600">{obtenerNombreTVUS(consultaCargada.tvus_2)}</div>
-                        </div>
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold text-slate-700 block mb-1">β-hCG</span>
-                          <div className="text-slate-600">{consultaCargada.hcg_valor_2 || "N/A"} mUI/mL</div>
-                        </div>
-                        {consultaCargada.variacion_hcg_2 && (
-                          <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                            <span className="font-semibold text-slate-700 block mb-1">Variación β-hCG</span>
-                            <div className="text-slate-600">{consultaCargada.variacion_hcg_2}</div>
-                          </div>
-                        )}
-                        {consultaCargada.resultado_2 != null && (
-                          <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-3 rounded-lg border border-amber-200">
-                            <span className="font-semibold text-amber-700 block mb-1">Resultado</span>
-                            <div className="text-amber-900 font-bold text-lg">
-                              {(consultaCargada.resultado_2 * 100).toFixed(1)}%
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Consulta 3 - Solo se muestra si existe */}
-                {existeConsulta(consultaCargada, 3) && (
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full shadow-lg">
-                        <FileText className="h-6 w-6 text-white" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-slate-800">📋 Consulta 3 - Seguimiento Final</h3>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4 text-sm">
-                      <div className="space-y-3">
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold text-slate-700 block mb-1">Síntomas Presentes</span>
-                          <div className="text-slate-600">
-                            {consultaCargada.sintomas_seleccionados_3 &&
-                            consultaCargada.sintomas_seleccionados_3.length > 0
-                              ? consultaCargada.sintomas_seleccionados_3
-                                  .map((s: string) => obtenerNombreSintoma(s))
-                                  .join(", ")
-                              : "Ninguno"}
-                          </div>
-                        </div>
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold text-slate-700 block mb-1">Factores de Riesgo</span>
-                          <div className="text-slate-600">
-                            {consultaCargada.factores_seleccionados_3 &&
-                            consultaCargada.factores_seleccionados_3.length > 0
-                              ? consultaCargada.factores_seleccionados_3
-                                  .map((f: string) => obtenerNombreFactorRiesgo(f))
-                                  .join(", ")
-                              : "Mantenidos de consulta anterior"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold text-slate-700 block mb-1">TVUS</span>
-                          <div className="text-slate-600">{obtenerNombreTVUS(consultaCargada.tvus_3)}</div>
-                        </div>
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold text-slate-700 block mb-1">β-hCG</span>
-                          <div className="text-slate-600">{consultaCargada.hcg_valor_3 || "N/A"} mUI/mL</div>
-                        </div>
-                        {consultaCargada.variacion_hcg_3 && (
-                          <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
-                            <span className="font-semibold text-slate-700 block mb-1">Variación β-hCG</span>
-                            <div className="text-slate-600">{consultaCargada.variacion_hcg_3}</div>
-                          </div>
-                        )}
-                        {consultaCargada.resultado_3 != null && (
-                          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-3 rounded-lg border border-purple-200">
-                            <span className="font-semibold text-purple-700 block mb-1">Resultado</span>
-                            <div className="text-purple-900 font-bold text-lg">
-                              {(consultaCargada.resultado_3 * 100).toFixed(1)}%
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Botones de acción */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                  <div className="flex space-x-4 justify-center">
-                    <Button
-                      onClick={continuarConsultaCargada}
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-2 px-6 shadow-sm"
-                      disabled={existeConsulta(consultaCargada, 3)}
-                    >
-                      <ArrowRight className="h-4 w-4 mr-2" />
-                      {existeConsulta(consultaCargada, 3) ? "Consulta Completada" : "Continuar Consulta"}
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setMostrarResumenConsulta(false)
-                        setModoCargarConsulta(true)
-                        setConsultaCargada(null)
-                      }}
-                      variant="outline"
-                      className="border-gray-300 text-gray-600 hover:bg-gray-50 shadow-sm"
-                    >
-                      Buscar Otra Consulta
-                    </Button>
-                  </div>
-                </div>
-
-                <CMGFooter />
+        <div className="max-w-6xl mx-auto p-6 space-y-6">
+          {/* Header */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg">
+                <FileText className="h-8 w-8 text-white" />
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <h2 className="text-3xl font-bold text-slate-800">📋 Historial Clínico Completo</h2>
+                <p className="text-slate-600">Registro completo de todas las consultas</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Información del Paciente */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg">
+                <User className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-800">Información del Paciente</h3>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 text-sm">
+              <div className="space-y-3">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg">
+                  <span className="font-semibold text-blue-700 block mb-1">ID de Seguimiento</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
+                      <span className="text-white text-xs font-bold">ID</span>
+                    </div>
+                    <span className="font-mono text-blue-600 font-bold">
+                      {consultaCargada.id_publico || consultaCargada.folio}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                  <span className="font-semibold text-slate-700 block mb-1">Última Actualización</span>
+                  <div className="text-slate-600 text-xs">
+                    {consultaCargada.fecha_ultima_actualizacion || consultaCargada.fechaUltimaActualizacion
+                      ? new Date(
+                          consultaCargada.fecha_ultima_actualizacion || consultaCargada.fechaUltimaActualizacion,
+                        ).toLocaleString()
+                      : "No disponible"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                  <span className="font-semibold text-slate-700 block mb-1">Paciente</span>
+                  <div className="font-semibold text-slate-800">
+                    {consultaCargada.nombre_paciente || "No especificado"}, {consultaCargada.edad_paciente || "N/A"}{" "}
+                    años
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                  <span className="font-semibold text-slate-700 block mb-1">Signos Vitales</span>
+                  <div className="text-slate-600 text-sm">
+                    FC: {consultaCargada.frecuencia_cardiaca || "N/A"} lpm | PA:{" "}
+                    {consultaCargada.presion_sistolica || "N/A"}/{consultaCargada.presion_diastolica || "N/A"} mmHg
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                  <span className="font-semibold text-slate-700 block mb-1">Fecha de Creación</span>
+                  <div className="text-slate-600 text-sm">
+                    {consultaCargada.fecha_creacion || consultaCargada.fechaCreacion
+                      ? new Date(consultaCargada.fecha_creacion || consultaCargada.fechaCreacion).toLocaleDateString()
+                      : "No disponible"}
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                  <span className="font-semibold text-slate-700 block mb-1">Estado de Conciencia</span>
+                  <div className="text-slate-600 capitalize text-sm">
+                    {consultaCargada.estado_conciencia || "No especificado"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {(consultaCargada.tvus || consultaCargada.hcg_valor || consultaCargada.resultado) && (
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-lg">
+                  <FileText className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-slate-800">📋 Consulta 1 - Evaluación Inicial</h3>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-3">
+                  <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                    <span className="font-semibold text-slate-700 block mb-1">Síntomas Presentes</span>
+                    <div className="text-slate-600">
+                      {consultaCargada.sintomas_seleccionados && consultaCargada.sintomas_seleccionados.length > 0
+                        ? consultaCargada.sintomas_seleccionados.map((s: string) => obtenerNombreSintoma(s)).join(", ")
+                        : "Ninguno"}
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                    <span className="font-semibold text-slate-700 block mb-1">Factores de Riesgo</span>
+                    <div className="text-slate-600">
+                      {consultaCargada.factores_seleccionados && consultaCargada.factores_seleccionados.length > 0
+                        ? consultaCargada.factores_seleccionados
+                            .map((f: string) => obtenerNombreFactorRiesgo(f))
+                            .join(", ")
+                        : "Ninguno"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                    <span className="font-semibold text-slate-700 block mb-1">TVUS</span>
+                    <div className="text-slate-600">{obtenerNombreTVUS(consultaCargada.tvus)}</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                    <span className="font-semibold text-slate-700 block mb-1">β-hCG</span>
+                    <div className="text-slate-600">{consultaCargada.hcg_valor || "N/A"} mUI/mL</div>
+                  </div>
+                  {consultaCargada.resultado != null && (
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
+                      <span className="font-semibold text-blue-700 block mb-1">Resultado</span>
+                      <div className="text-blue-900 font-bold text-lg">
+                        {(consultaCargada.resultado * 100).toFixed(1)}%
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {consultasSeguimiento.map((consulta, index) => {
+            const numeroConsulta = consulta.numero_consulta
+            const colores = [
+              {
+                border: "border-amber-100",
+                bg: "from-amber-500 to-orange-600",
+                result: "from-amber-50 to-orange-50 border-amber-200",
+                text: "text-amber-700",
+                textBold: "text-amber-900",
+              },
+              {
+                border: "border-purple-100",
+                bg: "from-purple-500 to-indigo-600",
+                result: "from-purple-50 to-indigo-50 border-purple-200",
+                text: "text-purple-700",
+                textBold: "text-purple-900",
+              },
+              {
+                border: "border-pink-100",
+                bg: "from-pink-500 to-rose-600",
+                result: "from-pink-50 to-rose-50 border-pink-200",
+                text: "text-pink-700",
+                textBold: "text-pink-900",
+              },
+              {
+                border: "border-teal-100",
+                bg: "from-teal-500 to-cyan-600",
+                result: "from-teal-50 to-cyan-50 border-teal-200",
+                text: "text-teal-700",
+                textBold: "text-teal-900",
+              },
+            ]
+            const color = colores[index % colores.length]
+
+            return (
+              <div key={consulta.id} className={`bg-white p-6 rounded-xl shadow-sm border ${color.border}`}>
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className={`p-2 bg-gradient-to-br ${color.bg} rounded-full shadow-lg`}>
+                    <FileText className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-slate-800">
+                    📋 Consulta {numeroConsulta} - Seguimiento {numeroConsulta - 1}
+                  </h3>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-3">
+                    <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                      <span className="font-semibold text-slate-700 block mb-1">Síntomas Presentes</span>
+                      <div className="text-slate-600">
+                        {consulta.sintomas_seleccionados && consulta.sintomas_seleccionados.length > 0
+                          ? consulta.sintomas_seleccionados.map((s: string) => obtenerNombreSintoma(s)).join(", ")
+                          : "Ninguno"}
+                      </div>
+                    </div>
+                    <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                      <span className="font-semibold text-slate-700 block mb-1">Factores de Riesgo</span>
+                      <div className="text-slate-600">
+                        {consulta.factores_seleccionados && consulta.factores_seleccionados.length > 0
+                          ? consulta.factores_seleccionados.map((f: string) => obtenerNombreFactorRiesgo(f)).join(", ")
+                          : "Mantenidos de consulta anterior"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                      <span className="font-semibold text-slate-700 block mb-1">TVUS</span>
+                      <div className="text-slate-600">{obtenerNombreTVUS(consulta.tvus)}</div>
+                    </div>
+                    <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                      <span className="font-semibold text-slate-700 block mb-1">β-hCG</span>
+                      <div className="text-slate-600">{consulta.hcg_valor || "N/A"} mUI/mL</div>
+                    </div>
+                    {consulta.variacion_hcg && (
+                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                        <span className="font-semibold text-slate-700 block mb-1">Variación β-hCG</span>
+                        <div className="text-slate-600">{consulta.variacion_hcg}</div>
+                      </div>
+                    )}
+                    {consulta.resultado != null && (
+                      <div className={`bg-gradient-to-r ${color.result} p-3 rounded-lg border`}>
+                        <span className={`font-semibold ${color.text} block mb-1`}>Resultado</span>
+                        <div className={`${color.textBold} font-bold text-lg`}>
+                          {(consulta.resultado * 100).toFixed(1)}%
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+
+          {/* Botones de acción */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+            <div className="flex space-x-4 justify-center">
+              <Button
+                onClick={continuarConsultaCargada}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-2 px-6 shadow-sm"
+                disabled={consultasSeguimiento.length >= 3} // Limit to 3 total consultations (1 initial + 2 follow-ups)
+              >
+                <ArrowRight className="h-4 w-4 mr-2" />
+                {consultasSeguimiento.length >= 3
+                  ? "Consulta Completada"
+                  : `Continuar Consulta (Seguimiento ${consultasSeguimiento.length + 1})`}
+              </Button>
+              <Button
+                onClick={() => {
+                  setMostrarResumenConsulta(false)
+                  setModoCargarConsulta(true)
+                  setConsultaCargada(null)
+                  setConsultasSeguimiento([])
+                }}
+                variant="outline"
+                className="border-slate-300 text-slate-700 hover:bg-slate-50"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cerrar
+              </Button>
+            </div>
+          </div>
         </div>
       ) : protocoloFinalizado ? (
         <div className="max-w-4xl mx-auto p-6">
@@ -1658,7 +1721,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
           <div className="max-w-4xl mx-auto p-6">
             <Card className="shadow-lg">
               <CardContent className="p-8">
-                {seccionActual === 1 && (
+                {step === 1 && ( // Changed from seccionActual === 1 to step === 1
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
                       <User className="h-6 w-6 text-blue-600" />
@@ -1689,7 +1752,9 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     <div className="flex justify-end">
                       <Button
                         onClick={async () => {
-                          if (await validarEdadPaciente()) completarSeccion(1)
+                          if (await validarEdadPaciente()) {
+                            setStep(2) // Move to the next step
+                          }
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
                       >
@@ -1700,7 +1765,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                 )}
 
-                {seccionActual === 2 && (
+                {step === 2 && ( // Changed from seccionActual === 2 to step === 2
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
                       <Activity className="h-6 w-6 text-blue-600" />
@@ -1781,7 +1846,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                     <div className="flex justify-between">
                       <Button
-                        onClick={() => setSeccionActual(1)}
+                        onClick={() => setStep(1)} // Go back to previous step
                         variant="outline"
                         className="border-gray-300 text-gray-600 hover:bg-gray-50"
                       >
@@ -1789,7 +1854,9 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </Button>
                       <Button
                         onClick={async () => {
-                          if (await validarSignosVitales()) completarSeccion(2)
+                          if (await validarSignosVitales()) {
+                            setStep(3) // Move to the next step
+                          }
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
                       >
@@ -1800,7 +1867,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                 )}
 
-                {seccionActual === 3 && (
+                {step === 3 && ( // Changed from seccionActual === 3 to step === 3
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
                       <FileText className="h-6 w-6 text-blue-600" />
@@ -1896,7 +1963,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                     <div className="flex justify-between">
                       <Button
-                        onClick={() => setSeccionActual(2)}
+                        onClick={() => setStep(2)} // Go back to previous step
                         variant="outline"
                         className="border-gray-300 text-gray-600 hover:bg-gray-50"
                       >
@@ -1922,7 +1989,9 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                                 setProtocoloFinalizado(true)
                               }, 2000)
                             } else {
-                              if (await validarPruebaEmbarazo()) completarSeccion(3)
+                              if (await validarPruebaEmbarazo()) {
+                                setStep(4) // Move to the next step
+                              }
                             }
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
@@ -1936,7 +2005,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                 )}
 
-                {seccionActual === 4 && (
+                {step === 4 && ( // Changed from seccionActual === 4 to step === 4
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
                       <Stethoscope className="h-6 w-6 text-blue-600" />
@@ -2017,7 +2086,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                     <div className="flex justify-between">
                       <Button
-                        onClick={() => setSeccionActual(3)}
+                        onClick={() => setStep(3)} // Go back to previous step
                         variant="outline"
                         className="border-gray-300 text-gray-600 hover:bg-gray-50"
                       >
@@ -2026,7 +2095,9 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <div className="text-center">
                         <Button
                           onClick={async () => {
-                            if (await validarEcoTransabdominal()) completarSeccion(4)
+                            if (await validarEcoTransabdominal()) {
+                              setStep(5) // Move to the next step (Calculation)
+                            }
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
                         >
@@ -2038,7 +2109,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                 )}
 
-                {seccionActual === 5 && (
+                {step === 5 && ( // Changed from seccionActual === 5 to step === 5
                   <div className="space-y-6">
                     <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg shadow-lg">
                       <div className="flex items-center space-x-3">
@@ -2108,7 +2179,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         <div>
                           <div className="flex items-center justify-between mb-4">
                             <h4 className="text-lg font-semibold text-gray-800">Factores de Riesgo</h4>
-                            {esConsultaSeguimiento && (
+                            {modoSeguimiento && ( // Show this only in follow-up mode
                               <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
                                 Mantenidos de consulta anterior
                               </div>
@@ -2215,21 +2286,22 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         </div>
 
                         {/* β-hCG previo */}
-                        {esConsultaSeguimiento && hcgAnterior && (
-                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <p className="text-sm text-blue-800">
-                              <strong>β-hCG de consulta anterior:</strong> {hcgAnterior} mUI/mL
-                            </p>
-                            <p className="text-xs text-blue-600 mt-1">
-                              Se calculará automáticamente la variación con el valor actual
-                            </p>
-                          </div>
-                        )}
+                        {modoSeguimiento &&
+                          hcgAnterior && ( // Show only in follow-up mode if previous value exists
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                              <p className="text-sm text-blue-800">
+                                <strong>β-hCG de consulta anterior:</strong> {hcgAnterior} mUI/mL
+                              </p>
+                              <p className="text-xs text-blue-600 mt-1">
+                                Se calculará automáticamente la variación con el valor actual
+                              </p>
+                            </div>
+                          )}
                       </div>
 
                       <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
                         <Button
-                          onClick={() => setSeccionActual(4)}
+                          onClick={() => setStep(4)} // Go back to previous step
                           variant="outline"
                           className="border-gray-300 text-gray-600 hover:bg-gray-50"
                         >
@@ -2238,6 +2310,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         <Button
                           onClick={calcular}
                           className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg"
+                          disabled={!tvus || !hcgValor} // Disable if required fields are not filled
                         >
                           <Calculator className="h-5 w-5 mr-2" />
                           Calcular Riesgo
@@ -2248,6 +2321,203 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     <CMGFooter />
                   </div>
                 )}
+
+                {step === 6 &&
+                  modoSeguimiento && ( // Step for follow-up form
+                    <div className="space-y-6">
+                      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg shadow-lg">
+                        <div className="flex items-center space-x-3">
+                          <Calculator className="h-8 w-8" />
+                          <div>
+                            <h2 className="text-2xl font-bold">Seguimiento: Consulta {numeroConsultaActual}</h2>
+                            <p className="text-blue-100 text-sm">
+                              Actualización de datos para la evaluación de seguimiento
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                        <div className="flex items-center space-x-2 mb-6">
+                          <div className="p-2 bg-orange-100 rounded-lg">
+                            <FileText className="h-5 w-5 text-orange-600" />
+                          </div>
+                          <h3 className="text-xl font-semibold text-gray-800">Actualización de Datos</h3>
+                        </div>
+
+                        <div className="space-y-8">
+                          {/* Síntomas */}
+                          <div>
+                            <h4 className="text-lg font-semibold text-gray-800 mb-4">Síntomas Presentes</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {[
+                                { id: "sangrado", label: "Sangrado vaginal" },
+                                { id: "dolor", label: "Dolor pélvico/abdominal" },
+                                { id: "dolor_sangrado", label: "Sangrado + Dolor" },
+                                { id: "sincope", label: "Síncope o mareo" },
+                              ].map((op) => (
+                                <label
+                                  key={op.id}
+                                  className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                                >
+                                  <div className="relative">
+                                    <input
+                                      type="checkbox"
+                                      checked={sintomasSeleccionados.includes(op.id)}
+                                      onChange={(e) =>
+                                        setSintomasSeleccionados((prev) =>
+                                          e.target.checked ? [...prev, op.id] : prev.filter((id) => id !== op.id),
+                                        )
+                                      }
+                                      className="sr-only"
+                                    />
+                                    <div
+                                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                        sintomasSeleccionados.includes(op.id)
+                                          ? "bg-blue-600 border-blue-600"
+                                          : "border-gray-300 hover:border-blue-400"
+                                      }`}
+                                    >
+                                      {sintomasSeleccionados.includes(op.id) && (
+                                        <div className="w-2 h-2 bg-white rounded-full" />
+                                      )}
+                                    </div>
+                                  </div>
+                                  <span className="text-sm font-medium text-gray-700">{op.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Factores de Riesgo */}
+                          <div>
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="text-lg font-semibold text-gray-800">Factores de Riesgo</h4>
+                              <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                Mantenidos de consulta anterior
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {factoresSeleccionados.map(
+                                (
+                                  factorId, // Render only maintained factors
+                                ) => (
+                                  <div
+                                    key={factorId}
+                                    className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg bg-gray-50 cursor-not-allowed"
+                                  >
+                                    <span className="text-sm font-medium text-gray-700">
+                                      {obtenerNombreFactorRiesgo(factorId)}
+                                    </span>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          </div>
+
+                          {/* TVUS */}
+                          <div>
+                            <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                              Ecografía Transvaginal (TVUS)
+                              {!tvus && (
+                                <span className="text-xs text-red-600 block font-normal mt-1">
+                                  * Campo requerido - Seleccione una opción
+                                </span>
+                              )}
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {[
+                                { value: "normal", label: "Normal" },
+                                { value: "libre", label: "Líquido libre" },
+                                { value: "masa", label: "Masa anexial" },
+                                { value: "masa_libre", label: "Masa anexial + líquido libre" },
+                              ].map((op) => (
+                                <label
+                                  key={op.value}
+                                  className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                                >
+                                  <div className="relative">
+                                    <input
+                                      type="radio"
+                                      name="tvus"
+                                      value={op.value}
+                                      checked={tvus === op.value}
+                                      onChange={(e) => setTvus(e.target.value)}
+                                      className="sr-only"
+                                    />
+                                    <div
+                                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                        tvus === op.value
+                                          ? "bg-blue-600 border-blue-600"
+                                          : "border-gray-300 hover:border-blue-400"
+                                      }`}
+                                    >
+                                      {tvus === op.value && <div className="w-2 h-2 bg-white rounded-full" />}
+                                    </div>
+                                  </div>
+                                  <span className="text-sm font-medium text-gray-700">{op.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* β-hCG actual */}
+                          <div>
+                            <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                              β-hCG actual (mUI/mL)
+                              {!hcgValor && (
+                                <span className="text-xs text-red-600 block font-normal mt-1">
+                                  * Campo requerido - Ingrese el valor
+                                </span>
+                              )}
+                            </h4>
+                            <input
+                              type="number"
+                              placeholder="Valor actual"
+                              value={hcgValor}
+                              onChange={(e) => setHcgValor(e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-700"
+                            />
+                          </div>
+
+                          {/* β-hCG previo */}
+                          {hcgAnterior && ( // Always show previous if available
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                              <p className="text-sm text-blue-800">
+                                <strong>β-hCG de consulta anterior:</strong> {hcgAnterior} mUI/mL
+                              </p>
+                              <p className="text-xs text-blue-600 mt-1">
+                                Se calculará automáticamente la variación con el valor actual
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+                          <Button
+                            onClick={() => {
+                              setStep(5) // Go back to calculation step
+                              setModoSeguimiento(false) // Exit follow-up mode
+                            }}
+                            variant="outline"
+                            className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                          >
+                            Anterior
+                          </Button>
+                          <Button
+                            onClick={guardarSeguimiento} // Use the new save function
+                            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg"
+                            disabled={!tvus || !hcgValor} // Disable if required fields are not filled
+                          >
+                            <Calculator className="h-5 w-5 mr-2" />
+                            Guardar Seguimiento
+                          </Button>
+                        </div>
+                      </div>
+
+                      <CMGFooter />
+                    </div>
+                  )}
               </CardContent>
             </Card>
           </div>

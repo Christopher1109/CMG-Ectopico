@@ -87,31 +87,65 @@ async function actualizarDatosEnBackend(folioOrId: string, visitaNo: 2 | 3, dato
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
     }
 
-    console.log(`📤 Actualizando consulta ${visitaNo}:`, patch)
+    console.log(`[v0] 📤 Actualizando consulta ${visitaNo} para folio/ID:`, folioOrId)
+    console.log(`[v0] 📦 Datos a enviar:`, JSON.stringify(patch, null, 2))
 
     const res = await actualizarConsulta(folioOrId, visitaNo, patch)
+
+    console.log(`[v0] 📨 Respuesta del servidor:`, JSON.stringify(res, null, 2))
+
     if (res?.error) {
-      console.error("API PATCH /api/consultas error:", res.error)
+      console.error("[v0] ❌ Error al actualizar:", res.error)
       return false
     }
 
-    console.log("✅ Consulta actualizada exitosamente")
+    console.log(`[v0] ✅ Consulta ${visitaNo} actualizada exitosamente`)
+    console.log(`[v0] 🔍 Datos guardados en BD:`, {
+      folio: res?.data?.folio,
+      TVUS_2: res?.data?.TVUS_2,
+      hCG_2: res?.data?.hCG_2,
+      Pronostico_2: res?.data?.Pronostico_2,
+      TVUS_3: res?.data?.TVUS_3,
+      hCG_3: res?.data?.hCG_3,
+      Pronostico_3: res?.data?.Pronostico_3,
+    })
+
     return true
   } catch (e) {
-    console.error("Error llamando PATCH /api/consultas:", e)
+    console.error("[v0] ❌ Error llamando PATCH /api/consultas:", e)
     return false
   }
 }
 
 async function leerDatosDesdeBackend(folioOrId: string): Promise<any | null> {
   try {
-    const res = await obtenerConsulta(folioOrId)
-    if (res?.error) return null
+    console.log(`[v0] 📥 Cargando datos para folio/ID:`, folioOrId)
 
-    console.log("📥 Datos cargados desde backend:", res?.data)
+    const res = await obtenerConsulta(folioOrId)
+
+    console.log(`[v0] 📨 Respuesta GET del servidor:`, JSON.stringify(res, null, 2))
+
+    if (res?.error) {
+      console.error("[v0] ❌ Error al cargar:", res.error)
+      return null
+    }
+
+    console.log("[v0] 📥 Datos cargados desde backend:", {
+      folio: res?.data?.folio,
+      tvus: res?.data?.tvus,
+      hcg_valor: res?.data?.hcg_valor,
+      resultado: res?.data?.resultado,
+      tvus_2: res?.data?.tvus_2,
+      hcg_valor_2: res?.data?.hcg_valor_2,
+      resultado_2: res?.data?.resultado_2,
+      tvus_3: res?.data?.tvus_3,
+      hcg_valor_3: res?.data?.hcg_valor_3,
+      resultado_3: res?.data?.resultado_3,
+    })
+
     return res?.data ?? null
   } catch (e) {
-    console.error("Error llamando GET /api/consultas/:id:", e)
+    console.error("[v0] ❌ Error llamando GET /api/consultas/:id:", e)
     return null
   }
 }

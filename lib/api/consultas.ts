@@ -36,7 +36,8 @@ export async function actualizarConsulta(folioOrId: string | number, visitaNo: 2
     const qs = new URLSearchParams({ visita: String(visitaNo) }).toString()
     const url = `/api/consultas/${numericId}?${qs}`
 
-    console.log("Actualizando consulta:", { url, patch })
+    console.log("[v0] 🔧 actualizarConsulta llamada con:", { folioOrId, numericId, visitaNo, url })
+    console.log("[v0] 📦 Patch a enviar:", JSON.stringify(patch, null, 2))
 
     const res = await fetch(url, {
       method: "PATCH",
@@ -45,12 +46,14 @@ export async function actualizarConsulta(folioOrId: string | number, visitaNo: 2
     })
 
     const json = await res.json().catch(() => ({}))
-    console.log("Respuesta del servidor:", json)
+
+    console.log("[v0] 📨 Respuesta HTTP:", { status: res.status, ok: res.ok })
+    console.log("[v0] 📨 JSON respuesta:", JSON.stringify(json, null, 2))
 
     if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`)
     return json
   } catch (error: any) {
-    console.error("API actualizarConsulta:", error)
+    console.error("[v0] ❌ API actualizarConsulta error:", error)
     return { error: error?.message ?? "Error al actualizar consulta" }
   }
 }
@@ -63,12 +66,20 @@ export async function obtenerConsulta(folioOrId: string | number) {
     // Convertir a número si es string
     const numericId = typeof folioOrId === "string" ? Number.parseInt(folioOrId.replace(/^ID-0*/, ""), 10) : folioOrId
 
-    const res = await fetch(`/api/consultas/${numericId}`, { method: "GET" })
+    const url = `/api/consultas/${numericId}`
+
+    console.log("[v0] 🔧 obtenerConsulta llamada con:", { folioOrId, numericId, url })
+
+    const res = await fetch(url, { method: "GET" })
     const json = await res.json().catch(() => ({}))
+
+    console.log("[v0] 📨 Respuesta HTTP:", { status: res.status, ok: res.ok })
+    console.log("[v0] 📨 JSON respuesta:", JSON.stringify(json, null, 2))
+
     if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`)
     return json
   } catch (error: any) {
-    console.error("API obtenerConsulta:", error)
+    console.error("[v0] ❌ API obtenerConsulta error:", error)
     return { error: error?.message ?? "Error al obtener consulta" }
   }
 }

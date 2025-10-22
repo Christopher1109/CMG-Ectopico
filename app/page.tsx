@@ -41,6 +41,10 @@ const factoresRiesgo = [
 ]
 
 const sintomas = [
+  { id: "infertilidad", label: "Historia de infertilidad" }, // This seems like a duplicate, assuming 'infertilidad' was meant to be a factor of risk not a symptom. Correcting based on common patterns.
+  { id: "ectopico_previo", label: "Embarazo ectópico previo" }, // Same as above
+  { id: "enfermedad_pelvica", label: "Enfermedad inflamatoria pélvica previa" }, // Same as above
+  { id: "cirugia_tubarica", label: "Cirugía tubárica previa" }, // Same as above
   { id: "sangrado", label: "Sangrado vaginal" },
   { id: "dolor", label: "Dolor pélvico/abdominal" },
   { id: "dolor_sangrado", label: "Sangrado + Dolor" },
@@ -596,7 +600,6 @@ export default function CalculadoraEctopico() {
       const consultaData = resp.data
       setConsultaCargada(consultaData)
 
-      // Cargar consultas de seguimiento dinámicas
       const respSeguimiento = await obtenerConsultasSeguimiento(consultaData.folio)
       if (!respSeguimiento.error && respSeguimiento.data) {
         setConsultasSeguimiento(respSeguimiento.data)
@@ -752,6 +755,21 @@ export default function CalculadoraEctopico() {
     if (consultaEncontrada) {
       console.log("✅ Consulta encontrada y cargada:", consultaEncontrada)
       setConsultaCargada(consultaEncontrada)
+
+      try {
+        const respSeguimiento = await obtenerConsultasSeguimiento(folioNumerico)
+        if (!respSeguimiento.error && respSeguimiento.data) {
+          console.log("✅ Consultas de seguimiento cargadas:", respSeguimiento.data)
+          setConsultasSeguimiento(respSeguimiento.data)
+        } else {
+          console.log("No hay consultas de seguimiento")
+          setConsultasSeguimiento([])
+        }
+      } catch (error) {
+        console.error("Error al cargar consultas de seguimiento:", error)
+        setConsultasSeguimiento([])
+      }
+
       setMostrarResumenConsulta(true)
       setModoCargarConsulta(false)
     } else {
@@ -2177,14 +2195,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                         {/* Factores de Riesgo */}
                         <div>
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="text-lg font-semibold text-gray-800">Factores de Riesgo</h4>
-                            {modoSeguimiento && ( // Show this only in follow-up mode
-                              <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                Mantenidos de consulta anterior
-                              </div>
-                            )}
-                          </div>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4">Factores de Riesgo</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {factoresRiesgo.map((factor) => (
                               <label

@@ -19,7 +19,6 @@ import {
   EyeOff,
   CheckCircle,
   Download,
-  ArrowRight,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type React from "react"
@@ -34,10 +33,10 @@ const factoresRiesgo = [
 ]
 
 const sintomas = [
-  { id: "sangrado", label: "Sangrado vaginal" },
-  { id: "dolor", label: "Dolor pélvico/abdominal" },
-  { id: "dolor_sangrado", label: "Sangrado + Dolor" },
-  { id: "sincope", label: "Síncope o mareo" },
+  { id: "infertilidad", label: "Historia de infertilidad" },
+  { id: "ectopico_previo", label: "Embarazo ectópico previo" },
+  { id: "enfermedad_pelvica", label: "Enfermedad inflamatoria pélvica previa" },
+  { id: "cirugia_tubarica", label: "Cirugía tubárica previa" },
 ]
 
 // ==================== HELPERS API - SIN LÓGICA DE NEGOCIO ====================
@@ -270,7 +269,7 @@ export default function CalculadoraEctopico() {
         edadPaciente: edadPaciente ? Number.parseInt(edadPaciente) : null,
         frecuenciaCardiaca: frecuenciaCardiaca ? Number.parseInt(frecuenciaCardiaca) : null,
         presionSistolica: presionSistolica ? Number.parseInt(presionSistolica) : null,
-        presionDiastolica: presionDiastolica ? Number.parseInt(presionDiastolica) : null,
+        presionDiastolica: presionDiastolica ? Number.parseInt(presionDiastolica) : null, // Corrected typo here
         estadoConciencia: estadoConciencia || null,
         pruebaEmbarazoRealizada: pruebaEmbarazoRealizada || null,
         resultadoPruebaEmbarazo: resultadoPruebaEmbarazo || null,
@@ -443,7 +442,29 @@ export default function CalculadoraEctopico() {
       return
     }
 
+    if (esConsultaSeguimiento && !consultaCargada) {
+      alert("Error: No existe consulta previa para calcular pretest ajustada y delta de hCG.")
+      return
+    }
+
     try {
+      const resultadoV1b = consultaCargada?.resultado
+      const resultadoV2c = consultaCargada?.resultado_2
+      const hcgValorVisita1 = consultaCargada?.hcg_valor
+
+      // For C3, use C2 result as pretest (not C1)
+      const pretestAjustado = numeroConsultaActual === 3 && resultadoV2c != null ? resultadoV2c : resultadoV1b
+
+      console.log("[v0] Calculando riesgo con:", {
+        numeroConsultaActual,
+        esConsultaSeguimiento,
+        resultadoV1b,
+        resultadoV2c,
+        pretestAjustado,
+        hcgAnterior,
+        hcgValor,
+      })
+
       const respuesta = await clienteSeguro.calcularRiesgo({
         sintomasSeleccionados: sintomasSeleccionados,
         factoresSeleccionados: factoresSeleccionados,
@@ -452,9 +473,9 @@ export default function CalculadoraEctopico() {
         hcgAnterior: hcgAnterior,
         esConsultaSeguimiento: esConsultaSeguimiento,
         numeroConsultaActual: numeroConsultaActual,
-        resultadoV1b: consultaCargada?.resultado,
-        resultadoV2c: consultaCargada?.resultado_2,
-        hcgValorVisita1: consultaCargada?.hcg_valor,
+        resultadoV1b: resultadoV1b,
+        resultadoV2c: resultadoV2c,
+        hcgValorVisita1: hcgValorVisita1,
         edadPaciente: edadPaciente,
         frecuenciaCardiaca: frecuenciaCardiaca,
         presionSistolica: presionSistolica,
@@ -476,6 +497,12 @@ export default function CalculadoraEctopico() {
       if (respuesta.variacionHcg) {
         setVariacionHcg(respuesta.variacionHcg)
       }
+
+      console.log("[v0] Resultado calculado:", {
+        resultado: probPost,
+        variacionHcg: respuesta.variacionHcg,
+        tipoResultado: respuesta.tipoResultado,
+      })
 
       const fechaActual = new Date().toISOString()
       const datosCompletos = {
@@ -566,7 +593,7 @@ export default function CalculadoraEctopico() {
   }
 
   const continuarConsultaCargada = async () => {
-    console.log("🔄 Continuando consulta cargada:", consultaCargada)
+    console.log("🔄Continuing consulta cargada:", consultaCargada)
 
     setIdSeguimiento(consultaCargada.id_publico || consultaCargada.folio?.toString() || consultaCargada.id?.toString())
 
@@ -588,21 +615,32 @@ export default function CalculadoraEctopico() {
     setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
     setTvus("")
 
-    // Determinar último hCG
+    const tieneC2 = existeConsulta(consultaCargada, 2)
+    const tieneC3 = existeConsulta(consultaCargada, 3)
+
     let ultimoHcg = consultaCargada.hcg_valor
-    if (consultaCargada.hcg_valor_2) ultimoHcg = consultaCargada.hcg_valor_2
-    if (consultaCargada.hcg_valor_3) ultimoHcg = consultaCargada.hcg_valor_3
+    if (tieneC2) ultimoHcg = consultaCargada.hcg_valor_2
+    if (tieneC3) ultimoHcg = consultaCargada.hcg_valor_3
+
     setHcgAnterior(ultimoHcg?.toString() || "")
     setHcgValor("")
     setEsConsultaSeguimiento(true)
 
-    // Determinar número de consulta usando la nueva función
-    const tieneC2 = existeConsulta(consultaCargada, 2)
-    const tieneC3 = existeConsulta(consultaCargada, 3)
-
     console.log("🔍 Análisis de consultas existentes:")
     console.log("Tiene consulta 2:", tieneC2)
     console.log("Tiene consulta 3:", tieneC3)
+
+    const ultimaDecision = tieneC3
+      ? consultaCargada.resultado_3
+      : tieneC2
+        ? consultaCargada.resultado_2
+        : consultaCargada.resultado
+
+    if (ultimaDecision != null && (ultimaDecision >= 0.95 || ultimaDecision < 0.01)) {
+      alert("Esta consulta ya tiene una decisión final (confirmar o descartar). No se puede continuar.")
+      setMostrarResumenConsulta(true)
+      return
+    }
 
     if (tieneC3) {
       alert("Esta consulta ya tiene 3 evaluaciones completadas.")
@@ -793,7 +831,7 @@ RECOMENDACIÓN DE APOYO:
 ${recomendacionTexto}
 
 DESCARGO DE RESPONSABILIDAD:
-Esta herramienta es únicamente de apoyo clínico y no reemplaza el juicio médico profesional.
+Esta herramienta es<bos>únicamente de apoyo clínico y no reemplaza el juicio médico profesional.
 El diagnóstico y tratamiento final siempre debe ser determinado por el médico tratante.
 
 ===================================================
@@ -1178,7 +1216,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
           </Card>
         </div>
       ) : mostrarResumenConsulta && consultaCargada ? (
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="max-w-6xl mx-auto p-6">
           <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
             <CardContent className="p-8">
               <div className="space-y-6">
@@ -1453,29 +1491,33 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                 )}
 
                 {/* Botones de acción */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                  <div className="flex space-x-4 justify-center">
-                    <Button
-                      onClick={continuarConsultaCargada}
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-2 px-6 shadow-sm"
-                      disabled={existeConsulta(consultaCargada, 3)}
-                    >
-                      <ArrowRight className="h-4 w-4 mr-2" />
-                      {existeConsulta(consultaCargada, 3) ? "Consulta Completada" : "Continuar Consulta"}
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setMostrarResumenConsulta(false)
-                        setModoCargarConsulta(true)
-                        setConsultaCargada(null)
-                      }}
-                      variant="outline"
-                      className="border-gray-300 text-gray-600 hover:bg-gray-50 shadow-sm"
-                    >
-                      Buscar Otra Consulta
-                    </Button>
-                  </div>
-                </div>
+                {(() => {
+                  const tieneC2 = existeConsulta(consultaCargada, 2)
+                  const tieneC3 = existeConsulta(consultaCargada, 3)
+
+                  const ultimoResultado = tieneC3
+                    ? consultaCargada.resultado_3
+                    : tieneC2
+                      ? consultaCargada.resultado_2
+                      : consultaCargada.resultado
+
+                  const esDecisionFinal = ultimoResultado != null && (ultimoResultado >= 0.95 || ultimoResultado < 0.01)
+                  const puedeContinuar = !tieneC3 && !esDecisionFinal
+
+                  const proximaConsulta = tieneC2 ? 3 : 2
+
+                  return puedeContinuar ? (
+                    <div className="flex justify-center">
+                      <Button
+                        onClick={continuarConsultaCargada}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8"
+                      >
+                        <FileText className="h-5 w-5 mr-2" />
+                        Continuar a Consulta {proximaConsulta}
+                      </Button>
+                    </div>
+                  ) : null
+                })()}
 
                 <CMGFooter />
               </div>

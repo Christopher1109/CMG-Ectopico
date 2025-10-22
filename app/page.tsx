@@ -162,22 +162,37 @@ function normalizarDesdeLocal(d: any) {
 
 // Función para verificar si existe una consulta específica
 function existeConsulta(consulta: any, numero: 1 | 2 | 3): boolean {
+  console.log(`[v0] Checking if consultation ${numero} exists:`, {
+    numero,
+    consulta,
+    tvus_2: consulta?.tvus_2,
+    hcg_valor_2: consulta?.hcg_valor_2,
+    resultado_2: consulta?.resultado_2,
+    sintomas_2: consulta?.sintomas_seleccionados_2,
+  })
+
   if (numero === 1) {
-    return !!(consulta.tvus || consulta.hcg_valor || consulta.resultado)
+    const exists = !!(consulta.tvus || consulta.hcg_valor || consulta.resultado)
+    console.log(`[v0] C1 exists: ${exists}`)
+    return exists
   } else if (numero === 2) {
-    return !!(
+    const exists = !!(
       consulta.tvus_2 ||
       consulta.hcg_valor_2 ||
       consulta.resultado_2 ||
       (consulta.sintomas_seleccionados_2 && consulta.sintomas_seleccionados_2.length > 0)
     )
+    console.log(`[v0] C2 exists: ${exists}`)
+    return exists
   } else if (numero === 3) {
-    return !!(
+    const exists = !!(
       consulta.tvus_3 ||
       consulta.hcg_valor_3 ||
       consulta.resultado_3 ||
       (consulta.sintomas_seleccionados_3 && consulta.sintomas_seleccionados_3.length > 0)
     )
+    console.log(`[v0] C3 exists: ${exists}`)
+    return exists
   }
   return false
 }
@@ -725,6 +740,7 @@ export default function CalculadoraEctopico() {
     if (datosLocal) {
       try {
         consultaEncontrada = normalizarDesdeLocal(JSON.parse(datosLocal))
+        console.log("[v0] Consulta loaded from localStorage:", consultaEncontrada)
       } catch (error) {
         console.warn("Error al parsear datos de localStorage:", error)
       }
@@ -735,6 +751,7 @@ export default function CalculadoraEctopico() {
         const res = await leerDatosDesdeBackend(folioNumerico)
         if (res) {
           consultaEncontrada = res
+          console.log("[v0] Consulta loaded from backend:", consultaEncontrada)
           localStorage.setItem(`ectopico_folio_${res.folio}`, JSON.stringify(consultaEncontrada))
         }
       } catch (error) {
@@ -744,6 +761,11 @@ export default function CalculadoraEctopico() {
 
     if (consultaEncontrada) {
       console.log("✅ Consulta encontrada y cargada:", consultaEncontrada)
+      console.log("[v0] Checking consultations after load:")
+      console.log("[v0] Has C1:", existeConsulta(consultaEncontrada, 1))
+      console.log("[v0] Has C2:", existeConsulta(consultaEncontrada, 2))
+      console.log("[v0] Has C3:", existeConsulta(consultaEncontrada, 3))
+
       setConsultaCargada(consultaEncontrada)
       setMostrarResumenConsulta(true)
       setModoCargarConsulta(false)

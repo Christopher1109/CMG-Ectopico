@@ -758,6 +758,332 @@ export default function CalculadoraEctopico() {
     setMostrarPantallaBienvenida(false)
     setSeccionActual(5)
   }
+/* =========================================================================
+   CMG-Ectópico — FIX COMPLETO DE FLUJO
+   - Backend primero (evita caché obsoleta)
+   - Re-fetch tras PATCH/POST (actualiza estado + localStorage)
+   - Uso de "consulta ANTERIOR real" (hCG y postprob) para C2/C3
+   - Normaliza respuesta (plano o {data})
+   Coloca este archivo como lib/consulta-flow-fix.ts o reemplaza el del PDF.
+   ========================================================================== */
+
+/** ===================== Utils generales ===================== **/
+
+function normalizaFolio(folioOrId: string | number): number {
+  if (typeof folioOrId === "string") {
+    const limpio = folioOrId.replace(/^ID-0*/, "");
+    const n = Number.parseInt(limpio, 10);
+    if (Number.isNaN(n)) throw new Error(`ID inválido: ${folioOrId}`);
+    return n;
+  }
+  return folioOrId;
+}
+
+async function fetchJson<T = any>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, init);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
+  return json as T;
+}
+
+function setLocal(key: string, val: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+function getLocal<T = any>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch { return null; }
+}
+
+/** ===================== API de consultas (REST del proyecto) ===================== **/
+
+/** GET detalle completo por folio (tabla base `consultas`) */
+export async function obtenerConsultaBackend(folioOrId: string | number) {
+  const folio = normalizaFolio(folioOrId);
+  // Ajusta la ruta si tu API es distinta
+  return fetchJson(`/api/consultas/${folio}`);
+}
+
+/** GET SOLO la consulta ANTERIOR (última visita) desde `consultas_visitas` */
+export async function obtenerConsultaAnteriorBackend(folioOrId: string | number) {
+  const folio = normalizaFolio(folioOrId);
+  return fetchJson<{
+    visit_number: number;     // 1,2,3
+    visit_date: string;
+    hcg: number | null;
+    postprob: number | null;  // 0..1
+    sintomas?: string | null;
+    factores?: string | null;
+    tvus?: string | null;
+  }>(`/api/consultas/${folio}?scope=previous`);
+}
+
+/** PATCH update parcial de visita 2 o 3 en tabla `consultas` */
+export async function patchVisita(
+  folioOrId: string | number,
+  visitaNo: 2 | 3,
+  patch: Record<string, any>
+) {
+  const folio = normalizaFolio(folioOrId);
+  return fetchJson(`/api/consultas/${folio}?visita=${visitaNo}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+}
+
+/** ===================== Cache y lectura consistente ===================== **/
+
+/**
+ * Lee SIEMPRE del backend (y luego sobreescribe localStorage).
+ * Solo si el backend falla, usa el cache local como respaldo.
+ */
+export async function leerDatosDesdeBackend(folioOrId: string | number) {
+  const folio = normalizaFolio(folioOrId);
+  const cacheKey = `ectopico_folio_${folio}`;
+
+  try {
+    const res = await obtenerConsultaBackend(folio);
+    const payload = (res as any)?.data ?? res; // soporta plano o {data}
+    if (!payload || payload.error) throw new Error(payload?.error || "sin datos");
+
+    setLocal(cacheKey, payload);
+    return payload;
+  } catch {
+    const cached = getLocal(cacheKey);
+    return cached ?? null;
+  }
+}
+
+/**
+ * Busca consulta por folio: backend primero; si falla, intenta cache.
+ * Actualiza el cache al éxito.
+ */
+export async function buscarConsulta(folioOrId: string | number) {
+  const folio = normalizaFolio(folioOrId);
+  const cacheKey = `ectopico_folio_${folio}`;
+
+  // 1) Backend primero
+  const payload = await leerDatosDesdeBackend(folio);
+  if (payload) return payload;
+
+  // 2) (Respaldo) cache local
+  const cached = getLocal(cacheKey);
+  return cached ?? null;
+}
+
+/** ===================== Guardado y re-sincronización de UI ===================== **/
+
+/**
+ * Actualiza visita 2 o 3 y luego re-lee del backend para mantener UI y cache sincronizados.
+ * - visitaNo: 2 | 3
+ * - patch: columnas permitidas (ver endpoint)
+ * - onRefresh: callback opcional para setear estado en tu UI (ej. setConsultaCargada)
+ */
+export async function actualizarDatosEnBackend(params: {
+  folioOrId: string | number;
+  visitaNo: 2 | 3;
+  patch: Record<string, any>;
+  onRefresh?: (fresh: any) => void;
+}) {
+  const { folioOrId, visitaNo, patch, onRefresh } = params;
+  const folio = normalizaFolio(folioOrId);
+  const cacheKey = `ectopico_folio_${folio}`;
+
+  // 1) PATCH parcial (no toca otras columnas)
+  await patchVisita(folio, visitaNo, patch);
+
+  // 2) Re-fetch “detalle base” (no previous) para sincronizar todo
+  const refreshed = await obtenerConsultaBackend(folio);
+  const freshData = (refreshed as any)?.data ?? refreshed;
+
+  if (freshData) {
+    setLocal(cacheKey, freshData);
+    if (onRefresh) onRefresh(freshData);
+  }
+
+  return true;
+}
+
+/** ===================== Cálculo: wrapper que SIEMPRE usa la consulta anterior ===================== **/
+
+/* Tu API actual de cálculo se conserva tal cual: */
+interface CalculoRiesgoRequest {
+  sintomas?: string[];
+  factoresRiesgo?: string[];
+  tvus?: string;
+  hcgValor?: string;
+  hcgAnterior?: string;
+  hcgValorVisita1?: string;
+  esConsultaSeguimiento?: boolean;
+  numeroConsultaActual?: 1 | 2 | 3;
+  resultadoV1b?: number;
+  resultadoV2c?: number;
+  edadPaciente?: string | number;
+  frecuenciaCardiaca?: string | number;
+  presionSistolica?: string | number;
+  presionDiastolica?: string | number;
+  estadoConciencia?: string;
+  pruebaEmbarazoRealizada?: string;
+  resultadoPruebaEmbarazo?: string;
+  tieneEcoTransabdominal?: string;
+  resultadoEcoTransabdominal?: string;
+}
+interface CalculoRiesgoResponse {
+  resultado?: number;
+  porcentaje?: string;
+  mensaje?: string;
+  tipoResultado?: "alto" | "bajo" | "intermedio";
+  variacionHcg?: string;
+  detalles?: any;
+  calculadoPor?: string;
+  error?: string;
+}
+
+export async function calcularRiesgo(datos: CalculoRiesgoRequest): Promise<CalculoRiesgoResponse> {
+  const token = localStorage.getItem("cmg_token");
+  const res = await fetch("/api/calculos/riesgo", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify(datos),
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    return { error: e?.error || "Error en la solicitud" };
+  }
+  return res.json();
+}
+
+/**
+ * Wrapper: trae la ÚLTIMA visita del backend y llama a /api/calculos/riesgo
+ * inyectando hcgAnterior y número de consulta actual.
+ */
+export async function calcularRiesgoUsandoAnterior(
+  folioOrId: string | number,
+  datosBase: Omit<CalculoRiesgoRequest, "hcgAnterior" | "esConsultaSeguimiento" | "numeroConsultaActual">
+): Promise<CalculoRiesgoResponse> {
+  const prev = await obtenerConsultaAnteriorBackend(folioOrId).catch(() => null);
+  if (!prev || (prev as any)?.error) {
+    return { error: "No existe consulta previa para continuar." };
+  }
+
+  const numeroConsultaActual =
+    typeof prev.visit_number === "number"
+      ? (Math.min(prev.visit_number + 1, 3) as 1 | 2 | 3)
+      : 2;
+
+  const payload: CalculoRiesgoRequest = {
+    ...datosBase,
+    hcgAnterior: String(prev.hcg ?? ""),          // ΔhCG SIEMPRE contra la ANTERIOR real
+    esConsultaSeguimiento: true,
+    numeroConsultaActual,
+    // Si tu backend usa postPrevio para ajustar pretest, le pasamos prev.postprob:
+    resultadoV1b: prev.postprob ?? undefined,
+    resultadoV2c: prev.postprob ?? undefined,
+  };
+
+  return calcularRiesgo(payload);
+}
+
+/** ===================== Flujo de “Continuar consulta” en UI ===================== **/
+
+/**
+ * Cargar SOLO la consulta anterior para mostrarla en la UI (bloque único)
+ */
+export async function cargarConsultaAnteriorParaUI(folioOrId: string | number) {
+  const prev = await obtenerConsultaAnteriorBackend(folioOrId);
+  if (!prev || (prev as any)?.error) throw new Error("No existe consulta previa para continuar.");
+  return prev;
+}
+
+/**
+ * Continuar consulta (ej. C2→C3): obtiene la ANTERIOR real, fija next y hCG base.
+ * - onSetNumeroConsultaActual: setea 2 o 3 en tu formulario
+ * - onSetHcgAnterior: setea el input/estado de hCG anterior
+ * - onSetResumenAnterior: te pasa el objeto 'prev' para renderizar “Consulta anterior”
+ */
+export async function prepararContinuacionConsulta(params: {
+  folioOrId: string | number;
+  onSetNumeroConsultaActual: (n: 2 | 3) => void;
+  onSetHcgAnterior: (h: string) => void;
+  onSetResumenAnterior?: (prev: any) => void;
+}) {
+  const { folioOrId, onSetNumeroConsultaActual, onSetHcgAnterior, onSetResumenAnterior } = params;
+  const prev = await obtenerConsultaAnteriorBackend(folioOrId);
+  if (!prev || (prev as any)?.error) throw new Error("No existe consulta previa para continuar.");
+
+  const next = Math.min((prev.visit_number ?? 1) + 1, 3) as 2 | 3;
+  onSetNumeroConsultaActual(next);
+  onSetHcgAnterior(String(prev.hcg ?? ""));
+
+  if (onSetResumenAnterior) onSetResumenAnterior(prev);
+}
+
+/**
+ * Guardar seguimiento (C2/C3):
+ * - Calcula usando la ANTERIOR real
+ * - Hace PATCH
+ * - Relee detalle base y refresca cache/estado con onRefresh
+ */
+export async function guardarSeguimiento(params: {
+  folioOrId: string | number;
+  datosFormulario: {
+    sintomas?: string[];
+    factoresRiesgo?: string[];
+    tvus?: string;
+    hcgValor?: string; // valor actual
+    // ...otros campos que tu backend use en /api/calculos/riesgo
+  };
+  visitaNo: 2 | 3;
+  // Callback para refrescar estado de UI con el “detalle base” actualizado
+  onRefresh?: (fresh: any) => void;
+}) {
+  const { folioOrId, datosFormulario, visitaNo, onRefresh } = params;
+
+  // 1) Calcular usando ANTERIOR real (inyecta hcgAnterior y ajusta pretest)
+  const calc = await calcularRiesgoUsandoAnterior(folioOrId, datosFormulario);
+  if (calc.error) throw new Error(calc.error);
+
+  // 2) Armar patch permitido para visita 2 o 3
+  const decision =
+    (calc.resultado ?? 0) >= 0.95 ? "confirmar" :
+    (calc.resultado ?? 0) < 0.01 ? "descartar" : "seguir";
+
+  const patch: Record<string, any> = visitaNo === 2
+    ? {
+        "Sintomas_2": (datosFormulario.sintomas ?? []).join(", "),
+        "Factores_2": (datosFormulario.factoresRiesgo ?? []).join(", "),
+        "TVUS_2": datosFormulario.tvus,
+        "hCG_2": Number(datosFormulario.hcgValor ?? "0"),
+        "Pronostico_2": decision,
+        "PostProb_2": calc.resultado,
+        // Variacion_hCG_2 la puede poner el trigger si tienes el SQL activado
+      }
+    : {
+        "Sintomas_3": (datosFormulario.sintomas ?? []).join(", "),
+        "Factores_3": (datosFormulario.factoresRiesgo ?? []).join(", "),
+        "TVUS_3": datosFormulario.tvus,
+        "hCG_3": Number(datosFormulario.hcgValor ?? "0"),
+        "Pronostico_3": decision,
+        "PostProb_3": calc.resultado,
+      };
+
+  // 3) PATCH y luego RE-FETCH para sincronizar UI + cache
+  await actualizarDatosEnBackend({
+    folioOrId,
+    visitaNo,
+    patch,
+    onRefresh, // si se provee, actualiza el estado de tu componente
+  });
+
+  return { ok: true, ...calc };
+}
+
+/* ===================== FIN DEL MÓDULO ===================== */
 
   // === BÚSQUEDA: usa SIEMPRE el backend ===
   const buscarConsulta = async () => {

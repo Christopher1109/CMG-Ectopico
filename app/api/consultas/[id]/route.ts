@@ -40,7 +40,10 @@ export async function GET(_req: Request, { params }: Params) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 })
     }
 
-    console.log("[v0 API] GET /api/consultas/[id] - Buscando consulta:", { idNum })
+    const { searchParams } = new URL(_req.url)
+    const scope = searchParams.get("scope")
+
+    console.log("[v0 API] GET /api/consultas/[id] - Buscando consulta:", { idNum, scope })
 
     // Buscar por folio primero, luego por id si no se encuentra
     let data = null
@@ -78,6 +81,42 @@ export async function GET(_req: Request, { params }: Params) {
     if (error || !data) {
       console.log("[v0 API] No se encontró consulta:", { error: error?.message })
       return NextResponse.json({ error: error?.message || "Consulta no encontrada" }, { status: 404 })
+    }
+
+    if (scope === "previous") {
+      // Determine which is the last completed visit
+      let lastVisit = 1
+      let lastVisitData: any = {
+        visit_number: 1,
+        tvus: data.TVUS_1,
+        hcg: asNumOrNull(data.hCG_1),
+        resultado: parsePctToProb(data.Pronostico_1),
+      }
+
+      if (data.TVUS_2 || data.hCG_2 || data.Pronostico_2) {
+        lastVisit = 2
+        lastVisitData = {
+          visit_number: 2,
+          tvus: data.TVUS_2,
+          hcg: asNumOrNull(data.hCG_2),
+          resultado: parsePctToProb(data.Pronostico_2),
+          variacion_hcg: data.Variacion_hCG_2,
+        }
+      }
+
+      if (data.TVUS_3 || data.hCG_3 || data.Pronostico_3) {
+        lastVisit = 3
+        lastVisitData = {
+          visit_number: 3,
+          tvus: data.TVUS_3,
+          hcg: asNumOrNull(data.hCG_3),
+          resultado: parsePctToProb(data.Pronostico_3),
+          variacion_hcg: data.Variacion_hCG_3,
+        }
+      }
+
+      console.log("[v0 API] Returning previous visit:", lastVisitData)
+      return NextResponse.json(lastVisitData)
     }
 
     // Normaliza campos hacia el formato que usa tu frontend

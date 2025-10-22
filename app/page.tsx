@@ -87,11 +87,16 @@ async function actualizarDatosEnBackend(folioOrId: string, visitaNo: 2 | 3, dato
       variacion_hcg: datos.variacionHcg || null,
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
     }
+
+    console.log(`📤 Actualizando consulta ${visitaNo}:`, patch)
+
     const res = await actualizarConsulta(folioOrId, visitaNo, patch)
     if (res?.error) {
       console.error("API PATCH /api/consultas error:", res.error)
       return false
     }
+
+    console.log("✅ Consulta actualizada exitosamente")
     return true
   } catch (e) {
     console.error("Error llamando PATCH /api/consultas:", e)
@@ -103,6 +108,8 @@ async function leerDatosDesdeBackend(folioOrId: string): Promise<any | null> {
   try {
     const res = await obtenerConsulta(folioOrId)
     if (res?.error) return null
+
+    console.log("📥 Datos cargados desde backend:", res?.data)
     return res?.data ?? null
   } catch (e) {
     console.error("Error llamando GET /api/consultas/:id:", e)
@@ -152,6 +159,28 @@ function normalizarDesdeLocal(d: any) {
     resultado_3: d.resultado_3 ?? null,
     resultado: d.resultado ?? null,
   }
+}
+
+// Función para verificar si existe una consulta específica
+function existeConsulta(consulta: any, numero: 1 | 2 | 3): boolean {
+  if (numero === 1) {
+    return !!(consulta.tvus || consulta.hcg_valor || consulta.resultado)
+  } else if (numero === 2) {
+    return !!(
+      consulta.tvus_2 ||
+      consulta.hcg_valor_2 ||
+      consulta.resultado_2 ||
+      (consulta.sintomas_seleccionados_2 && consulta.sintomas_seleccionados_2.length > 0)
+    )
+  } else if (numero === 3) {
+    return !!(
+      consulta.tvus_3 ||
+      consulta.hcg_valor_3 ||
+      consulta.resultado_3 ||
+      (consulta.sintomas_seleccionados_3 && consulta.sintomas_seleccionados_3.length > 0)
+    )
+  }
+  return false
 }
 
 // ==================== COMPONENTE PRINCIPAL ====================
@@ -292,15 +321,14 @@ export default function CalculadoraEctopico() {
     try {
       const respuesta = await calcularRiesgo({
         edadPaciente: edadPaciente,
-        tvus: "normal", // valor dummy para pasar validación
-        hcgValor: "1000", // valor dummy para pasar validación
+        tvus: "normal",
+        hcgValor: "1000",
       })
 
       if (respuesta.error) {
         throw new Error(respuesta.error)
       }
 
-      // El backend maneja toda la lógica de validación
       return true
     } catch (error) {
       setMensajeFinal(
@@ -416,7 +444,6 @@ export default function CalculadoraEctopico() {
     }
 
     try {
-      // ✅ TODA la lógica está en el backend
       const respuesta = await clienteSeguro.calcularRiesgo({
         sintomasSeleccionados: sintomasSeleccionados,
         factoresSeleccionados: factoresSeleccionados,
@@ -444,7 +471,6 @@ export default function CalculadoraEctopico() {
         return
       }
 
-      // Usar el resultado del backend
       const probPost = respuesta.resultado!
       setResultado(probPost)
       if (respuesta.variacionHcg) {
@@ -495,20 +521,18 @@ export default function CalculadoraEctopico() {
             )
           }
         } else {
-          const tieneC2 =
-            consultaCargada &&
-            (consultaCargada.tvus_2 ||
-              consultaCargada.hcg_valor_2 ||
-              consultaCargada.resultado_2 ||
-              consultaCargada.sintomas_seleccionados_2?.length > 0)
-          const tieneC3 =
-            consultaCargada &&
-            (consultaCargada.tvus_3 ||
-              consultaCargada.hcg_valor_3 ||
-              consultaCargada.resultado_3 ||
-              consultaCargada.sintomas_seleccionados_3?.length > 0)
+          console.log("🔍 Evaluando qué consulta actualizar...")
+          console.log("Consulta cargada:", consultaCargada)
+
+          const tieneC2 = existeConsulta(consultaCargada, 2)
+          const tieneC3 = existeConsulta(consultaCargada, 3)
+
+          console.log("¿Tiene consulta 2?:", tieneC2)
+          console.log("¿Tiene consulta 3?:", tieneC3)
 
           const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
+          console.log(`📝 Guardando como consulta ${visitaNo}`)
+
           const ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
           result.success = ok
         }
@@ -520,7 +544,6 @@ export default function CalculadoraEctopico() {
         alert("Advertencia: Falló la sincronización con la base de datos.")
       }
 
-      // Usar tipoResultado del backend para determinar el flujo
       if (respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo") {
         setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
         setProtocoloFinalizado(true)
@@ -543,8 +566,11 @@ export default function CalculadoraEctopico() {
   }
 
   const continuarConsultaCargada = async () => {
+    console.log("🔄 Continuando consulta cargada:", consultaCargada)
+
     setIdSeguimiento(consultaCargada.id_publico || consultaCargada.folio?.toString() || consultaCargada.id?.toString())
-    // Mantener datos del paciente (NO cambiar)
+
+    // Mantener datos del paciente
     setNombrePaciente(consultaCargada.nombre_paciente || "")
     setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
     setFrecuenciaCardiaca(consultaCargada.frecuencia_cardiaca?.toString() || "")
@@ -557,13 +583,12 @@ export default function CalculadoraEctopico() {
     setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
     setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
 
-    // LIMPIAR campos para nueva consulta
+    // Limpiar campos para nueva consulta
     setSintomasSeleccionados([])
-
-    // Mantener factores de riesgo
     setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
-
     setTvus("")
+
+    // Determinar último hCG
     let ultimoHcg = consultaCargada.hcg_valor
     if (consultaCargada.hcg_valor_2) ultimoHcg = consultaCargada.hcg_valor_2
     if (consultaCargada.hcg_valor_3) ultimoHcg = consultaCargada.hcg_valor_3
@@ -571,17 +596,23 @@ export default function CalculadoraEctopico() {
     setHcgValor("")
     setEsConsultaSeguimiento(true)
 
-    // Determinar número de consulta
-    const tieneC2 = consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2
-    const tieneC3 = consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3
+    // Determinar número de consulta usando la nueva función
+    const tieneC2 = existeConsulta(consultaCargada, 2)
+    const tieneC3 = existeConsulta(consultaCargada, 3)
+
+    console.log("🔍 Análisis de consultas existentes:")
+    console.log("Tiene consulta 2:", tieneC2)
+    console.log("Tiene consulta 3:", tieneC3)
 
     if (tieneC3) {
       alert("Esta consulta ya tiene 3 evaluaciones completadas.")
       setMostrarResumenConsulta(true)
       return
     } else if (tieneC2) {
+      console.log("➡️ Será consulta 3")
       setNumeroConsultaActual(3)
     } else {
+      console.log("➡️ Será consulta 2")
       setNumeroConsultaActual(2)
     }
 
@@ -602,7 +633,6 @@ export default function CalculadoraEctopico() {
 
     let consultaEncontrada: any = null
 
-    // Cache local usando folio
     const folioNumerico = Number.parseInt(id.replace(/^ID-0*/, ""), 10)
     const datosLocal = localStorage.getItem(`ectopico_folio_${folioNumerico}`)
     if (datosLocal) {
@@ -613,12 +643,11 @@ export default function CalculadoraEctopico() {
       }
     }
 
-    // Backend
     if (!consultaEncontrada) {
       try {
         const res = await leerDatosDesdeBackend(folioNumerico)
         if (res) {
-          consultaEncontrada = res // ya viene normalizado desde el endpoint
+          consultaEncontrada = res
           localStorage.setItem(`ectopico_folio_${res.folio}`, JSON.stringify(consultaEncontrada))
         }
       } catch (error) {
@@ -627,6 +656,7 @@ export default function CalculadoraEctopico() {
     }
 
     if (consultaEncontrada) {
+      console.log("✅ Consulta encontrada y cargada:", consultaEncontrada)
       setConsultaCargada(consultaEncontrada)
       setMostrarResumenConsulta(true)
       setModoCargarConsulta(false)
@@ -784,7 +814,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
     }
   }
 
-  // ✅ LOGIN SEGURO - Solo via backend
+  // ✅ LOGIN SEGURO
   const manejarLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorLogin("")
@@ -1239,7 +1269,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                 </div>
 
                 {/* Consulta 1 - Siempre se muestra si existe */}
-                {(consultaCargada.tvus || consultaCargada.hcg_valor || consultaCargada.resultado) && (
+                {existeConsulta(consultaCargada, 1) && (
                   <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
                     <div className="flex items-center space-x-3 mb-4">
                       <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-lg">
@@ -1295,7 +1325,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                 )}
 
                 {/* Consulta 2 - Solo se muestra si existe */}
-                {(consultaCargada.tvus_2 || consultaCargada.hcg_valor_2 || consultaCargada.resultado_2) && (
+                {existeConsulta(consultaCargada, 2) && (
                   <div className="bg-white p-6 rounded-xl shadow-sm border border-amber-100">
                     <div className="flex items-center space-x-3 mb-4">
                       <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full shadow-lg">
@@ -1359,7 +1389,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                 )}
 
                 {/* Consulta 3 - Solo se muestra si existe */}
-                {(consultaCargada.tvus_3 || consultaCargada.hcg_valor_3 || consultaCargada.resultado_3) && (
+                {existeConsulta(consultaCargada, 3) && (
                   <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100">
                     <div className="flex items-center space-x-3 mb-4">
                       <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full shadow-lg">
@@ -1428,9 +1458,10 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     <Button
                       onClick={continuarConsultaCargada}
                       className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-2 px-6 shadow-sm"
+                      disabled={existeConsulta(consultaCargada, 3)}
                     >
                       <ArrowRight className="h-4 w-4 mr-2" />
-                      Continuar Consulta
+                      {existeConsulta(consultaCargada, 3) ? "Consulta Completada" : "Continuar Consulta"}
                     </Button>
                     <Button
                       onClick={() => {

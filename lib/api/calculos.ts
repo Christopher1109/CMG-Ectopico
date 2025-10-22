@@ -1,105 +1,152 @@
-// ✅ API limpia - SIN lógica de cálculo expuesta
-interface CalculoRiesgoRequest {
-  sintomas?: string[]
-  factoresRiesgo?: string[]
-  tvus?: string
-  hcgValor?: string
-  hcgAnterior?: string
-  hcgValorVisita1?: string
-  esConsultaSeguimiento?: boolean
-  numeroConsultaActual?: 1 | 2 | 3
-  resultadoV1b?: number
-  resultadoV2c?: number
-  // Datos para validaciones
-  edadPaciente?: string | number
-  frecuenciaCardiaca?: string | number
-  presionSistolica?: string | number
-  presionDiastolica?: string | number
-  estadoConciencia?: string
-  pruebaEmbarazoRealizada?: string
-  resultadoPruebaEmbarazo?: string
-  tieneEcoTransabdominal?: string
-  resultadoEcoTransabdominal?: string
+// app/api/consultas/[id]/route.ts
+import { NextResponse } from "next/server";
+// ⬇️ AJUSTA esta importación a tu helper real de Supabase (admin server-side)
+import { createClient } from "@/lib/supabaseAdmin";
+
+/**
+ * Normaliza el id: acepta "ID-000123" o "123" y lo convierte en número.
+ * Se usa como FOLIO visible (no el id interno).
+ */
+function normalizaFolio(raw: string): number {
+  const limpio = raw.replace(/^ID-0*/, "");
+  const n = Number.parseInt(limpio, 10);
+  if (Number.isNaN(n)) {
+    throw new Error(`Folio inválido: ${raw}`);
+  }
+  return n;
 }
 
-interface CalculoRiesgoResponse {
-  resultado?: number
-  porcentaje?: string
-  mensaje?: string
-  tipoResultado?: "alto" | "bajo" | "intermedio"
-  variacionHcg?: string
-  detalles?: any
-  calculadoPor?: string
-  error?: string
-}
-
-export async function calcularRiesgo(datos: CalculoRiesgoRequest): Promise<CalculoRiesgoResponse> {
+/**
+ * GET /api/consultas/:id
+ * - ?scope=previous -> trae solo la consulta anterior (última visita) desde la vista consultas_visitas
+ * - (sin scope)     -> trae el registro completo de la tabla consultas por folio
+ */
+export async function GET(req: Request, ctx: { params: { id: string } }) {
   try {
-    const token = localStorage.getItem("cmg_token")
+    const supabase = createClient();
+    const url = new URL(req.url);
+    const scope = url.searchParams.get("scope");
+    const folio = normalizaFolio(ctx.params.id);
 
-    const response = await fetch("/api/calculos/riesgo", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: JSON.stringify(datos),
-    })
+    if (scope === "previous") {
+      const { data, error } = await supabase
+        .from("consultas_visitas")
+        .select("visit_number, visit_date, hcg, postprob, sintomas, factores, tvus")
+        .eq("folio", folio)
+        .order("visit_number", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (!response.ok) {
-      const errorData = await response.json()
-      return { error: errorData.error || "Error en la solicitud" }
+      if (error) throw error;
+      if (!data) {
+        return NextResponse.json(
+          { error: "No existe consulta previa para continuar." },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(data);
     }
 
-    return await response.json()
-  } catch (error) {
-    console.error("Error en calcularRiesgo:", error)
-    return { error: "Error de conexión" }
+    // Sin scope: devolver registro completo por folio
+    const { data, error } = await supabase
+      .from("consultas")
+      .select("*")
+      .eq("folio", folio)
+      .single();
+
+    if (error) throw error;
+    if (!data) {
+      return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    }
+    return NextResponse.json(data);
+  } catch (e: any) {
+    return NextResponse.json(
+      { error: e?.message ?? "Error al obtener consulta" },
+      { status: 500 }
+    );
   }
 }
 
-export async function validarEmbarazo(datos: { pruebaEmbarazoRealizada: string; resultadoPruebaEmbarazo: string }) {
+/**
+ * PATCH /api/consultas/:id?visita=2|3
+ * Update PARCIAL de columnas de la visita 2 o 3.
+ * - Solo se permiten campos específicos por visita (whitelist).
+ * - Si no viene fecha, se auto-asigna ahora.
+ */
+export async function PATCH(req: Request, ctx: { params: { id: string } }) {
   try {
-    const token = localStorage.getItem("cmg_token")
+    const supabase = createClient();
+    const url = new URL(req.url);
+    const visita = url.searchParams.get("visita");
+    const folio = normalizaFolio(ctx.params.id);
+    const patch = (await req.json()) ?? {};
 
-    const response = await fetch("/api/validaciones/embarazo", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: JSON.stringify(datos),
-    })
-
-    if (!response.ok) {
-      throw new Error("Error en validación")
+    if (visita !== "2" && visita !== "3") {
+      return NextResponse.json(
+        { error: "Parámetro 'visita' inválido. Usa 2 o 3." },
+        { status: 400 }
+      );
     }
 
-    return await response.json()
-  } catch (error) {
-    throw new Error("No se pudo validar la prueba de embarazo")
+    // Whitelists por visita para evitar sobrescribir columnas ajenas
+    const allowV2 = new Set([
+      "Sintomas_2",
+      "Factores_2",
+      "TVUS_2",
+      "hCG_2",
+      "Variacion_hCG_2",
+      "Pronostico_2",
+      "PostProb_2",
+      "Consulta_2_Date",
+    ]);
+    const allowV3 = new Set([
+      "Sintomas_3",
+      "Factores_3",
+      "TVUS_3",
+      "hCG_3",
+      "Variacion_hCG_3",
+      "Pronostico_3",
+      "PostProb_3",
+      "Consulta_3_Date",
+    ]);
+
+    const allowed = visita === "2" ? allowV2 : allowV3;
+    const updateBody: Record<string, any> = {};
+    for (const [k, v] of Object.entries(patch)) {
+      if (allowed.has(k)) updateBody[k] = v;
+    }
+
+    // Autocompletar fecha si no se envió
+    const dateKey = visita === "2" ? "Consulta_2_Date" : "Consulta_3_Date";
+    if (!updateBody[dateKey]) {
+      updateBody[dateKey] = new Date().toISOString();
+    }
+
+    if (Object.keys(updateBody).length === 0) {
+      return NextResponse.json(
+        { error: "Nada que actualizar" },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("consultas")
+      .update(updateBody)
+      .eq("folio", folio)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json({ ok: true, data });
+  } catch (e: any) {
+    return NextResponse.json(
+      { error: e?.message ?? "Error al actualizar consulta" },
+      { status: 500 }
+    );
   }
 }
 
-export async function validarEcografia(datos: { tieneEcoTransabdominal: string; resultadoEcoTransabdominal: string }) {
-  try {
-    const token = localStorage.getItem("cmg_token")
+/**
+ * (Opcional: si más adelante necesitas soportar DELETE o PUT, agrégalo aquí)
+ */
 
-    const response = await fetch("/api/validaciones/ecografia", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: JSON.stringify(datos),
-    })
-
-    if (!response.ok) {
-      throw new Error("Error en validación")
-    }
-
-    return await response.json()
-  } catch (error) {
-    throw new Error("No se pudo validar la ecografía")
-  }
-}

@@ -2362,6 +2362,61 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <h3 className="text-2xl font-bold text-gray-800">Ecografía Transvaginal (TVUS)</h3>
                     </div>
 
+                    {!tieneTVUS && (
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                          ¿Cuenta con una Ecografía Transvaginal (TVUS)?
+                          <span className="text-xs text-gray-600 block font-normal mt-1">* Campo requerido</span>
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                            <div className="relative">
+                              <input
+                                type="radio"
+                                name="tieneTVUS"
+                                value="si"
+                                checked={tieneTVUS === "si"}
+                                onChange={(e) => setTieneTVUS(e.target.value)}
+                                className="sr-only"
+                              />
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                  tieneTVUS === "si"
+                                    ? "bg-blue-600 border-blue-600"
+                                    : "border-gray-300 hover:border-blue-400"
+                                }`}
+                              >
+                                {tieneTVUS === "si" && <div className="w-2 h-2 bg-white rounded-full" />}
+                              </div>
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">Sí, tengo TVUS</span>
+                          </label>
+                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                            <div className="relative">
+                              <input
+                                type="radio"
+                                name="tieneTVUS"
+                                value="no"
+                                checked={tieneTVUS === "no"}
+                                onChange={(e) => setTieneTVUS(e.target.value)}
+                                className="sr-only"
+                              />
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                  tieneTVUS === "no"
+                                    ? "bg-blue-600 border-blue-600"
+                                    : "border-gray-300 hover:border-blue-400"
+                                }`}
+                              >
+                                {tieneTVUS === "no" && <div className="w-2 h-2 bg-white rounded-full" />}
+                              </div>
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">No, no tengo TVUS</span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Show blocking alert if no TVUS */}
                     {tieneTVUS === "no" && (
                       <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">

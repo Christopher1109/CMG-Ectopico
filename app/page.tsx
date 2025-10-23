@@ -289,6 +289,7 @@ export default function CalculadoraEctopico() {
   const [seccionActual, setSeccionActual] = useState(1)
   const [seccionesCompletadas, setSeccionesCompletadas] = useState<number[]>([])
   const [mostrarPantallaBienvenida, setMostrarPantallaBienvenida] = useState(true)
+  const [errorSeccion, setErrorSeccion] = useState("")
 
   // Consultas
   const [sintomasSeleccionados, setSintomasSeleccionados] = useState<string[]>([])
@@ -899,6 +900,7 @@ export default function CalculadoraEctopico() {
   const volverAInicio = () => resetCalculadora()
 
   const completarSeccion = (seccion: number) => {
+    setErrorSeccion("")
     if (!seccionesCompletadas.includes(seccion)) {
       setSeccionesCompletadas([...seccionesCompletadas, seccion])
     }
@@ -1890,9 +1892,18 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         />
                       </div>
                     </div>
+                    {errorSeccion && (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    )}
                     <div className="flex justify-end">
                       <Button
                         onClick={async () => {
+                          if (!nombrePaciente || !edadPaciente) {
+                            setErrorSeccion("Por favor, complete todos los campos requeridos.")
+                            return
+                          }
                           if (await validarEdadPaciente()) completarSeccion(1)
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
@@ -1983,16 +1994,22 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
                     </div>
 
+                    {errorSeccion && (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    )}
+
                     <div className="flex justify-between">
-                      <Button
-                        onClick={() => setSeccionActual(1)}
-                        variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                      >
+                      <Button onClick={() => setSeccionActual(1)} variant="outline">
                         Anterior
                       </Button>
                       <Button
                         onClick={async () => {
+                          if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
+                            setErrorSeccion("Por favor, complete todos los campos de signos vitales.")
+                            return
+                          }
                           if (await validarSignosVitales()) completarSeccion(2)
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
@@ -2098,17 +2115,27 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
                     )}
 
+                    {errorSeccion && (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    )}
+
                     <div className="flex justify-between">
-                      <Button
-                        onClick={() => setSeccionActual(2)}
-                        variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                      >
+                      <Button onClick={() => setSeccionActual(2)} variant="outline">
                         Anterior
                       </Button>
                       <div className="text-center">
                         <Button
                           onClick={async () => {
+                            if (!pruebaEmbarazoRealizada) {
+                              setErrorSeccion("Por favor, seleccione si tiene prueba de embarazo.")
+                              return
+                            }
+                            if (pruebaEmbarazoRealizada === "si" && !resultadoPruebaEmbarazo) {
+                              setErrorSeccion("Por favor, seleccione el resultado de la prueba de embarazo.")
+                              return
+                            }
                             if (pruebaEmbarazoRealizada === "no") {
                               setMostrarAlerta(true)
                               setMensajeAlerta(
@@ -2134,7 +2161,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         </Button>
                       </div>
                     </div>
-
                     <CMGFooter />
                   </div>
                 )}
@@ -2218,17 +2244,27 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       )}
                     </div>
 
+                    {errorSeccion && (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    )}
+
                     <div className="flex justify-between">
-                      <Button
-                        onClick={() => setSeccionActual(3)}
-                        variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                      >
+                      <Button onClick={() => setSeccionActual(3)} variant="outline">
                         Anterior
                       </Button>
                       <div className="text-center">
                         <Button
                           onClick={async () => {
+                            if (!tieneEcoTransabdominal) {
+                              setErrorSeccion("Por favor, seleccione si tiene ecografía transabdominal.")
+                              return
+                            }
+                            if (tieneEcoTransabdominal === "si" && !resultadoEcoTransabdominal) {
+                              setErrorSeccion("Por favor, seleccione el resultado de la ecografía.")
+                              return
+                            }
                             if (await validarEcoTransabdominal()) completarSeccion(4)
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
@@ -2242,7 +2278,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                 )}
 
                 {seccionActual === 5 && (
-                  <div className="space-y-8">
+                  <div className="space-y-6">
                     <div className="flex items-center space-x-3 mb-6">
                       <div className="bg-blue-100 p-3 rounded-full">
                         <AlertTriangle className="h-6 w-6 text-blue-600" />
@@ -2344,15 +2380,30 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </p>
                     </div>
 
+                    {errorSeccion && (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    )}
+
                     <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
-                      <Button
-                        onClick={() => setSeccionActual(4)}
-                        variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                      >
+                      <Button onClick={() => setSeccionActual(4)} variant="outline">
                         Anterior
                       </Button>
-                      <Button onClick={() => completarSeccion(5)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Button
+                        onClick={() => {
+                          if (sintomasSeleccionados.length === 0) {
+                            setErrorSeccion("Por favor, seleccione al menos un síntoma presente.")
+                            return
+                          }
+                          if (factoresSeleccionados.length === 0) {
+                            setErrorSeccion("Por favor, seleccione al menos un factor de riesgo.")
+                            return
+                          }
+                          completarSeccion(5)
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                      >
                         Continuar
                       </Button>
                     </div>
@@ -2412,7 +2463,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             { value: "masa_anexial", label: "Masa anexial" },
                             { value: "saco_vacio", label: "Saco vacío" },
                             { value: "embarazo_viable", label: "Embarazo viable" },
-                            { value: "normal", label: "Normal" },
+                            // Removed 'normal' as per previous logic, if it needs to be there, it was removed accidentally
                           ].map((opcion) => (
                             <label
                               key={opcion.value}
@@ -2433,6 +2484,12 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
                     )}
 
+                    {errorSeccion && (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    )}
+
                     <div className="flex justify-between">
                       <Button
                         onClick={() => setSeccionActual(5)}
@@ -2443,6 +2500,10 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </Button>
                       <Button
                         onClick={async () => {
+                          if (!tieneTVUS) {
+                            setErrorSeccion("Por favor, seleccione si tiene ecografía transvaginal.")
+                            return
+                          }
                           if (tieneTVUS === "no") {
                             await guardarDatosIncompletos("tvus_no_realizada", 6)
                             setMensajeFinal(
@@ -2453,8 +2514,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             )
                             setProtocoloFinalizado(true)
                           } else if (tieneTVUS === "si" && !tvus) {
-                            setMostrarAlerta(true)
-                            setMensajeAlerta("Por favor, seleccione el resultado de la ecografía transvaginal.")
+                            setErrorSeccion("Por favor, seleccione el resultado de la ecografía transvaginal.")
                           } else {
                             completarSeccion(6)
                           }
@@ -2540,6 +2600,12 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
                     )}
 
+                    {errorSeccion && (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    )}
+
                     <div className="flex justify-between">
                       <Button
                         onClick={() => setSeccionActual(6)}
@@ -2550,36 +2616,28 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </Button>
                       <Button
                         onClick={async () => {
+                          if (!tieneBetaHCG) {
+                            setErrorSeccion("Por favor, seleccione si tiene análisis de β-hCG.")
+                            return
+                          }
                           if (tieneBetaHCG === "no") {
-                            setMostrarAlerta(true)
-                            setMensajeAlerta(
-                              "Se recomienda realizar un análisis de β-hCG en sangre antes de continuar con la evaluación.",
+                            await guardarDatosIncompletos("beta_hcg_no_realizada", 7)
+                            setMensajeFinal(
+                              <div className="text-center">
+                                Se recomienda realizar un análisis de β-hCG en sangre antes de proseguir con la
+                                evaluación. Por favor, acuda a un laboratorio clínico.
+                              </div>,
                             )
-
-                            setTimeout(async () => {
-                              await guardarDatosIncompletos("beta_hcg_no_realizada", 7)
-                              setMensajeFinal(
-                                <div className="text-center">
-                                  Se recomienda realizar un análisis de β-hCG en sangre antes de proseguir con la
-                                  evaluación. Por favor, acuda a un laboratorio clínico.
-                                </div>,
-                              )
-                              setProtocoloFinalizado(true)
-                            }, 2000)
+                            setProtocoloFinalizado(true)
                           } else if (tieneBetaHCG === "si" && !betaHcg) {
-                            setMostrarAlerta(true)
-                            setMensajeAlerta("Por favor, ingrese el valor de β-hCG.")
+                            setErrorSeccion("Por favor, ingrese el valor de β-hCG.")
                           } else {
-                            // Assuming calcularRiesgo should be called here as per the original logic.
-                            // If betaHcg is not directly used in calcularRiesgo but should be set for the calculation,
-                            // ensure it's handled correctly within calcularRiesgo or before.
-                            // For now, directly calling calcular.
                             await calcular()
                           }
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
                       >
-                        Calcular Riesgo
+                        Continuar
                       </Button>
                     </div>
                   </div>

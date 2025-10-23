@@ -879,14 +879,12 @@ export default function CalculadoraEctopico() {
     switch (tvusId) {
       case "normal":
         return "Normal"
-      case "liquido_libre":
+      case "libre":
         return "Líquido libre"
-      case "masa_anexial":
+      case "masa":
         return "Masa anexial"
-      case "saco_vacio":
-        return "Saco vacío"
-      case "embarazo_viable":
-        return "Embarazo viable"
+      case "masa_libre":
+        return "Masa anexial + Líquido libre"
       default:
         return tvusId
     }
@@ -947,6 +945,7 @@ export default function CalculadoraEctopico() {
     setMostrarAlerta(false)
     setMensajeAlerta("")
     setTieneBetaHCG("") // Reset tieneBetaHCG state
+    setErrorSeccion("")
   }
 
   const generarInformePDF = () => {
@@ -2456,11 +2455,10 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         <Label className="text-base font-medium text-slate-700">Resultado de la Ecografía</Label>
                         <div className="grid grid-cols-1 gap-3">
                           {[
-                            { value: "liquido_libre", label: "Líquido libre" },
-                            { value: "masa_anexial", label: "Masa anexial" },
-                            { value: "saco_vacio", label: "Saco vacío" },
-                            { value: "embarazo_viable", label: "Embarazo viable" },
-                            // Removed 'normal' as per previous logic, if it needs to be there, it was removed accidentally
+                            { value: "normal", label: "Normal" },
+                            { value: "libre", label: "Líquido libre" },
+                            { value: "masa", label: "Masa anexial" },
+                            { value: "masa_libre", label: "Masa anexial + Líquido libre" },
                           ].map((opcion) => (
                             <label
                               key={opcion.value}

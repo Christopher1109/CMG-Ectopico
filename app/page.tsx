@@ -317,6 +317,8 @@ export default function CalculadoraEctopico() {
   const [tieneTVUS, setTieneTVUS] = useState<string>("") // Indicates if TVUS result is available
   const [tieneHCG, setTieneHCG] = useState<string>("") // This state seems unused, but kept for consistency
 
+  const [guardandoConsulta, setGuardandoConsulta] = useState(false)
+
   // ✅ Verificar autenticación al cargar
   useEffect(() => {
     const verificarAuth = async () => {
@@ -337,6 +339,13 @@ export default function CalculadoraEctopico() {
 
   // ==================== GUARDAR DATOS INCOMPLETOS ====================
   async function guardarDatosIncompletos(motivoFinalizacion: string, seccionCompletada: number): Promise<boolean> {
+    if (guardandoConsulta) {
+      console.log("[v0] ⚠️ Ya se está guardando una consulta, evitando duplicado")
+      return false
+    }
+
+    setGuardandoConsulta(true)
+
     try {
       const fechaActual = new Date().toISOString()
       const datosIncompletos = {
@@ -347,7 +356,7 @@ export default function CalculadoraEctopico() {
         edadPaciente: edadPaciente ? Number.parseInt(edadPaciente) : null,
         frecuenciaCardiaca: frecuenciaCardiaca ? Number.parseInt(frecuenciaCardiaca) : null,
         presionSistolica: presionSistolica ? Number.parseInt(presionSistolica) : null,
-        presionDiastolica: presionDiastolica ? Number.parseInt(presionDiastolica) : null, // Corrected typo here
+        presionDiastolica: presionDiastolica ? Number.parseInt(presionDiastolica) : null,
         estadoConciencia: estadoConciencia || null,
         pruebaEmbarazoRealizada: pruebaEmbarazoRealizada || null,
         resultadoPruebaEmbarazo: resultadoPruebaEmbarazo || null,
@@ -356,7 +365,7 @@ export default function CalculadoraEctopico() {
         resultadoEcoTransabdominal: resultadoEcoTransabdominal || null,
         sintomasSeleccionados: sintomasSeleccionados || [],
         factoresSeleccionados: factoresSeleccionados || [],
-        tvus: tvus || null, // Using 'tvus' here as it's the actual TVUS result field
+        tvus: tvus || null,
         hcgValor: hcgValor ? Number.parseFloat(hcgValor) : null,
         variacionHcg: variacionHcg || null,
         hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
@@ -388,6 +397,8 @@ export default function CalculadoraEctopico() {
     } catch (error) {
       console.error("Error al guardar datos incompletos:", error)
       return false
+    } finally {
+      setGuardandoConsulta(false)
     }
   }
 
@@ -676,6 +687,7 @@ export default function CalculadoraEctopico() {
     setResultado(null)
     setSeccion(1)
     setSeccionesCompletadas([])
+    setGuardandoConsulta(false)
     setNombrePaciente("")
     setEdadPaciente("")
     setFrecuenciaCardiaca("")
@@ -1668,12 +1680,41 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   <h2 className="text-2xl font-bold text-slate-800">Evaluación Completada</h2>
                 </div>
 
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 text-center">
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
                   <p className="text-blue-900 font-medium">
                     {mensajeFinal ||
-                      (resultado !== null
-                        ? "La evaluación ha sido completada exitosamente. Revise los resultados a continuación."
-                        : "Los datos de esta consulta han sido guardados exitosamente.")}
+                      (resultado !== null ? (
+                        resultado < 0.01 ? (
+                          // Baja probabilidad
+                          <>
+                            <strong>Bajas probabilidades de embarazo ectópico.</strong>
+                            <br />
+                            <br />
+                            Se recomienda mantener un monitoreo constante con su ginecólogo de confianza y estar atenta
+                            a cualquier cambio en los síntomas.
+                          </>
+                        ) : resultado >= 0.95 ? (
+                          // Alta probabilidad
+                          <>
+                            <strong>Alta probabilidad de embarazo ectópico.</strong>
+                            <br />
+                            <br />
+                            Se recomienda referencia inmediata a un centro médico especializado para evaluación y manejo
+                            apropiado.
+                          </>
+                        ) : (
+                          // Probabilidad intermedia
+                          <>
+                            <strong>Probabilidad intermedia de embarazo ectópico.</strong>
+                            <br />
+                            <br />
+                            Guarde el código de consulta (disponible abajo para copiar) y regrese en 48 a 72 horas con
+                            nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento.
+                          </>
+                        )
+                      ) : (
+                        "Los datos de esta consulta han sido guardados exitosamente."
+                      ))}
                   </p>
                 </div>
 
@@ -1684,9 +1725,19 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                   <div className="text-green-800 text-sm space-y-2">
                     <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
-                    <p>
-                      📋 ID de Consulta: <span className="font-mono font-bold">{idSeguimiento}</span>
-                    </p>
+                    <div className="flex items-center space-x-2">
+                      <span>📋 ID de Consulta:</span>
+                      <span className="font-mono font-bold">{idSeguimiento}</span>
+                      <Button
+                        onClick={copiarId}
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-green-100"
+                        title="Copiar ID"
+                      >
+                        <Copy className="h-3 w-3 text-green-700" />
+                      </Button>
+                    </div>
                     <p>
                       👤 Paciente: {nombrePaciente}, {edadPaciente} años
                     </p>
@@ -2068,24 +2119,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                               name="resultadoPrueba"
                               value="negativa"
                               checked={resultadoPruebaEmbarazo === "negativa"}
-                              onChange={async (e) => {
-                                setResultadoPruebaEmbarazo(e.target.value)
-                                if (e.target.value === "negativa") {
-                                  try {
-                                    const respuesta = await validarEmbarazo({
-                                      pruebaEmbarazoRealizada: "si",
-                                      resultadoPruebaEmbarazo: "negativa",
-                                    })
-                                    if (respuesta.debeDetener) {
-                                      await guardarDatosIncompletos(respuesta.motivo, 3)
-                                      setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-                                      setProtocoloFinalizado(true)
-                                    }
-                                  } catch (error) {
-                                    console.warn("Error en validación inmediata:", error)
-                                  }
-                                }
-                              }}
+                              onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
                               className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
                             <span className="text-base font-medium text-slate-700">Negativa</span>
@@ -2115,26 +2149,34 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                               setErrorSeccion("Por favor, seleccione el resultado de la prueba de embarazo.")
                               return
                             }
-                            if (pruebaEmbarazoRealizada === "no") {
-                              setMostrarAlerta(true)
-                              setMensajeAlerta(
-                                "Se recomienda realizar una prueba de embarazo cualitativa antes de continuar con la evaluación.",
-                              )
 
-                              setTimeout(async () => {
-                                await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
-                                setMensajeFinal(
-                                  <div className="text-center">
-                                    Se recomienda realizar una prueba de embarazo antes de proseguir con la evaluación.
-                                  </div>,
-                                )
-                                setProtocoloFinalizado(true)
-                              }, 2000)
-                            } else {
-                              if (await validarPruebaEmbarazo()) {
-                                setSeccion(4)
-                                completarSeccion(3)
-                              }
+                            if (pruebaEmbarazoRealizada === "no") {
+                              await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
+                              setMensajeFinal(
+                                <div className="text-center">
+                                  Se recomienda realizar una prueba de embarazo antes de proseguir con la evaluación.
+                                  Por favor, regrese cuando tenga el resultado.
+                                </div>,
+                              )
+                              setPantalla("finalizado")
+                              return
+                            }
+
+                            if (resultadoPruebaEmbarazo === "negativa") {
+                              await guardarDatosIncompletos("prueba_embarazo_negativa", 3)
+                              setMensajeFinal(
+                                <div className="text-center">
+                                  Con una prueba de embarazo negativa, es muy poco probable que padezca un embarazo
+                                  ectópico. Se recomienda buscar otras causas para sus síntomas.
+                                </div>,
+                              )
+                              setPantalla("finalizado")
+                              return
+                            }
+
+                            if (await validarPruebaEmbarazo()) {
+                              setSeccion(4)
+                              completarSeccion(3)
                             }
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
@@ -2487,7 +2529,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             setMensajeFinal(
                               <div className="text-center">
                                 Se recomienda realizar una ecografía transvaginal (TVUS) con un ginecólogo antes de
-                                proseguir con la evaluación.
+                                proseguir con la evaluación. Por favor, acuda a un laboratorio clínico.
                               </div>,
                             )
                             setProtocoloFinalizado(true)

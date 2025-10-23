@@ -749,6 +749,35 @@ export default function CalculadoraEctopico() {
   const continuarConsultaCargada = async () => {
     console.log("🔄 Continuing consulta cargada:", consultaCargada)
 
+    const fc = Number.parseFloat(consultaCargada.frecuencia_cardiaca?.toString() || "0")
+    const sistolica = Number.parseFloat(consultaCargada.presion_sistolica?.toString() || "0")
+    const diastolica = Number.parseFloat(consultaCargada.presion_diastolica?.toString() || "0")
+    const conciencia = consultaCargada.estado_conciencia || ""
+
+    // Check for critical vital signs or altered consciousness
+    const tieneCriteriosEmergencia =
+      sistolica >= 180 ||
+      diastolica >= 110 ||
+      fc > 120 ||
+      fc < 50 ||
+      (fc > 100 && (sistolica <= 90 || diastolica <= 60)) ||
+      conciencia === "somnolienta" ||
+      conciencia === "estuporosa" ||
+      conciencia === "comatosa"
+
+    if (tieneCriteriosEmergencia) {
+      alert(
+        "⚠️ SEGUIMIENTO BLOQUEADO\n\n" +
+          "Esta paciente presenta signos vitales críticos o alteración del estado de conciencia que requieren atención médica inmediata.\n\n" +
+          "No se puede continuar con el seguimiento ambulatorio. Se recomienda:\n" +
+          "• Acudir de inmediato a urgencias\n" +
+          "• Monitoreo continuo de signos vitales\n" +
+          "• Evaluación médica presencial\n\n" +
+          "La herramienta de seguimiento está diseñada para pacientes estables.",
+      )
+      return
+    }
+
     const folioNumeric = Number(
       (consultaCargada.id_publico || consultaCargada.folio || "").toString().replace(/^ID-0*/, ""),
     )

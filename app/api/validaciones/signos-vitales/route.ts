@@ -55,7 +55,11 @@ export async function POST(req: Request) {
       mensaje =
         "🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin demora."
       tipoAlerta = "bradicardia_severa"
-    } else if (estadoConciencia === "estuporosa" || estadoConciencia === "comatosa") {
+    } else if (
+      estadoConciencia === "estuporosa" ||
+      estadoConciencia === "comatosa" ||
+      estadoConciencia === "somnolienta"
+    ) {
       esEmergencia = true
       mensaje =
         "🚨 ALERTA MÉDICA: Los resultados sugieren una posible urgencia. Se recomienda acudir a valoración médica sin demora."

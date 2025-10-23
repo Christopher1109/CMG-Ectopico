@@ -34,10 +34,10 @@ const factoresRiesgo = [
 ]
 
 const sintomas = [
-  { id: "infertilidad", label: "Historia de infertilidad" },
-  { id: "ectopico_previo", label: "Embarazo ectópico previo" },
-  { id: "enfermedad_pelvica", label: "Enfermedad inflamatoria pélvica previa" },
-  { id: "cirugia_tubarica", label: "Cirugía tubárica previa" },
+  { id: "dolor", label: "Dolor" },
+  { id: "sangrado", label: "Sangrado" },
+  { id: "dolor_sangrado", label: "Dolor y sangrado" },
+  { id: "sincope", label: "Síncope" },
 ]
 
 // ==================== HELPERS API - SIN LÓGICA DE NEGOCIO ====================
@@ -2241,9 +2241,56 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <div className="bg-blue-100 p-3 rounded-full">
                         <AlertTriangle className="h-6 w-6 text-blue-600" />
                       </div>
-                      <h3 className="text-2xl font-bold text-gray-800">Factores de Riesgo</h3>
+                      <h3 className="text-2xl font-bold text-gray-800">Síntomas y Factores de Riesgo</h3>
                     </div>
 
+                    {/* Síntomas Presentes */}
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4">Seleccione los síntomas presentes</h4>
+                      {esConsultaSeguimiento && (
+                        <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mb-4">
+                          Mantenidos de consulta anterior
+                        </div>
+                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {sintomas.map((sintoma) => (
+                          <label
+                            key={sintoma.id}
+                            className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                          >
+                            <div className="relative">
+                              <input
+                                type="checkbox"
+                                checked={sintomasSeleccionados.includes(sintoma.id)}
+                                onChange={(e) =>
+                                  setSintomasSeleccionados((prev) =>
+                                    e.target.checked ? [...prev, sintoma.id] : prev.filter((id) => id !== sintoma.id),
+                                  )
+                                }
+                                className="sr-only"
+                              />
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                  sintomasSeleccionados.includes(sintoma.id)
+                                    ? "bg-blue-600 border-blue-600"
+                                    : "border-gray-300 hover:border-blue-400"
+                                }`}
+                              >
+                                {sintomasSeleccionados.includes(sintoma.id) && (
+                                  <div className="w-2 h-2 bg-white rounded-full" />
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">{sintoma.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <p className="text-sm text-gray-500 mt-4">
+                        Si no tiene ningún síntoma, puede continuar sin seleccionar ninguno
+                      </p>
+                    </div>
+
+                    {/* Factores de Riesgo */}
                     <div>
                       <h4 className="text-lg font-semibold text-gray-800 mb-4">
                         Seleccione los factores de riesgo presentes

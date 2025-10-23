@@ -1669,7 +1669,12 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                 </div>
 
                 <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 text-center">
-                  <p className="text-blue-900 font-medium">{mensajeFinal}</p>
+                  <p className="text-blue-900 font-medium">
+                    {mensajeFinal ||
+                      (resultado !== null
+                        ? "La evaluación ha sido completada exitosamente. Revise los resultados a continuación."
+                        : "Los datos de esta consulta han sido guardados exitosamente.")}
+                  </p>
                 </div>
 
                 <div className="bg-green-50 p-6 rounded-lg border border-green-200">

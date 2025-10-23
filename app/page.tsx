@@ -31,6 +31,7 @@ const factoresRiesgo = [
   { id: "ectopico_previo", label: "Embarazo ectópico previo" },
   { id: "enfermedad_pelvica", label: "Enfermedad inflamatoria pélvica previa" },
   { id: "cirugia_tubarica", label: "Cirugía tubárica previa" },
+  { id: "sin_factores", label: "Sin factores de riesgo" },
 ]
 
 const sintomas = [
@@ -38,6 +39,7 @@ const sintomas = [
   { id: "sangrado", label: "Sangrado" },
   { id: "dolor_sangrado", label: "Dolor y sangrado" },
   { id: "sincope", label: "Síncope" },
+  { id: "sin_sintomas", label: "Sin síntomas" },
 ]
 
 // ==================== HELPERS API - SIN LÓGICA DE NEGOCIO ====================
@@ -2327,9 +2329,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           </label>
                         ))}
                       </div>
-                      <p className="text-sm text-gray-500 mt-4">
-                        Si no tiene ningún síntoma, puede continuar sin seleccionar ninguno
-                      </p>
                     </div>
 
                     {/* Factores de Riesgo */}
@@ -2375,9 +2374,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           </label>
                         ))}
                       </div>
-                      <p className="text-sm text-gray-500 mt-4">
-                        Si no tiene ningún factor de riesgo, puede continuar sin seleccionar ninguno
-                      </p>
                     </div>
 
                     {errorSeccion && (
@@ -2393,13 +2389,14 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <Button
                         onClick={() => {
                           if (sintomasSeleccionados.length === 0) {
-                            setErrorSeccion("Por favor, seleccione al menos un síntoma presente.")
+                            setErrorSeccion("Por favor llene todos los campos")
                             return
                           }
                           if (factoresSeleccionados.length === 0) {
-                            setErrorSeccion("Por favor, seleccione al menos un factor de riesgo.")
+                            setErrorSeccion("Por favor llene todos los campos")
                             return
                           }
+                          setErrorSeccion("")
                           completarSeccion(5)
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"

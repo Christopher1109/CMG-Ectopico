@@ -1684,9 +1684,19 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                   <div className="text-green-800 text-sm space-y-2">
                     <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
-                    <p>
-                      📋 ID de Consulta: <span className="font-mono font-bold">{idSeguimiento}</span>
-                    </p>
+                    <div className="flex items-center space-x-2">
+                      <span>📋 ID de Consulta:</span>
+                      <span className="font-mono font-bold">{idSeguimiento}</span>
+                      <Button
+                        onClick={copiarId}
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-green-100"
+                        title="Copiar ID"
+                      >
+                        <Copy className="h-3 w-3 text-green-700" />
+                      </Button>
+                    </div>
                     <p>
                       👤 Paciente: {nombrePaciente}, {edadPaciente} años
                     </p>

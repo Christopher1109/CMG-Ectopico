@@ -2332,7 +2332,7 @@ export default function CalculadoraEctopico() {
                       <div className="space-y-3">
                         <Label className="text-base font-medium text-slate-700">Resultado de la prueba</Label>
                         <div className="grid grid-cols-2 gap-4">
-                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
+                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition-colors">
                             <input
                               type="radio"
                               name="resultadoPrueba"
@@ -2344,29 +2344,14 @@ export default function CalculadoraEctopico() {
                             <span className="text-base font-medium text-slate-700">Positiva</span>
                           </label>
 
-                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
+                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition-colors">
                             <input
                               type="radio"
                               name="resultadoPrueba"
                               value="negativa"
                               checked={resultadoPruebaEmbarazo === "negativa"}
-                              onChange={async (e) => {
+                              onChange={(e) => {
                                 setResultadoPruebaEmbarazo(e.target.value)
-                                if (e.target.value === "negativa") {
-                                  try {
-                                    const respuesta = await validarEmbarazo({
-                                      pruebaEmbarazoRealizada: "si",
-                                      resultadoPruebaEmbarazo: "negativa",
-                                    })
-                                    if (respuesta.debeDetener) {
-                                      await guardarDatosIncompletos(respuesta.motivo, 3)
-                                      setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-                                      setProtocoloFinalizado(true)
-                                    }
-                                  } catch (error) {
-                                    console.warn("Error en validación inmediata:", error)
-                                  }
-                                }
                               }}
                               className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
@@ -2397,6 +2382,18 @@ export default function CalculadoraEctopico() {
                               setErrorSeccion("Por favor, seleccione el resultado de la prueba de embarazo.")
                               return
                             }
+                            if (pruebaEmbarazoRealizada === "si" && resultadoPruebaEmbarazo === "negativa") {
+                              await guardarDatosIncompletos("prueba_embarazo_negativa", 3)
+                              setMensajeFinal(
+                                <div className="text-center">
+                                  Una prueba de embarazo negativa indica muy baja probabilidad de embarazo ectópico. Se
+                                  recomienda buscar otras causas para los síntomas presentados. Consulte con su médico
+                                  de confianza.
+                                </div>,
+                              )
+                              setProtocoloFinalizado(true)
+                              return
+                            }
                             if (pruebaEmbarazoRealizada === "no") {
                               await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
                               setMensajeFinal(
@@ -2406,11 +2403,11 @@ export default function CalculadoraEctopico() {
                                 </div>,
                               )
                               setProtocoloFinalizado(true)
-                            } else {
-                              if (await validarPruebaEmbarazo()) {
-                                setSeccion(4)
-                                completarSeccion(3)
-                              }
+                              return
+                            }
+                            if (await validarPruebaEmbarazo()) {
+                              setSeccion(4)
+                              completarSeccion(3)
                             }
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"

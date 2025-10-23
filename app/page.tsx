@@ -2380,8 +2380,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             checked={tieneTVUS === "si"}
                             onChange={(e) => {
                               setTieneTVUS(e.target.value)
-                              setMostrarAlerta(false)
-                              setMensajeAlerta("")
                             }}
                             className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
@@ -2435,17 +2433,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
                     )}
 
-                    {mostrarAlerta && mensajeAlerta && (
-                      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                        <div className="flex">
-                          <AlertCircle className="h-5 w-5 text-yellow-400" />
-                          <div className="ml-3">
-                            <p className="text-sm text-yellow-700">{mensajeAlerta}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
                     <div className="flex justify-between">
                       <Button
                         onClick={() => setSeccionActual(5)}
@@ -2457,21 +2444,14 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <Button
                         onClick={async () => {
                           if (tieneTVUS === "no") {
-                            setMostrarAlerta(true)
-                            setMensajeAlerta(
-                              "Se recomienda realizar una ecografía transvaginal antes de continuar con la evaluación.",
+                            await guardarDatosIncompletos("tvus_no_realizada", 6)
+                            setMensajeFinal(
+                              <div className="text-center">
+                                Se recomienda realizar una ecografía transvaginal (TVUS) con un ginecólogo antes de
+                                proseguir con la evaluación.
+                              </div>,
                             )
-
-                            setTimeout(async () => {
-                              await guardarDatosIncompletos("tvus_no_realizada", 6)
-                              setMensajeFinal(
-                                <div className="text-center">
-                                  Se recomienda realizar una ecografía transvaginal (TVUS) con un ginecólogo antes de
-                                  proseguir con la evaluación.
-                                </div>,
-                              )
-                              setProtocoloFinalizado(true)
-                            }, 2000)
+                            setProtocoloFinalizado(true)
                           } else if (tieneTVUS === "si" && !tvus) {
                             setMostrarAlerta(true)
                             setMensajeAlerta("Por favor, seleccione el resultado de la ecografía transvaginal.")

@@ -2398,20 +2398,14 @@ export default function CalculadoraEctopico() {
                               return
                             }
                             if (pruebaEmbarazoRealizada === "no") {
-                              setMostrarAlerta(true)
-                              setMensajeAlerta(
-                                "Se recomienda realizar una prueba de embarazo cualitativa antes de continuar con la evaluación.",
+                              await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
+                              setMensajeFinal(
+                                <div className="text-center">
+                                  Se recomienda realizar una prueba de embarazo cualitativa antes de proseguir con la
+                                  evaluación. Por favor regrese cuando tenga la prueba realizada y con el resultado.
+                                </div>,
                               )
-
-                              setTimeout(async () => {
-                                await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
-                                setMensajeFinal(
-                                  <div className="text-center">
-                                    Se recomienda realizar una prueba de embarazo antes de proseguir con la evaluación.
-                                  </div>,
-                                )
-                                setProtocoloFinalizado(true)
-                              }, 2000)
+                              setProtocoloFinalizado(true)
                             } else {
                               if (await validarPruebaEmbarazo()) {
                                 setSeccion(4)

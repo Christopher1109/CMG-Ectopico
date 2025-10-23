@@ -829,7 +829,7 @@ export default function CalculadoraEctopico() {
       return
     }
 
-    setIdSeguimiento(consultaCargada.id_publico || consultaCargada.folio?.toString() || consultaCargada.id?.toString())
+    setIdSeguimiento(consultaCargada.id_publico || consultaCargada.folio || consultaCargada.id?.toString())
 
     // Mantener datos del paciente
     setNombrePaciente(consultaCargada.nombre_paciente || "")
@@ -2362,73 +2362,22 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <h3 className="text-2xl font-bold text-gray-800">Ecografía Transvaginal (TVUS)</h3>
                     </div>
 
-                    {/* Ask if patient has TVUS */}
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                        ¿La paciente cuenta con una ecografía transvaginal (TVUS)?
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                          <input
-                            type="radio"
-                            name="tieneTVUS"
-                            value="si"
-                            checked={tieneTVUS === "si"}
-                            onChange={(e) => {
-                              setTieneTVUS(e.target.value)
-                              setTvus("") // Reset TVUS selection when changing answer
-                            }}
-                            className="sr-only"
-                          />
-                          <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                              tieneTVUS === "si"
-                                ? "bg-green-600 border-green-600"
-                                : "border-gray-300 hover:border-green-400"
-                            }`}
-                          >
-                            {tieneTVUS === "si" && <div className="w-3 h-3 bg-white rounded-full" />}
-                          </div>
-                          <span className="text-base font-medium text-gray-700">Sí, cuenta con TVUS</span>
-                        </label>
-
-                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                          <input
-                            type="radio"
-                            name="tieneTVUS"
-                            value="no"
-                            checked={tieneTVUS === "no"}
-                            onChange={(e) => setTieneTVUS(e.target.value)}
-                            className="sr-only"
-                          />
-                          <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                              tieneTVUS === "no" ? "bg-red-600 border-red-600" : "border-gray-300 hover:border-red-400"
-                            }`}
-                          >
-                            {tieneTVUS === "no" && <div className="w-3 h-3 bg-white rounded-full" />}
-                          </div>
-                          <span className="text-base font-medium text-gray-700">No cuenta con TVUS</span>
-                        </label>
-                      </div>
-                    </div>
-
                     {/* Show blocking alert if no TVUS */}
                     {tieneTVUS === "no" && (
-                      <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6">
+                      <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
                         <div className="flex items-start space-x-4">
-                          <div className="bg-red-100 p-3 rounded-full flex-shrink-0">
-                            <AlertTriangle className="h-6 w-6 text-red-600" />
+                          <div className="bg-blue-100 p-3 rounded-full flex-shrink-0">
+                            <AlertTriangle className="h-6 w-6 text-blue-600" />
                           </div>
                           <div className="flex-1">
-                            <h4 className="text-lg font-bold text-red-800 mb-2">Ecografía Transvaginal Requerida</h4>
-                            <p className="text-red-700 mb-4">
+                            <h4 className="text-lg font-bold text-blue-900 mb-2">Ecografía Transvaginal Requerida</h4>
+                            <p className="text-blue-800 mb-4">
                               Para continuar con la evaluación del embarazo ectópico, es necesario contar con una
                               ecografía transvaginal (TVUS) realizada por un ginecólogo.
                             </p>
-                            <div className="bg-white border border-red-200 rounded-lg p-4">
-                              <p className="text-sm font-semibold text-red-800 mb-2">Recomendaciones:</p>
-                              <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
+                            <div className="bg-white border border-blue-200 rounded-lg p-4">
+                              <p className="text-sm font-semibold text-blue-900 mb-2">Recomendaciones:</p>
+                              <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
                                 <li>Acuda con su ginecólogo para realizar una ecografía transvaginal</li>
                                 <li>Una vez cuente con los resultados, podrá continuar con esta evaluación</li>
                                 <li>La TVUS es fundamental para determinar la ubicación del embarazo</li>
@@ -2523,73 +2472,22 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       <h3 className="text-2xl font-bold text-gray-800">Prueba de β-hCG</h3>
                     </div>
 
-                    {/* Ask if patient has β-hCG test */}
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                        ¿La paciente cuenta con una prueba de β-hCG (Gonadotropina Coriónica Humana)?
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                          <input
-                            type="radio"
-                            name="tieneHCG"
-                            value="si"
-                            checked={tieneHCG === "si"}
-                            onChange={(e) => {
-                              setTieneHCG(e.target.value)
-                              setHcgValor("") // Reset HCG value when changing answer
-                            }}
-                            className="sr-only"
-                          />
-                          <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                              tieneHCG === "si"
-                                ? "bg-green-600 border-green-600"
-                                : "border-gray-300 hover:border-green-400"
-                            }`}
-                          >
-                            {tieneHCG === "si" && <div className="w-3 h-3 bg-white rounded-full" />}
-                          </div>
-                          <span className="text-base font-medium text-gray-700">Sí, cuenta con β-hCG</span>
-                        </label>
-
-                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                          <input
-                            type="radio"
-                            name="tieneHCG"
-                            value="no"
-                            checked={tieneHCG === "no"}
-                            onChange={(e) => setTieneHCG(e.target.value)}
-                            className="sr-only"
-                          />
-                          <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                              tieneHCG === "no" ? "bg-red-600 border-red-600" : "border-gray-300 hover:border-red-400"
-                            }`}
-                          >
-                            {tieneHCG === "no" && <div className="w-3 h-3 bg-white rounded-full" />}
-                          </div>
-                          <span className="text-base font-medium text-gray-700">No cuenta con β-hCG</span>
-                        </label>
-                      </div>
-                    </div>
-
                     {/* Show blocking alert if no β-hCG */}
                     {tieneHCG === "no" && (
-                      <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6">
+                      <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
                         <div className="flex items-start space-x-4">
-                          <div className="bg-red-100 p-3 rounded-full flex-shrink-0">
-                            <AlertTriangle className="h-6 w-6 text-red-600" />
+                          <div className="bg-blue-100 p-3 rounded-full flex-shrink-0">
+                            <AlertTriangle className="h-6 w-6 text-blue-600" />
                           </div>
                           <div className="flex-1">
-                            <h4 className="text-lg font-bold text-red-800 mb-2">Análisis de β-hCG Requerido</h4>
-                            <p className="text-red-700 mb-4">
+                            <h4 className="text-lg font-bold text-blue-900 mb-2">Análisis de β-hCG Requerido</h4>
+                            <p className="text-blue-800 mb-4">
                               Para continuar con la evaluación del embarazo ectópico, es necesario contar con un
                               análisis clínico de β-hCG (Gonadotropina Coriónica Humana).
                             </p>
-                            <div className="bg-white border border-red-200 rounded-lg p-4">
-                              <p className="text-sm font-semibold text-red-800 mb-2">Recomendaciones:</p>
-                              <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
+                            <div className="bg-white border border-blue-200 rounded-lg p-4">
+                              <p className="text-sm font-semibold text-blue-900 mb-2">Recomendaciones:</p>
+                              <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
                                 <li>Acuda a un laboratorio clínico para realizar el análisis de β-hCG</li>
                                 <li>Una vez cuente con los resultados, podrá continuar con esta evaluación</li>
                                 <li>El nivel de β-hCG es fundamental para determinar el riesgo de embarazo ectópico</li>

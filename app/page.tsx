@@ -20,10 +20,12 @@ import {
   CheckCircle,
   Download,
   AlertCircle,
+  CheckCircle2,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type React from "react"
 import { crearConsulta, actualizarConsulta, obtenerConsulta } from "@/lib/api/consultas"
+import jsPDF from "jspdf"
 
 // ==================== SOLO CONFIGURACIÓN UI - SIN LÓGICA SENSIBLE ====================
 const factoresRiesgo = [
@@ -921,67 +923,207 @@ export default function CalculadoraEctopico() {
 
   const generarInformePDF = () => {
     try {
-      const recomendacionTexto =
-        resultado != null
-          ? resultado >= 0.95
-            ? "Se sugiere considerar alta probabilidad - Evaluación médica recomendada"
+      const doc = new jsPDF()
+      const pageWidth = doc.internal.pageSize.getWidth()
+      const margin = 20
+      let yPos = 20
+
+      // Helper function to add text with word wrap
+      const addText = (text: string, size = 10, isBold = false) => {
+        doc.setFontSize(size)
+        doc.setFont("helvetica", isBold ? "bold" : "normal")
+        const lines = doc.splitTextToSize(text, pageWidth - 2 * margin)
+        doc.text(lines, margin, yPos)
+        yPos += lines.length * (size * 0.5) + 3
+      }
+
+      // Header
+      doc.setFillColor(37, 99, 235) // Blue
+      doc.rect(0, 0, pageWidth, 30, "F")
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(16)
+      doc.setFont("helvetica", "bold")
+      doc.text("REPORTE DE APOYO CLÍNICO", pageWidth / 2, 15, { align: "center" })
+      doc.setFontSize(10)
+      doc.text("Herramienta de Evaluación - Embarazo Ectópico", pageWidth / 2, 22, { align: "center" })
+
+      yPos = 40
+      doc.setTextColor(0, 0, 0)
+
+      // Important disclaimer
+      doc.setFillColor(254, 243, 199) // Yellow background
+      doc.rect(margin - 5, yPos - 5, pageWidth - 2 * margin + 10, 20, "F")
+      doc.setFontSize(9)
+      doc.setFont("helvetica", "bold")
+      doc.text("⚠ IMPORTANTE:", margin, yPos)
+      doc.setFont("helvetica", "normal")
+      const disclaimer =
+        "Esta herramienta es únicamente de apoyo y no constituye un diagnóstico médico. La decisión final siempre corresponde al médico tratante."
+      const disclaimerLines = doc.splitTextToSize(disclaimer, pageWidth - 2 * margin - 10)
+      doc.text(disclaimerLines, margin + 25, yPos)
+      yPos += 25
+
+      // Consultation info
+      addText(`ID de Consulta: ${idSeguimiento}`, 10, true)
+      addText(`Fecha: ${new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}`)
+      addText(`Médico: ${nombreUsuario}`)
+      yPos += 5
+
+      // Patient data section
+      doc.setDrawColor(37, 99, 235)
+      doc.setLineWidth(0.5)
+      doc.line(margin, yPos, pageWidth - margin, yPos)
+      yPos += 7
+      addText("DATOS DEL PACIENTE", 12, true)
+      addText(`Nombre: ${nombrePaciente || "No especificado"}`)
+      addText(`Edad: ${edadPaciente || "N/A"} años`)
+      yPos += 5
+
+      // Vital signs section
+      doc.line(margin, yPos, pageWidth - margin, yPos)
+      yPos += 7
+      addText("SIGNOS VITALES", 12, true)
+      addText(`Frecuencia Cardíaca: ${frecuenciaCardiaca || "N/A"} lpm`)
+      addText(`Presión Arterial: ${presionSistolica || "N/A"}/${presionDiastolica || "N/A"} mmHg`)
+      addText(`Estado de Conciencia: ${estadoConciencia || "N/A"}`)
+      yPos += 5
+
+      // Check if we need a new page
+      if (yPos > 250) {
+        doc.addPage()
+        yPos = 20
+      }
+
+      // Complementary studies section
+      doc.line(margin, yPos, pageWidth - margin, yPos)
+      yPos += 7
+      addText("ESTUDIOS COMPLEMENTARIOS", 12, true)
+      addText(`Ecografía Transvaginal (TVUS): ${obtenerNombreTVUS(resultadoTVUS)}`)
+      addText(`β-hCG en sangre: ${betaHcg || "N/A"} mUI/mL`)
+      if (hcgAnterior) {
+        // Corrected: betaHcgAnterior was not declared, used hcgAnterior which is declared.
+        addText(`β-hCG Anterior: ${hcgAnterior} mUI/mL`)
+      }
+      yPos += 5
+
+      // Symptoms section
+      doc.line(margin, yPos, pageWidth - margin, yPos)
+      yPos += 7
+      addText("SÍNTOMAS PRESENTES", 12, true)
+      if (sintomasSeleccionados && sintomasSeleccionados.length > 0) {
+        sintomasSeleccionados.forEach((s: string) => {
+          addText(`• ${obtenerNombreSintoma(s)}`)
+        })
+      } else {
+        addText("Sin síntomas reportados")
+      }
+      yPos += 5
+
+      // Risk factors section
+      if (yPos > 230) {
+        doc.addPage()
+        yPos = 20
+      }
+      doc.line(margin, yPos, pageWidth - margin, yPos)
+      yPos += 7
+      addText("FACTORES DE RIESGO", 12, true)
+      if (factoresSeleccionados && factoresSeleccionados.length > 0) {
+        factoresSeleccionados.forEach((f: string) => {
+          addText(`• ${obtenerNombreFactorRiesgo(f)}`)
+        })
+      } else {
+        addText("Sin factores de riesgo reportados")
+      }
+      yPos += 5
+
+      // Result section
+      doc.line(margin, yPos, pageWidth - margin, yPos)
+      yPos += 7
+      addText("RESULTADO DE LA EVALUACIÓN", 12, true)
+
+      if (resultado != null) {
+        const porcentaje = (resultado * 100).toFixed(1)
+        doc.setFillColor(219, 234, 254) // Light blue background
+        doc.rect(margin - 5, yPos - 5, pageWidth - 2 * margin + 10, 15, "F")
+        doc.setFontSize(14)
+        doc.setFont("helvetica", "bold")
+        doc.setTextColor(37, 99, 235)
+        doc.text(`Estimación de Riesgo: ${porcentaje}%`, pageWidth / 2, yPos + 5, { align: "center" })
+        yPos += 20
+        doc.setTextColor(0, 0, 0)
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "normal")
+
+        // Classification
+        const clasificacion =
+          resultado >= 0.95
+            ? "Alta probabilidad de embarazo ectópico"
             : resultado < 0.01
-              ? "Se sugiere considerar baja probabilidad - Seguimiento médico recomendado"
-              : "Probabilidad intermedia - Seguimiento médico requerido"
-          : "Evaluación en proceso"
+              ? "Baja probabilidad de embarazo ectópico"
+              : "Probabilidad intermedia de embarazo ectópico"
+        addText(`Clasificación: ${clasificacion}`, 10, true)
+      } else {
+        addText("No se pudo calcular el resultado")
+      }
+      yPos += 5
 
-      const contenidoInforme = `
-REPORTE DE APOYO CLÍNICO - HERRAMIENTA DE EVALUACIÓN
-===================================================
+      // Recommendations section
+      if (yPos > 220) {
+        doc.addPage()
+        yPos = 20
+      }
+      doc.line(margin, yPos, pageWidth - margin, yPos)
+      yPos += 7
+      addText("RECOMENDACIONES", 12, true)
 
-IMPORTANTE: Esta herramienta es únicamente de apoyo y no constituye un diagnóstico médico.
-La decisión final siempre corresponde al médico tratante.
+      let recomendacion = ""
+      if (resultado != null) {
+        if (resultado >= 0.95) {
+          recomendacion =
+            "Se recomienda referencia inmediata a un centro médico especializado para evaluación y manejo por especialista en ginecología."
+        } else if (resultado < 0.01) {
+          recomendacion =
+            "Se recomienda seguimiento médico continuo con su ginecólogo de confianza para monitoreo del embarazo."
+        } else {
+          recomendacion = `Se recomienda guardar el código de consulta (${idSeguimiento}) y regresar en 48-72 horas con nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento.`
+        }
+      } else {
+        recomendacion = "Consulte con su médico tratante para evaluación completa."
+      }
 
-ID de Consulta: ${idSeguimiento}
-Fecha: ${new Date().toLocaleDateString()}
-Médico: ${nombreUsuario}
+      doc.setFillColor(240, 253, 244) // Light green background
+      doc.rect(margin - 5, yPos - 5, pageWidth - 2 * margin + 10, 25, "F")
+      const recomLines = doc.splitTextToSize(recomendacion, pageWidth - 2 * margin - 10)
+      doc.text(recomLines, margin, yPos)
+      yPos += recomLines.length * 5 + 10
 
-DATOS DEL PACIENTE:
-- Nombre: ${nombrePaciente}
-- Edad: ${edadPaciente} años
+      // Footer disclaimer
+      if (yPos > 240) {
+        doc.addPage()
+        yPos = 20
+      }
+      yPos += 10
+      doc.setFillColor(243, 244, 246) // Gray background
+      doc.rect(margin - 5, yPos - 5, pageWidth - 2 * margin + 10, 30, "F")
+      doc.setFontSize(8)
+      doc.setFont("helvetica", "bold")
+      doc.text("DESCARGO DE RESPONSABILIDAD:", margin, yPos)
+      yPos += 5
+      doc.setFont("helvetica", "normal")
+      const footerText =
+        "Esta herramienta es únicamente de apoyo clínico y no reemplaza el juicio médico profesional. El diagnóstico y tratamiento final siempre debe ser determinado por el médico tratante. Esta aplicación no constituye un dispositivo médico de diagnóstico."
+      const footerLines = doc.splitTextToSize(footerText, pageWidth - 2 * margin - 10)
+      doc.text(footerLines, margin, yPos)
+      yPos += footerLines.length * 3 + 5
+      doc.setFontSize(7)
+      doc.setTextColor(100, 100, 100)
+      doc.text("Desarrollado por CMG Health Solutions - Herramienta de Apoyo Clínico", pageWidth / 2, yPos, {
+        align: "center",
+      })
 
-SIGNOS VITALES:
-- Frecuencia Cardíaca: ${frecuenciaCardiaca} lpm
-- Presión Arterial: ${presionSistolica}/${presionDiastolica} mmHg
-- Estado de Conciencia: ${estadoConciencia}
-
-ESTUDIOS COMPLEMENTARIOS:
-- Ecografía Transvaginal (TVUS): ${obtenerNombreTVUS(tvus)}
-- β-hCG: ${hcgValor} mUI/mL
-${hcgAnterior ? `- β-hCG Anterior: ${hcgAnterior} mUI/mL` : ""}
-
-SÍNTOMAS PRESENTES:
-${sintomasSeleccionados.map((s) => `- ${obtenerNombreSintoma(s)}`).join("\n")}
-
-FACTORES DE RIESGO:
-${factoresSeleccionados.map((f) => `- ${obtenerNombreFactorRiesgo(f)}`).join("\n")}
-
-RESULTADO DE LA HERRAMIENTA:
-${resultado != null ? `Estimación de riesgo: ${(resultado * 100).toFixed(1)}%` : "No calculado"}
-
-RECOMENDACIÓN DE APOYO:
-${recomendacionTexto}
-
-DESCARGO DE RESPONSABILIDAD:
-Esta herramienta es<bos>únicamente de apoyo clínico y no reemplaza el juicio médico profesional.
-El diagnóstico y tratamiento final siempre debe ser determinado por el médico tratante.
-
-===================================================
-Desarrollado por CMG Health Solutions
-Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
-      `
-      const a = document.createElement("a")
-      const archivo = new Blob([contenidoInforme], { type: "text/plain" })
-      a.href = URL.createObjectURL(archivo)
-      a.download = `Reporte_Apoyo_Ectopico_${idSeguimiento}_${new Date().toISOString().split("T")[0]}.txt`
-      document.body.appendChild(a)
-      document.body.removeChild(a)
-      alert("Reporte de apoyo generado y descargado exitosamente")
+      // Save PDF
+      doc.save(`Reporte_Ectopico_${idSeguimiento}_${new Date().toISOString().split("T")[0]}.pdf`)
+      alert("Reporte PDF generado y descargado exitosamente")
     } catch (error) {
       console.error("Error al generar el reporte:", error)
       alert("Error al generar el reporte. Por favor, inténtelo de nuevo.")
@@ -1776,7 +1918,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
                   <div className="flex items-center space-x-4">
                     <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-lg">
-                      <CheckCircle className="h-8 w-8 text-white" />
+                      <CheckCircle2 className="h-8 w-8 text-white" />
                     </div>
                     <div>
                       <h2 className="text-3xl font-bold text-slate-800">Resultado de la Herramienta</h2>

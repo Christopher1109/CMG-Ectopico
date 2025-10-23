@@ -19,6 +19,7 @@ import {
   EyeOff,
   CheckCircle,
   Download,
+  Droplet,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type React from "react"
@@ -302,6 +303,9 @@ export default function CalculadoraEctopico() {
   const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
   const [consultaCargada, setConsultaCargada] = useState<any>(null)
   const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
+
+  const [tieneTVUS, setTieneTVUS] = useState<string>("")
+  const [tieneHCG, setTieneHCG] = useState<string>("")
 
   // ✅ Verificar autenticación al cargar
   useEffect(() => {
@@ -847,11 +851,12 @@ export default function CalculadoraEctopico() {
     setHcgValor("")
     setEsConsultaSeguimiento(true)
 
-    setSeccionesCompletadas([1, 2, 3, 4])
+    // Update total sections from 5 to 7 and set to completed
+    setSeccionesCompletadas([1, 2, 3, 4, 5, 6, 7])
+    setSeccionActual(8) // Proceed to the final calculation step
     setMostrarResumenConsulta(false)
     setModoCargarConsulta(false)
     setMostrarPantallaBienvenida(false)
-    setSeccionActual(5)
   }
 
   const obtenerNombreSintoma = (sintomaId: string) => {
@@ -919,19 +924,19 @@ export default function CalculadoraEctopico() {
     setHcgValor("")
     setVariacionHcg("")
     setHcgAnterior("")
-    setIdSeguimiento("")
-    setMostrarIdSeguimiento(false)
-    setModoCargarConsulta(false)
+    setTieneTVUS("")
+    setTieneHCG("")
     setIdBusqueda("")
+    setConsultaAnteriorParaMostrar(null) // Reset state to null
+    setNumeroConsultaActual(1) // Reset to 1
+    setEsConsultaSeguimiento(false) // Reset to false
+    setModoCargarConsulta(false)
     setMostrarResumenConsulta(false)
     setConsultaCargada(null)
     setMostrarPantallaBienvenida(true)
     setMostrarResultados(false)
     setMostrarAlerta(false)
     setMensajeAlerta("")
-    setEsConsultaSeguimiento(false)
-    setNumeroConsultaActual(1)
-    setConsultaAnteriorParaMostrar(1) // Reset new state
   }
 
   const generarInformePDF = () => {
@@ -966,7 +971,7 @@ SIGNOS VITALES:
 - Estado de Conciencia: ${estadoConciencia}
 
 ESTUDIOS COMPLEMENTARIOS:
-- Ecografía Transvaginal: ${obtenerNombreTVUS(tvus)}
+- Ecografía Transvaginal (TVUS): ${obtenerNombreTVUS(tvus)}
 - β-hCG: ${hcgValor} mUI/mL
 ${hcgAnterior ? `- β-hCG Anterior: ${hcgAnterior} mUI/mL` : ""}
 
@@ -1075,7 +1080,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
     ) {
       return null
     }
-    const totalSecciones = 5
+    const totalSecciones = 7
     const seccionesCompletas = seccionesCompletadas.length
     const progreso = (seccionesCompletas / totalSecciones) * 100
 
@@ -2231,184 +2236,349 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                 )}
 
                 {seccionActual === 5 && (
-                  <div className="space-y-6">
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg shadow-lg">
-                      <div className="flex items-center space-x-3">
-                        <Calculator className="h-8 w-8" />
-                        <div>
-                          <h2 className="text-2xl font-bold">Calculadora de Riesgo de Embarazo Ectópico</h2>
-                          <p className="text-blue-100 text-sm">
-                            Herramienta de apoyo clínico para la evaluación del riesgo de embarazo ectópico
-                          </p>
+                  <div className="space-y-8">
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className="bg-blue-100 p-3 rounded-full">
+                        <AlertTriangle className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-800">Factores de Riesgo</h3>
+                    </div>
+
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                        Seleccione los factores de riesgo presentes
+                      </h4>
+                      {esConsultaSeguimiento && (
+                        <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mb-4">
+                          Mantenidos de consulta anterior
                         </div>
+                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {factoresRiesgo.map((factor) => (
+                          <label
+                            key={factor.id}
+                            className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                          >
+                            <div className="relative">
+                              <input
+                                type="checkbox"
+                                checked={factoresSeleccionados.includes(factor.id)}
+                                onChange={(e) =>
+                                  setFactoresSeleccionados((prev) =>
+                                    e.target.checked ? [...prev, factor.id] : prev.filter((id) => id !== factor.id),
+                                  )
+                                }
+                                className="sr-only"
+                              />
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                  factoresSeleccionados.includes(factor.id)
+                                    ? "bg-blue-600 border-blue-600"
+                                    : "border-gray-300 hover:border-blue-400"
+                                }`}
+                              >
+                                {factoresSeleccionados.includes(factor.id) && (
+                                  <div className="w-2 h-2 bg-white rounded-full" />
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">{factor.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <p className="text-sm text-gray-500 mt-4">
+                        Si no tiene ningún factor de riesgo, puede continuar sin seleccionar ninguno
+                      </p>
+                    </div>
+
+                    <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+                      <Button
+                        onClick={() => setSeccionActual(4)}
+                        variant="outline"
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
+                        Anterior
+                      </Button>
+                      <Button onClick={() => completarSeccion(5)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                        Continuar
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {seccionActual === 6 && (
+                  <div className="space-y-8">
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className="bg-blue-100 p-3 rounded-full">
+                        <Activity className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-800">Ecografía Transvaginal (TVUS)</h3>
+                    </div>
+
+                    {/* Ask if patient has TVUS */}
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                        ¿La paciente cuenta con una ecografía transvaginal (TVUS)?
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                          <input
+                            type="radio"
+                            name="tieneTVUS"
+                            value="si"
+                            checked={tieneTVUS === "si"}
+                            onChange={(e) => {
+                              setTieneTVUS(e.target.value)
+                              setTvus("") // Reset TVUS selection when changing answer
+                            }}
+                            className="sr-only"
+                          />
+                          <div
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              tieneTVUS === "si"
+                                ? "bg-green-600 border-green-600"
+                                : "border-gray-300 hover:border-green-400"
+                            }`}
+                          >
+                            {tieneTVUS === "si" && <div className="w-3 h-3 bg-white rounded-full" />}
+                          </div>
+                          <span className="text-base font-medium text-gray-700">Sí, cuenta con TVUS</span>
+                        </label>
+
+                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                          <input
+                            type="radio"
+                            name="tieneTVUS"
+                            value="no"
+                            checked={tieneTVUS === "no"}
+                            onChange={(e) => setTieneTVUS(e.target.value)}
+                            className="sr-only"
+                          />
+                          <div
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              tieneTVUS === "no" ? "bg-red-600 border-red-600" : "border-gray-300 hover:border-red-400"
+                            }`}
+                          >
+                            {tieneTVUS === "no" && <div className="w-3 h-3 bg-white rounded-full" />}
+                          </div>
+                          <span className="text-base font-medium text-gray-700">No cuenta con TVUS</span>
+                        </label>
                       </div>
                     </div>
 
-                    <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                      <div className="flex items-center space-x-2 mb-6">
-                        <div className="p-2 bg-orange-100 rounded-lg">
-                          <FileText className="h-5 w-5 text-orange-600" />
+                    {/* Show blocking alert if no TVUS */}
+                    {tieneTVUS === "no" && (
+                      <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6">
+                        <div className="flex items-start space-x-4">
+                          <div className="bg-red-100 p-3 rounded-full flex-shrink-0">
+                            <AlertTriangle className="h-6 w-6 text-red-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-lg font-bold text-red-800 mb-2">Ecografía Transvaginal Requerida</h4>
+                            <p className="text-red-700 mb-4">
+                              Para continuar con la evaluación del embarazo ectópico, es necesario contar con una
+                              ecografía transvaginal (TVUS) realizada por un ginecólogo.
+                            </p>
+                            <div className="bg-white border border-red-200 rounded-lg p-4">
+                              <p className="text-sm font-semibold text-red-800 mb-2">Recomendaciones:</p>
+                              <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
+                                <li>Acuda con su ginecólogo para realizar una ecografía transvaginal</li>
+                                <li>Una vez cuente con los resultados, podrá continuar con esta evaluación</li>
+                                <li>La TVUS es fundamental para determinar la ubicación del embarazo</li>
+                              </ul>
+                            </div>
+                          </div>
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-800">Evaluación de Riesgo</h3>
                       </div>
+                    )}
 
-                      <div className="space-y-8">
-                        {/* Síntomas */}
-                        <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-4">Síntomas Presentes</h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {[
-                              { id: "sangrado", label: "Sangrado vaginal" },
-                              { id: "dolor", label: "Dolor pélvico/abdominal" },
-                              { id: "dolor_sangrado", label: "Sangrado + Dolor" },
-                              { id: "sincope", label: "Síncope o mareo" },
-                            ].map((op) => (
-                              <label
-                                key={op.id}
-                                className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                              >
-                                <div className="relative">
-                                  <input
-                                    type="checkbox"
-                                    checked={sintomasSeleccionados.includes(op.id)}
-                                    onChange={(e) =>
-                                      setSintomasSeleccionados((prev) =>
-                                        e.target.checked ? [...prev, op.id] : prev.filter((id) => id !== op.id),
-                                      )
-                                    }
-                                    className="sr-only"
-                                  />
-                                  <div
-                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                      sintomasSeleccionados.includes(op.id)
-                                        ? "bg-blue-600 border-blue-600"
-                                        : "border-gray-300 hover:border-blue-400"
-                                    }`}
-                                  >
-                                    {sintomasSeleccionados.includes(op.id) && (
-                                      <div className="w-2 h-2 bg-white rounded-full" />
-                                    )}
-                                  </div>
+                    {/* Show TVUS options if patient has it */}
+                    {tieneTVUS === "si" && (
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                          Resultado de la Ecografía Transvaginal
+                          {!tvus && (
+                            <span className="text-xs text-red-600 block font-normal mt-1">
+                              * Campo requerido - Seleccione una opción
+                            </span>
+                          )}
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {[
+                            { value: "normal", label: "Normal" },
+                            { value: "libre", label: "Líquido libre" },
+                            { value: "masa", label: "Masa anexial" },
+                            { value: "masa_libre", label: "Masa anexial + líquido libre" },
+                          ].map((op) => (
+                            <label
+                              key={op.value}
+                              className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                            >
+                              <div className="relative">
+                                <input
+                                  type="radio"
+                                  name="tvus"
+                                  value={op.value}
+                                  checked={tvus === op.value}
+                                  onChange={(e) => setTvus(e.target.value)}
+                                  className="sr-only"
+                                />
+                                <div
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                    tvus === op.value
+                                      ? "bg-blue-600 border-blue-600"
+                                      : "border-gray-300 hover:border-blue-400"
+                                  }`}
+                                >
+                                  {tvus === op.value && <div className="w-2 h-2 bg-white rounded-full" />}
                                 </div>
-                                <span className="text-sm font-medium text-gray-700">{op.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Factores de Riesgo */}
-                        <div>
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="text-lg font-semibold text-gray-800">Factores de Riesgo</h4>
-                            {esConsultaSeguimiento && (
-                              <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                Mantenidos de consulta anterior
                               </div>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {factoresRiesgo.map((factor) => (
-                              <label
-                                key={factor.id}
-                                className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                              >
-                                <div className="relative">
-                                  <input
-                                    type="checkbox"
-                                    checked={factoresSeleccionados.includes(factor.id)}
-                                    onChange={(e) =>
-                                      setFactoresSeleccionados((prev) =>
-                                        e.target.checked ? [...prev, factor.id] : prev.filter((id) => id !== factor.id),
-                                      )
-                                    }
-                                    className="sr-only"
-                                  />
-                                  <div
-                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                      factoresSeleccionados.includes(factor.id)
-                                        ? "bg-blue-600 border-blue-600"
-                                        : "border-gray-300 hover:border-blue-400"
-                                    }`}
-                                  >
-                                    {factoresSeleccionados.includes(factor.id) && (
-                                      <div className="w-2 h-2 bg-white rounded-full" />
-                                    )}
-                                  </div>
-                                </div>
-                                <span className="text-sm font-medium text-gray-700">{factor.label}</span>
-                              </label>
-                            ))}
-                          </div>
+                              <span className="text-sm font-medium text-gray-700">{op.label}</span>
+                            </label>
+                          ))}
                         </div>
+                      </div>
+                    )}
 
-                        {/* TVUS */}
-                        <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                            Ecografía Transvaginal (TVUS)
-                            {!tvus && (
-                              <span className="text-xs text-red-600 block font-normal mt-1">
-                                * Campo requerido - Seleccione una opción
-                              </span>
-                            )}
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {[
-                              { value: "normal", label: "Normal" },
-                              { value: "libre", label: "Líquido libre" },
-                              { value: "masa", label: "Masa anexial" },
-                              { value: "masa_libre", label: "Masa anexial + líquido libre" },
-                            ].map((op) => (
-                              <label
-                                key={op.value}
-                                className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                              >
-                                <div className="relative">
-                                  <input
-                                    type="radio"
-                                    name="tvus"
-                                    value={op.value}
-                                    checked={tvus === op.value}
-                                    onChange={(e) => setTvus(e.target.value)}
-                                    className="sr-only"
-                                  />
-                                  <div
-                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                      tvus === op.value
-                                        ? "bg-blue-600 border-blue-600"
-                                        : "border-gray-300 hover:border-blue-400"
-                                    }`}
-                                  >
-                                    {tvus === op.value && <div className="w-2 h-2 bg-white rounded-full" />}
-                                  </div>
-                                </div>
-                                <span className="text-sm font-medium text-gray-700">{op.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
+                    <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+                      <Button
+                        onClick={() => setSeccionActual(5)}
+                        variant="outline"
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (tieneTVUS === "si" && tvus) {
+                            completarSeccion(6)
+                          } else if (tieneTVUS === "no") {
+                            // Block continuation - do nothing
+                          } else {
+                            alert("Por favor seleccione si cuenta con TVUS")
+                          }
+                        }}
+                        disabled={tieneTVUS === "no" || (tieneTVUS === "si" && !tvus)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      >
+                        Continuar
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
-                        {/* β-hCG actual */}
-                        <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                            β-hCG actual (mUI/mL)
-                            {!hcgValor && (
-                              <span className="text-xs text-red-600 block font-normal mt-1">
-                                * Campo requerido - Ingrese el valor
-                              </span>
-                            )}
-                          </h4>
+                {seccionActual === 7 && (
+                  <div className="space-y-8">
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className="bg-blue-100 p-3 rounded-full">
+                        <Droplet className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-800">Prueba de β-hCG</h3>
+                    </div>
+
+                    {/* Ask if patient has β-hCG test */}
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                        ¿La paciente cuenta con una prueba de β-hCG (Gonadotropina Coriónica Humana)?
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
                           <input
-                            type="number"
-                            placeholder="Valor actual"
-                            value={hcgValor}
-                            onChange={(e) => setHcgValor(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-700"
+                            type="radio"
+                            name="tieneHCG"
+                            value="si"
+                            checked={tieneHCG === "si"}
+                            onChange={(e) => {
+                              setTieneHCG(e.target.value)
+                              setHcgValor("") // Reset HCG value when changing answer
+                            }}
+                            className="sr-only"
                           />
-                        </div>
+                          <div
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              tieneHCG === "si"
+                                ? "bg-green-600 border-green-600"
+                                : "border-gray-300 hover:border-green-400"
+                            }`}
+                          >
+                            {tieneHCG === "si" && <div className="w-3 h-3 bg-white rounded-full" />}
+                          </div>
+                          <span className="text-base font-medium text-gray-700">Sí, cuenta con β-hCG</span>
+                        </label>
 
-                        {/* β-hCG previo */}
+                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                          <input
+                            type="radio"
+                            name="tieneHCG"
+                            value="no"
+                            checked={tieneHCG === "no"}
+                            onChange={(e) => setTieneHCG(e.target.value)}
+                            className="sr-only"
+                          />
+                          <div
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              tieneHCG === "no" ? "bg-red-600 border-red-600" : "border-gray-300 hover:border-red-400"
+                            }`}
+                          >
+                            {tieneHCG === "no" && <div className="w-3 h-3 bg-white rounded-full" />}
+                          </div>
+                          <span className="text-base font-medium text-gray-700">No cuenta con β-hCG</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Show blocking alert if no β-hCG */}
+                    {tieneHCG === "no" && (
+                      <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6">
+                        <div className="flex items-start space-x-4">
+                          <div className="bg-red-100 p-3 rounded-full flex-shrink-0">
+                            <AlertTriangle className="h-6 w-6 text-red-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-lg font-bold text-red-800 mb-2">Análisis de β-hCG Requerido</h4>
+                            <p className="text-red-700 mb-4">
+                              Para continuar con la evaluación del embarazo ectópico, es necesario contar con un
+                              análisis clínico de β-hCG (Gonadotropina Coriónica Humana).
+                            </p>
+                            <div className="bg-white border border-red-200 rounded-lg p-4">
+                              <p className="text-sm font-semibold text-red-800 mb-2">Recomendaciones:</p>
+                              <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
+                                <li>Acuda a un laboratorio clínico para realizar el análisis de β-hCG</li>
+                                <li>Una vez cuente con los resultados, podrá continuar con esta evaluación</li>
+                                <li>El nivel de β-hCG es fundamental para determinar el riesgo de embarazo ectópico</li>
+                                <li>Solicite el resultado en mUI/mL (mili Unidades Internacionales por mililitro)</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Show β-hCG input if patient has it */}
+                    {tieneHCG === "si" && (
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                          Valor de β-hCG actual (mUI/mL)
+                          {!hcgValor && (
+                            <span className="text-xs text-red-600 block font-normal mt-1">
+                              * Campo requerido - Ingrese el valor
+                            </span>
+                          )}
+                        </h4>
+                        <input
+                          type="number"
+                          placeholder="Ejemplo: 2000"
+                          value={hcgValor}
+                          onChange={(e) => setHcgValor(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-700"
+                        />
+                        <p className="text-sm text-gray-500 mt-2">
+                          Ingrese el valor numérico del resultado de su análisis de β-hCG
+                        </p>
+
+                        {/* Show previous β-hCG if follow-up consultation */}
                         {esConsultaSeguimiento && hcgAnterior && (
-                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-4">
                             <p className="text-sm text-blue-800">
                               <strong>β-hCG de consulta anterior:</strong> {hcgAnterior} mUI/mL
                             </p>
@@ -2418,26 +2588,33 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           </div>
                         )}
                       </div>
+                    )}
 
-                      <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
-                        <Button
-                          onClick={() => setSeccionActual(4)}
-                          variant="outline"
-                          className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                        >
-                          Anterior
-                        </Button>
-                        <Button
-                          onClick={calcular}
-                          className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg"
-                        >
-                          <Calculator className="h-5 w-5 mr-2" />
-                          Calcular Riesgo
-                        </Button>
-                      </div>
+                    <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+                      <Button
+                        onClick={() => setSeccionActual(6)}
+                        variant="outline"
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (tieneHCG === "si" && hcgValor) {
+                            calcular()
+                          } else if (tieneHCG === "no") {
+                            // Block continuation - do nothing
+                          } else {
+                            alert("Por favor seleccione si cuenta con β-hCG")
+                          }
+                        }}
+                        disabled={tieneHCG === "no" || (tieneHCG === "si" && !hcgValor)}
+                        className="bg-green-600 hover:bg-green-700 text-white font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      >
+                        <Calculator className="h-5 w-5 mr-2" />
+                        Calcular Riesgo
+                      </Button>
                     </div>
-
-                    <CMGFooter />
                   </div>
                 )}
               </CardContent>

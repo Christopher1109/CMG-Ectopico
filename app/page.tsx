@@ -296,10 +296,10 @@ export default function CalculadoraEctopico() {
   // Consultas
   const [sintomasSeleccionados, setSintomasSeleccionados] = useState<string[]>([])
   const [factoresSeleccionados, setFactoresSeleccionados] = useState<string[]>([])
-  const [tvus, setTvus] = useState("")
-  const [hcgValor, setHcgValor] = useState("")
-  const [variacionHcg, setVariacionHcg] = useState("")
-  const [hcgAnterior, setHcgAnterior] = useState("")
+  const [tvus, setTvus] = useState("") // TVUS result, should be 'normal', 'libre', 'masa', 'masa_libre'
+  const [hcgValor, setHcgValor] = useState("") // Current hCG value
+  const [variacionHcg, setVariacionHcg] = useState("") // Calculated hCG variation
+  const [hcgAnterior, setHcgAnterior] = useState("") // Previous hCG value
 
   // Búsqueda y carga
   const [idBusqueda, setIdBusqueda] = useState("")
@@ -307,10 +307,12 @@ export default function CalculadoraEctopico() {
   const [consultaCargada, setConsultaCargada] = useState<any>(null)
   const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
 
-  const [tieneTVUS, setTieneTVUS] = useState<string>("")
-  const [tieneHCG, setTieneHCG] = useState<string>("")
-  const [betaHcg, setBetaHcg] = useState("") // Added state for betaHcg value
-  const [tieneBetaHCG, setTieneBetaHCG] = useState<string>("") // Declared here
+  // Estados específicos para el cálculo
+  const [resultadoTVUS, setResultadoTVUS] = useState<string>("") // Renamed from 'tvus' for clarity
+  const [betaHcg, setBetaHcg] = useState<string>("") // Renamed from 'hcgValor' for clarity
+  const [tieneBetaHCG, setTieneBetaHCG] = useState<string>("") // Indicates if betaHCG result is available
+  const [tieneTVUS, setTieneTVUS] = useState<string>("") // Indicates if TVUS result is available
+  const [tieneHCG, setTieneHCG] = useState<string>("") // This state seems unused, but kept for consistency
 
   // ✅ Verificar autenticación al cargar
   useEffect(() => {
@@ -351,7 +353,7 @@ export default function CalculadoraEctopico() {
         resultadoEcoTransabdominal: resultadoEcoTransabdominal || null,
         sintomasSeleccionados: sintomasSeleccionados || [],
         factoresSeleccionados: factoresSeleccionados || [],
-        tvus: tvus || null,
+        tvus: tvus || null, // Using 'tvus' here as it's the actual TVUS result field
         hcgValor: hcgValor ? Number.parseFloat(hcgValor) : null,
         variacionHcg: variacionHcg || null,
         hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
@@ -393,8 +395,8 @@ export default function CalculadoraEctopico() {
     try {
       const respuesta = await calcularRiesgo({
         edadPaciente: edadPaciente,
-        tvus: "normal",
-        hcgValor: "1000",
+        tvus: "normal", // Using a default value for TVUS here as it's not yet collected
+        hcgValor: "1000", // Using a default value for hCG here as it's not yet collected
       })
 
       if (respuesta.error) {
@@ -510,7 +512,7 @@ export default function CalculadoraEctopico() {
   }
 
   const calcular = async () => {
-    if (!tvus || !hcgValor) {
+    if (!resultadoTVUS || !betaHcg) {
       alert("Por favor complete todos los campos requeridos: TVUS y β-hCG")
       return
     }
@@ -535,14 +537,15 @@ export default function CalculadoraEctopico() {
         resultadoV2c,
         pretestAjustado,
         hcgAnterior,
-        hcgValor,
+        hcgValor: betaHcg, // Use betaHcg here
+        tvus: resultadoTVUS, // Use resultadoTVUS here
       })
 
       const respuesta = await clienteSeguro.calcularRiesgo({
         sintomasSeleccionados: sintomasSeleccionados,
         factoresSeleccionados: factoresSeleccionados,
-        tvus: tvus,
-        hcgValor: hcgValor,
+        tvus: resultadoTVUS, // Use resultadoTVUS here
+        hcgValor: betaHcg, // Use betaHcg here
         hcgAnterior: hcgAnterior,
         esConsultaSeguimiento: esConsultaSeguimiento,
         numeroConsultaActual: numeroConsultaActual,
@@ -595,8 +598,8 @@ export default function CalculadoraEctopico() {
         resultadoEcoTransabdominal,
         sintomasSeleccionados,
         factoresSeleccionados,
-        tvus,
-        hcgValor: Number.parseFloat(hcgValor),
+        tvus: resultadoTVUS, // Use resultadoTVUS here
+        hcgValor: betaHcg ? Number.parseFloat(betaHcg) : null, // Use betaHcg here
         variacionHcg: respuesta.variacionHcg || null,
         hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
         resultado: probPost,
@@ -680,8 +683,8 @@ export default function CalculadoraEctopico() {
     setResultadoEcoTransabdominal("")
     setSintomasSeleccionados([])
     setFactoresSeleccionados([])
-    setTvus("")
-    setHcgValor("")
+    setTvus("") // Resetting the original tvus state
+    setHcgValor("") // Resetting the original hcgValor state
     setHcgAnterior("")
     setResultado(null)
     setIdSeguimiento("")
@@ -689,6 +692,13 @@ export default function CalculadoraEctopico() {
     setConsultaCargada(null)
     setNumeroConsultaActual(1)
     setEsConsultaSeguimiento(false)
+
+    // Clear specific states related to the calculation
+    setResultadoTVUS("")
+    setBetaHcg("")
+    setTieneBetaHCG("")
+    setTieneTVUS("")
+    setTieneHCG("") // This state seems unused, but kept for consistency
 
     // Clear localStorage draft data
     Object.keys(localStorage).forEach((key) => {
@@ -852,8 +862,8 @@ export default function CalculadoraEctopico() {
     // Limpiar campos para nueva consulta
     setSintomasSeleccionados([])
     setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
-    setTvus("")
-    setHcgValor("")
+    setTvus("") // Resetting original tvus state
+    setHcgValor("") // Resetting original hcgValor state
     setEsConsultaSeguimiento(true)
 
     // Update total sections from 5 to 7 and set to completed
@@ -926,12 +936,12 @@ export default function CalculadoraEctopico() {
     setMensajeFinal("")
     setSintomasSeleccionados([])
     setFactoresSeleccionados([])
-    setTvus("")
-    setHcgValor("")
+    setTvus("") // Resetting original tvus state
+    setHcgValor("") // Resetting original hcgValor state
     setVariacionHcg("")
     setHcgAnterior("")
     setTieneTVUS("")
-    setTieneHCG("")
+    setTieneHCG("") // This state seems unused, but kept for consistency
     setBetaHcg("") // Reset betaHcg state
     setIdBusqueda("")
     setConsultaAnteriorParaMostrar(null) // Reset state to null
@@ -946,6 +956,9 @@ export default function CalculadoraEctopico() {
     setMensajeAlerta("")
     setTieneBetaHCG("") // Reset tieneBetaHCG state
     setErrorSeccion("")
+
+    // Resetting states related to the calculation itself
+    setResultadoTVUS("")
   }
 
   const generarInformePDF = () => {
@@ -2441,7 +2454,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             checked={tieneTVUS === "no"}
                             onChange={(e) => {
                               setTieneTVUS(e.target.value)
-                              setTvus("")
+                              setTvus("") // Resetting original tvus state
                             }}
                             className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
@@ -2511,6 +2524,8 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           } else if (tieneTVUS === "si" && !tvus) {
                             setErrorSeccion("Por favor, seleccione el resultado de la ecografía transvaginal.")
                           } else {
+                            // Before moving to the next section, set the result of TVUS
+                            setResultadoTVUS(tvus) // Setting the result to the new state variable
                             completarSeccion(6)
                           }
                         }}
@@ -2559,7 +2574,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             checked={tieneBetaHCG === "no"}
                             onChange={(e) => {
                               setTieneBetaHCG(e.target.value)
-                              setBetaHcg("")
+                              setBetaHcg("") // Resetting betaHcg state
                             }}
                             className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />

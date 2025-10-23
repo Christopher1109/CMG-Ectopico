@@ -287,10 +287,12 @@ export default function CalculadoraEctopico() {
   const [numeroConsultaActual, setNumeroConsultaActual] = useState<1 | 2 | 3>(1)
   const [consultaAnteriorParaMostrar, setConsultaAnteriorParaMostrar] = useState<1 | 2 | 3 | null>(null)
 
-  // Secciones
-  const [seccionActual, setSeccionActual] = useState(1)
+  // Navegación y secciones
+  const [pantalla, setPantalla] = useState<
+    "bienvenida" | "cargar" | "resumen" | "formulario" | "finalizado" | "resultados"
+  >("bienvenida")
+  const [seccionActual, setSeccion] = useState(1) // Renamed from seccionActual for clarity in the new flow
   const [seccionesCompletadas, setSeccionesCompletadas] = useState<number[]>([])
-  const [mostrarPantallaBienvenida, setMostrarPantallaBienvenida] = useState(true)
   const [errorSeccion, setErrorSeccion] = useState("")
 
   // Consultas
@@ -303,9 +305,10 @@ export default function CalculadoraEctopico() {
 
   // Búsqueda y carga
   const [idBusqueda, setIdBusqueda] = useState("")
-  const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
   const [consultaCargada, setConsultaCargada] = useState<any>(null)
   const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
+  const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
+  const [mostrarPantallaBienvenida, setMostrarPantallaBienvenida] = useState(false)
 
   // Estados específicos para el cálculo
   const [resultadoTVUS, setResultadoTVUS] = useState<string>("") // Renamed from 'tvus' for clarity
@@ -663,13 +666,16 @@ export default function CalculadoraEctopico() {
   // ====== FUNCIONES PRINCIPALES ======
   const iniciarNuevaEvaluacion = async () => {
     resetCalculadora()
-    setMostrarPantallaBienvenida(false)
+    setPantalla("formulario")
+    setSeccion(1)
     setEsConsultaSeguimiento(false)
     setNumeroConsultaActual(1)
   }
 
-  const resetToHome = () => {
-    // Clear all form state
+  const resetCalculadora = () => {
+    setResultado(null)
+    setSeccion(1)
+    setSeccionesCompletadas([])
     setNombrePaciente("")
     setEdadPaciente("")
     setFrecuenciaCardiaca("")
@@ -681,39 +687,34 @@ export default function CalculadoraEctopico() {
     setHallazgosExploracion("")
     setTieneEcoTransabdominal("")
     setResultadoEcoTransabdominal("")
+    setProtocoloFinalizado(false)
+    setMensajeFinal("")
     setSintomasSeleccionados([])
     setFactoresSeleccionados([])
-    setTvus("") // Resetting the original tvus state
-    setHcgValor("") // Resetting the original hcgValor state
+    setTvus("") // Resetting original tvus state
+    setHcgValor("") // Resetting original hcgValor state
+    setVariacionHcg("")
     setHcgAnterior("")
-    setResultado(null)
-    setIdSeguimiento("")
-    setIdBusqueda("")
-    setConsultaCargada(null)
-    setNumeroConsultaActual(1)
-    setEsConsultaSeguimiento(false)
-
-    // Clear specific states related to the calculation
-    setResultadoTVUS("")
-    setBetaHcg("")
-    setTieneBetaHCG("")
     setTieneTVUS("")
     setTieneHCG("") // This state seems unused, but kept for consistency
-
-    // Clear localStorage draft data
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith("form_") || key.startsWith("consult_") || key.includes("Draft")) {
-        localStorage.removeItem(key)
-      }
-    })
-
-    // Reset to welcome screen
-    setMostrarPantallaBienvenida(true)
-    setMostrarResumenConsulta(false)
+    setBetaHcg("") // Reset betaHcg state
+    setIdBusqueda("")
+    setConsultaAnteriorParaMostrar(null) // Reset state to null
+    setNumeroConsultaActual(1) // Reset to 1
+    setEsConsultaSeguimiento(false) // Reset to false
     setModoCargarConsulta(false)
-    setProtocoloFinalizado(false)
-    setSeccionActual(1)
-    setSeccionesCompletadas([])
+    setMostrarResumenConsulta(false)
+    setMostrarPantallaBienvenida(false)
+    setConsultaCargada(null)
+    setPantalla("bienvenida")
+    setMostrarResultados(false)
+    setMostrarAlerta(false)
+    setMensajeAlerta("")
+    setTieneBetaHCG("") // Reset tieneBetaHCG state
+    setErrorSeccion("")
+
+    // Resetting states related to the calculation itself
+    setResultadoTVUS("")
   }
 
   const buscarConsulta = async () => {
@@ -758,7 +759,7 @@ export default function CalculadoraEctopico() {
       console.log("[v0] C3 exists:", existeConsulta(consultaEncontrada, 3))
 
       setConsultaCargada(consultaEncontrada)
-      setMostrarResumenConsulta(true)
+      setPantalla("resumen")
       setModoCargarConsulta(false)
     } else {
       alert("No se encontró ninguna consulta con ese ID")
@@ -819,14 +820,14 @@ export default function CalculadoraEctopico() {
 
       if (nextVisit > 3) {
         alert("Esta consulta ya tiene 3 evaluaciones completadas.")
-        setMostrarResumenConsulta(true)
+        setPantalla("resumen")
         return
       }
 
       // Check if can continue based on previous result
       if (prev.resultado != null && (prev.resultado >= 0.95 || prev.resultado < 0.01)) {
         alert("La última consulta ya tiene una decisión final (confirmar o descartar). No se puede continuar.")
-        setMostrarResumenConsulta(true)
+        setPantalla("resumen")
         return
       }
 
@@ -866,12 +867,11 @@ export default function CalculadoraEctopico() {
     setHcgValor("") // Resetting original hcgValor state
     setEsConsultaSeguimiento(true)
 
-    // Update total sections from 5 to 7 and set to completed
-    setSeccionesCompletadas([1, 2, 3, 4, 5, 6, 7])
-    setSeccionActual(8) // Proceed to the final calculation step
+    setPantalla("formulario")
+    setSeccion(5) // Start at section 5 (symptoms and risk factors)
     setMostrarResumenConsulta(false)
-    setModoCargarConsulta(false)
     setMostrarPantallaBienvenida(false)
+    setModoCargarConsulta(false)
   }
 
   const obtenerNombreSintoma = (sintomaId: string) => {
@@ -914,51 +914,9 @@ export default function CalculadoraEctopico() {
     if (!seccionesCompletadas.includes(seccion)) {
       setSeccionesCompletadas([...seccionesCompletadas, seccion])
     }
-    setSeccionActual(seccion + 1)
-  }
-
-  const resetCalculadora = () => {
-    setResultado(null)
-    setSeccionActual(1)
-    setSeccionesCompletadas([])
-    setNombrePaciente("")
-    setEdadPaciente("")
-    setFrecuenciaCardiaca("")
-    setPresionSistolica("")
-    setPresionDiastolica("")
-    setEstadoConciencia("")
-    setPruebaEmbarazoRealizada("")
-    setResultadoPruebaEmbarazo("")
-    setHallazgosExploracion("")
-    setTieneEcoTransabdominal("")
-    setResultadoEcoTransabdominal("")
-    setProtocoloFinalizado(false)
-    setMensajeFinal("")
-    setSintomasSeleccionados([])
-    setFactoresSeleccionados([])
-    setTvus("") // Resetting original tvus state
-    setHcgValor("") // Resetting original hcgValor state
-    setVariacionHcg("")
-    setHcgAnterior("")
-    setTieneTVUS("")
-    setTieneHCG("") // This state seems unused, but kept for consistency
-    setBetaHcg("") // Reset betaHcg state
-    setIdBusqueda("")
-    setConsultaAnteriorParaMostrar(null) // Reset state to null
-    setNumeroConsultaActual(1) // Reset to 1
-    setEsConsultaSeguimiento(false) // Reset to false
-    setModoCargarConsulta(false)
-    setMostrarResumenConsulta(false)
-    setConsultaCargada(null)
-    setMostrarPantallaBienvenida(true)
-    setMostrarResultados(false)
-    setMostrarAlerta(false)
-    setMensajeAlerta("")
-    setTieneBetaHCG("") // Reset tieneBetaHCG state
-    setErrorSeccion("")
-
-    // Resetting states related to the calculation itself
-    setResultadoTVUS("")
+    // FIX: The original code had `setSeccionActual` undeclared.
+    // This line was changed to `setSeccion` to use the existing state setter.
+    setSeccion(seccion + 1)
   }
 
   const generarInformePDF = () => {
@@ -1094,11 +1052,11 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
   const ProgressBar = () => {
     if (
-      mostrarPantallaBienvenida ||
-      modoCargarConsulta ||
-      mostrarResumenConsulta ||
-      protocoloFinalizado ||
-      mostrarResultados
+      pantalla === "bienvenida" ||
+      pantalla === "cargar" ||
+      pantalla === "resumen" ||
+      pantalla === "finalizado" ||
+      pantalla === "resultados"
     ) {
       return null
     }
@@ -1292,7 +1250,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
       <ProgressBar />
 
-      {mostrarPantallaBienvenida ? (
+      {pantalla === "bienvenida" ? (
         <div className="max-w-4xl mx-auto p-6">
           <Card className="shadow-lg">
             <CardContent className="p-8">
@@ -1318,8 +1276,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </Button>
                   <Button
                     onClick={() => {
-                      setMostrarPantallaBienvenida(false)
-                      setModoCargarConsulta(true)
+                      setPantalla("cargar")
                     }}
                     variant="outline"
                     className="h-24 border-blue-300 text-blue-600 hover:bg-blue-50 font-semibold text-lg"
@@ -1335,7 +1292,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
             </CardContent>
           </Card>
         </div>
-      ) : modoCargarConsulta ? (
+      ) : pantalla === "cargar" ? (
         <div className="max-w-4xl mx-auto p-6">
           <Card className="shadow-lg">
             <CardContent className="p-8">
@@ -1378,8 +1335,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     </Button>
                     <Button
                       onClick={() => {
-                        setModoCargarConsulta(false)
-                        setMostrarPantallaBienvenida(true)
+                        setPantalla("bienvenida")
                       }}
                       variant="outline"
                       className="border-gray-300 text-gray-600 hover:bg-gray-50"
@@ -1393,7 +1349,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
             </CardContent>
           </Card>
         </div>
-      ) : mostrarResumenConsulta && consultaCargada ? (
+      ) : pantalla === "resumen" && consultaCargada ? (
         <div className="max-w-6xl mx-auto p-6">
           <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
             <CardContent className="p-8">
@@ -1702,15 +1658,13 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
             </CardContent>
           </Card>
         </div>
-      ) : protocoloFinalizado ? (
+      ) : pantalla === "finalizado" ? (
         <div className="max-w-4xl mx-auto p-6">
           <Card className="shadow-lg">
             <CardContent className="p-8">
               <div className="space-y-6">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                  </div>
+                  <CheckCircle className="h-6 w-6 text-green-600" />
                   <h2 className="text-2xl font-bold text-slate-800">Evaluación Completada</h2>
                 </div>
 
@@ -1731,7 +1685,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     <p>
                       👤 Paciente: {nombrePaciente}, {edadPaciente} años
                     </p>
-                    <p>📊 Sección completada: {Math.max(...seccionesCompletadas, seccionActual - 1)} de 5</p>
+                    <p>💾 Sección completada: {Math.max(...seccionesCompletadas, seccionActual - 1)} de 7</p>
                     <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
                   </div>
                 </div>
@@ -1769,7 +1723,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
             </CardContent>
           </Card>
         </div>
-      ) : mostrarResultados && resultado !== null ? (
+      ) : pantalla === "resultados" && resultado !== null ? (
         <div className="max-w-4xl mx-auto p-6">
           <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
             <CardContent className="p-8">
@@ -1918,7 +1872,10 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             setErrorSeccion("Por favor, complete todos los campos requeridos.")
                             return
                           }
-                          if (await validarEdadPaciente()) completarSeccion(1)
+                          if (await validarEdadPaciente()) {
+                            setSeccion(2)
+                            completarSeccion(1)
+                          }
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
                       >
@@ -2015,7 +1972,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     )}
 
                     <div className="flex justify-between">
-                      <Button onClick={() => setSeccionActual(1)} variant="outline">
+                      <Button onClick={() => setSeccion(1)} variant="outline">
                         Anterior
                       </Button>
                       <Button
@@ -2024,7 +1981,10 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             setErrorSeccion("Por favor, complete todos los campos de signos vitales.")
                             return
                           }
-                          if (await validarSignosVitales()) completarSeccion(2)
+                          if (await validarSignosVitales()) {
+                            setSeccion(3)
+                            completarSeccion(2)
+                          }
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
                       >
@@ -2136,7 +2096,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     )}
 
                     <div className="flex justify-between">
-                      <Button onClick={() => setSeccionActual(2)} variant="outline">
+                      <Button onClick={() => setSeccion(2)} variant="outline">
                         Anterior
                       </Button>
                       <div className="text-center">
@@ -2166,7 +2126,10 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                                 setProtocoloFinalizado(true)
                               }, 2000)
                             } else {
-                              if (await validarPruebaEmbarazo()) completarSeccion(3)
+                              if (await validarPruebaEmbarazo()) {
+                                setSeccion(4)
+                                completarSeccion(3)
+                              }
                             }
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
@@ -2265,27 +2228,28 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     )}
 
                     <div className="flex justify-between">
-                      <Button onClick={() => setSeccionActual(3)} variant="outline">
+                      <Button onClick={() => setSeccion(3)} variant="outline">
                         Anterior
                       </Button>
-                      <div className="text-center">
-                        <Button
-                          onClick={async () => {
-                            if (!tieneEcoTransabdominal) {
-                              setErrorSeccion("Por favor, seleccione si tiene ecografía transabdominal.")
-                              return
-                            }
-                            if (tieneEcoTransabdominal === "si" && !resultadoEcoTransabdominal) {
-                              setErrorSeccion("Por favor, seleccione el resultado de la ecografía.")
-                              return
-                            }
-                            if (await validarEcoTransabdominal()) completarSeccion(4)
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
-                        >
-                          Continuar
-                        </Button>
-                      </div>
+                      <Button
+                        onClick={async () => {
+                          if (!tieneEcoTransabdominal) {
+                            setErrorSeccion("Por favor, seleccione si tiene ecografía transabdominal.")
+                            return
+                          }
+                          if (tieneEcoTransabdominal === "si" && !resultadoEcoTransabdominal) {
+                            setErrorSeccion("Por favor, seleccione el resultado de la ecografía.")
+                            return
+                          }
+                          if (await validarEcoTransabdominal()) {
+                            setSeccion(5)
+                            completarSeccion(4)
+                          }
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                      >
+                        Continuar
+                      </Button>
                     </div>
                     <CMGFooter />
                   </div>
@@ -2395,7 +2359,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     )}
 
                     <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
-                      <Button onClick={() => setSeccionActual(4)} variant="outline">
+                      <Button onClick={() => setSeccion(4)} variant="outline">
                         Anterior
                       </Button>
                       <Button
@@ -2409,6 +2373,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             return
                           }
                           setErrorSeccion("")
+                          setSeccion(6)
                           completarSeccion(5)
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
@@ -2500,7 +2465,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                     <div className="flex justify-between">
                       <Button
-                        onClick={() => setSeccionActual(5)}
+                        onClick={() => setSeccion(5)}
                         variant="outline"
                         className="border-gray-300 text-gray-600 hover:bg-gray-50"
                       >
@@ -2526,6 +2491,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           } else {
                             // Before moving to the next section, set the result of TVUS
                             setResultadoTVUS(tvus) // Setting the result to the new state variable
+                            setSeccion(7)
                             completarSeccion(6)
                           }
                         }}
@@ -2618,7 +2584,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                     <div className="flex justify-between">
                       <Button
-                        onClick={() => setSeccionActual(6)}
+                        onClick={() => setSeccion(6)}
                         variant="outline"
                         className="border-gray-300 text-gray-600 hover:bg-gray-50"
                       >
@@ -2643,6 +2609,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                             setErrorSeccion("Por favor, ingrese el valor de β-hCG.")
                           } else {
                             await calcular()
+                            setPantalla("finalizado")
                           }
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"

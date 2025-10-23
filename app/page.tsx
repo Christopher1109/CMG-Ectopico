@@ -1668,12 +1668,41 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   <h2 className="text-2xl font-bold text-slate-800">Evaluación Completada</h2>
                 </div>
 
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 text-center">
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
                   <p className="text-blue-900 font-medium">
                     {mensajeFinal ||
-                      (resultado !== null
-                        ? "La evaluación ha sido completada exitosamente. Revise los resultados a continuación."
-                        : "Los datos de esta consulta han sido guardados exitosamente.")}
+                      (resultado !== null ? (
+                        resultado < 0.01 ? (
+                          // Baja probabilidad
+                          <>
+                            <strong>Bajas probabilidades de embarazo ectópico.</strong>
+                            <br />
+                            <br />
+                            Se recomienda mantener un monitoreo constante con su ginecólogo de confianza y estar atenta
+                            a cualquier cambio en los síntomas.
+                          </>
+                        ) : resultado >= 0.95 ? (
+                          // Alta probabilidad
+                          <>
+                            <strong>Alta probabilidad de embarazo ectópico.</strong>
+                            <br />
+                            <br />
+                            Se recomienda referencia inmediata a un centro médico especializado para evaluación y manejo
+                            apropiado.
+                          </>
+                        ) : (
+                          // Probabilidad intermedia
+                          <>
+                            <strong>Probabilidad intermedia de embarazo ectópico.</strong>
+                            <br />
+                            <br />
+                            Guarde el código de consulta (disponible abajo para copiar) y regrese en 48 a 72 horas con
+                            nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento.
+                          </>
+                        )
+                      ) : (
+                        "Los datos de esta consulta han sido guardados exitosamente."
+                      ))}
                   </p>
                 </div>
 

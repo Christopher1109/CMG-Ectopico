@@ -929,195 +929,296 @@ export default function CalculadoraEctopico() {
       let yPos = 20
 
       // Helper function to add text with word wrap
-      const addText = (text: string, size = 10, isBold = false) => {
+      const addText = (text: string, size = 10, isBold = false, color: [number, number, number] = [0, 0, 0]) => {
         doc.setFontSize(size)
         doc.setFont("helvetica", isBold ? "bold" : "normal")
+        doc.setTextColor(color[0], color[1], color[2])
         const lines = doc.splitTextToSize(text, pageWidth - 2 * margin)
         doc.text(lines, margin, yPos)
-        yPos += lines.length * (size * 0.5) + 3
+        yPos += lines.length * (size * 0.4) + 4
       }
 
-      // Header
-      doc.setFillColor(37, 99, 235) // Blue
-      doc.rect(0, 0, pageWidth, 30, "F")
+      // Header with logo area
+      doc.setFillColor(37, 99, 235)
+      doc.rect(0, 0, pageWidth, 35, "F")
       doc.setTextColor(255, 255, 255)
-      doc.setFontSize(16)
+      doc.setFontSize(18)
       doc.setFont("helvetica", "bold")
-      doc.text("REPORTE DE APOYO CLÍNICO", pageWidth / 2, 15, { align: "center" })
-      doc.setFontSize(10)
-      doc.text("Herramienta de Evaluación - Embarazo Ectópico", pageWidth / 2, 22, { align: "center" })
+      doc.text("REPORTE DE APOYO CLINICO", pageWidth / 2, 15, { align: "center" })
+      doc.setFontSize(11)
+      doc.setFont("helvetica", "normal")
+      doc.text("Herramienta de Evaluacion - Embarazo Ectopico", pageWidth / 2, 24, { align: "center" })
 
-      yPos = 40
+      yPos = 45
       doc.setTextColor(0, 0, 0)
 
-      // Important disclaimer
-      doc.setFillColor(254, 243, 199) // Yellow background
-      doc.rect(margin - 5, yPos - 5, pageWidth - 2 * margin + 10, 20, "F")
+      // Important disclaimer box
+      doc.setFillColor(254, 243, 199)
+      doc.setDrawColor(251, 191, 36)
+      doc.setLineWidth(0.5)
+      doc.rect(margin - 5, yPos - 5, pageWidth - 2 * margin + 10, 22, "FD")
       doc.setFontSize(9)
       doc.setFont("helvetica", "bold")
-      doc.text("⚠ IMPORTANTE:", margin, yPos)
+      doc.setTextColor(146, 64, 14)
+      doc.text("! IMPORTANTE:", margin, yPos + 2)
       doc.setFont("helvetica", "normal")
+      doc.setTextColor(0, 0, 0)
       const disclaimer =
-        "Esta herramienta es únicamente de apoyo y no constituye un diagnóstico médico. La decisión final siempre corresponde al médico tratante."
-      const disclaimerLines = doc.splitTextToSize(disclaimer, pageWidth - 2 * margin - 10)
-      doc.text(disclaimerLines, margin + 25, yPos)
-      yPos += 25
+        "Esta herramienta es unicamente de apoyo y no constituye un diagnostico medico. La decision final siempre corresponde al medico tratante."
+      const disclaimerLines = doc.splitTextToSize(disclaimer, pageWidth - 2 * margin - 30)
+      doc.text(disclaimerLines, margin + 30, yPos + 2)
+      yPos += 28
 
       // Consultation info
-      addText(`ID de Consulta: ${idSeguimiento}`, 10, true)
-      addText(`Fecha: ${new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}`)
-      addText(`Médico: ${nombreUsuario}`)
-      yPos += 5
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "bold")
+      doc.text(`ID de Consulta: `, margin, yPos)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(37, 99, 235)
+      doc.text(`${idSeguimiento}`, margin + 30, yPos)
+      yPos += 6
+      doc.setTextColor(0, 0, 0)
+      doc.text(
+        `Fecha: ${new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}`,
+        margin,
+        yPos,
+      )
+      yPos += 6
+      doc.text(`Medico: ${nombreUsuario}`, margin, yPos)
+      yPos += 10
 
       // Patient data section
       doc.setDrawColor(37, 99, 235)
-      doc.setLineWidth(0.5)
+      doc.setLineWidth(0.8)
       doc.line(margin, yPos, pageWidth - margin, yPos)
-      yPos += 7
-      addText("DATOS DEL PACIENTE", 12, true)
-      addText(`Nombre: ${nombrePaciente || "No especificado"}`)
-      addText(`Edad: ${edadPaciente || "N/A"} años`)
-      yPos += 5
+      yPos += 8
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(37, 99, 235)
+      doc.text("DATOS DEL PACIENTE", margin, yPos)
+      yPos += 8
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(0, 0, 0)
+      doc.text(`Nombre: ${nombrePaciente || "No especificado"}`, margin + 5, yPos)
+      yPos += 6
+      doc.text(`Edad: ${edadPaciente || "N/A"} anos`, margin + 5, yPos)
+      yPos += 10
 
       // Vital signs section
+      doc.setLineWidth(0.8)
+      doc.setDrawColor(37, 99, 235)
       doc.line(margin, yPos, pageWidth - margin, yPos)
-      yPos += 7
-      addText("SIGNOS VITALES", 12, true)
-      addText(`Frecuencia Cardíaca: ${frecuenciaCardiaca || "N/A"} lpm`)
-      addText(`Presión Arterial: ${presionSistolica || "N/A"}/${presionDiastolica || "N/A"} mmHg`)
-      addText(`Estado de Conciencia: ${estadoConciencia || "N/A"}`)
-      yPos += 5
+      yPos += 8
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(37, 99, 235)
+      doc.text("SIGNOS VITALES", margin, yPos)
+      yPos += 8
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(0, 0, 0)
+      doc.text(`Frecuencia Cardiaca: ${frecuenciaCardiaca || "N/A"} lpm`, margin + 5, yPos)
+      yPos += 6
+      doc.text(`Presion Arterial: ${presionSistolica || "N/A"}/${presionDiastolica || "N/A"} mmHg`, margin + 5, yPos)
+      yPos += 6
+      doc.text(`Estado de Conciencia: ${estadoConciencia || "N/A"}`, margin + 5, yPos)
+      yPos += 10
 
       // Check if we need a new page
-      if (yPos > 250) {
+      if (yPos > 240) {
         doc.addPage()
         yPos = 20
       }
 
       // Complementary studies section
+      doc.setLineWidth(0.8)
+      doc.setDrawColor(37, 99, 235)
       doc.line(margin, yPos, pageWidth - margin, yPos)
-      yPos += 7
-      addText("ESTUDIOS COMPLEMENTARIOS", 12, true)
-      addText(`Ecografía Transvaginal (TVUS): ${obtenerNombreTVUS(resultadoTVUS)}`)
-      addText(`β-hCG en sangre: ${betaHcg || "N/A"} mUI/mL`)
+      yPos += 8
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(37, 99, 235)
+      doc.text("ESTUDIOS COMPLEMENTARIOS", margin, yPos)
+      yPos += 8
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(0, 0, 0)
+      doc.text(`Ecografia Transvaginal (TVUS): ${obtenerNombreTVUS(resultadoTVUS)}`, margin + 5, yPos)
+      yPos += 6
+      doc.text(`B-hCG en sangre: ${betaHcg || "N/A"} mUI/mL`, margin + 5, yPos)
       if (hcgAnterior) {
-        // Corrected: betaHcgAnterior was not declared, used hcgAnterior which is declared.
-        addText(`β-hCG Anterior: ${hcgAnterior} mUI/mL`)
+        yPos += 6
+        doc.text(`B-hCG Anterior: ${hcgAnterior} mUI/mL`, margin + 5, yPos)
       }
-      yPos += 5
+      yPos += 10
 
       // Symptoms section
+      doc.setLineWidth(0.8)
+      doc.setDrawColor(37, 99, 235)
       doc.line(margin, yPos, pageWidth - margin, yPos)
-      yPos += 7
-      addText("SÍNTOMAS PRESENTES", 12, true)
+      yPos += 8
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(37, 99, 235)
+      doc.text("SINTOMAS PRESENTES", margin, yPos)
+      yPos += 8
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(0, 0, 0)
       if (sintomasSeleccionados && sintomasSeleccionados.length > 0) {
         sintomasSeleccionados.forEach((s: string) => {
-          addText(`• ${obtenerNombreSintoma(s)}`)
+          doc.text(`- ${obtenerNombreSintoma(s)}`, margin + 5, yPos)
+          yPos += 6
         })
       } else {
-        addText("Sin síntomas reportados")
+        doc.text("- Sin sintomas reportados", margin + 5, yPos)
+        yPos += 6
       }
-      yPos += 5
+      yPos += 4
 
       // Risk factors section
-      if (yPos > 230) {
-        doc.addPage()
-        yPos = 20
-      }
-      doc.line(margin, yPos, pageWidth - margin, yPos)
-      yPos += 7
-      addText("FACTORES DE RIESGO", 12, true)
-      if (factoresSeleccionados && factoresSeleccionados.length > 0) {
-        factoresSeleccionados.forEach((f: string) => {
-          addText(`• ${obtenerNombreFactorRiesgo(f)}`)
-        })
-      } else {
-        addText("Sin factores de riesgo reportados")
-      }
-      yPos += 5
-
-      // Result section
-      doc.line(margin, yPos, pageWidth - margin, yPos)
-      yPos += 7
-      addText("RESULTADO DE LA EVALUACIÓN", 12, true)
-
-      if (resultado != null) {
-        const porcentaje = (resultado * 100).toFixed(1)
-        doc.setFillColor(219, 234, 254) // Light blue background
-        doc.rect(margin - 5, yPos - 5, pageWidth - 2 * margin + 10, 15, "F")
-        doc.setFontSize(14)
-        doc.setFont("helvetica", "bold")
-        doc.setTextColor(37, 99, 235)
-        doc.text(`Estimación de Riesgo: ${porcentaje}%`, pageWidth / 2, yPos + 5, { align: "center" })
-        yPos += 20
-        doc.setTextColor(0, 0, 0)
-        doc.setFontSize(10)
-        doc.setFont("helvetica", "normal")
-
-        // Classification
-        const clasificacion =
-          resultado >= 0.95
-            ? "Alta probabilidad de embarazo ectópico"
-            : resultado < 0.01
-              ? "Baja probabilidad de embarazo ectópico"
-              : "Probabilidad intermedia de embarazo ectópico"
-        addText(`Clasificación: ${clasificacion}`, 10, true)
-      } else {
-        addText("No se pudo calcular el resultado")
-      }
-      yPos += 5
-
-      // Recommendations section
       if (yPos > 220) {
         doc.addPage()
         yPos = 20
       }
+      doc.setLineWidth(0.8)
+      doc.setDrawColor(37, 99, 235)
       doc.line(margin, yPos, pageWidth - margin, yPos)
-      yPos += 7
-      addText("RECOMENDACIONES", 12, true)
+      yPos += 8
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(37, 99, 235)
+      doc.text("FACTORES DE RIESGO", margin, yPos)
+      yPos += 8
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(0, 0, 0)
+      if (factoresSeleccionados && factoresSeleccionados.length > 0) {
+        factoresSeleccionados.forEach((f: string) => {
+          doc.text(`- ${obtenerNombreFactorRiesgo(f)}`, margin + 5, yPos)
+          yPos += 6
+        })
+      } else {
+        doc.text("- Sin factores de riesgo reportados", margin + 5, yPos)
+        yPos += 6
+      }
+      yPos += 4
+
+      // Result section
+      if (yPos > 210) {
+        doc.addPage()
+        yPos = 20
+      }
+      doc.setLineWidth(0.8)
+      doc.setDrawColor(37, 99, 235)
+      doc.line(margin, yPos, pageWidth - margin, yPos)
+      yPos += 8
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(37, 99, 235)
+      doc.text("RESULTADO DE LA EVALUACION", margin, yPos)
+      yPos += 10
+
+      if (resultado != null) {
+        const porcentaje = (resultado * 100).toFixed(1)
+
+        // Result box
+        doc.setFillColor(219, 234, 254)
+        doc.setDrawColor(37, 99, 235)
+        doc.setLineWidth(0.5)
+        doc.rect(margin - 5, yPos - 5, pageWidth - 2 * margin + 10, 20, "FD")
+        doc.setFontSize(16)
+        doc.setFont("helvetica", "bold")
+        doc.setTextColor(37, 99, 235)
+        doc.text(`Estimacion de Riesgo: ${porcentaje}%`, pageWidth / 2, yPos + 5, { align: "center" })
+        yPos += 25
+
+        // Classification
+        doc.setFontSize(11)
+        doc.setTextColor(0, 0, 0)
+        const clasificacion =
+          resultado >= 0.95
+            ? "Alta probabilidad de embarazo ectopico"
+            : resultado < 0.01
+              ? "Baja probabilidad de embarazo ectopico"
+              : "Probabilidad intermedia de embarazo ectopico"
+        doc.text(`Clasificacion: ${clasificacion}`, margin + 5, yPos)
+        yPos += 12
+      } else {
+        doc.setFontSize(10)
+        doc.setTextColor(0, 0, 0)
+        doc.text("No se pudo calcular el resultado", margin + 5, yPos)
+        yPos += 12
+      }
+
+      // Recommendations section
+      if (yPos > 210) {
+        doc.addPage()
+        yPos = 20
+      }
+      doc.setLineWidth(0.8)
+      doc.setDrawColor(37, 99, 235)
+      doc.line(margin, yPos, pageWidth - margin, yPos)
+      yPos += 8
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(37, 99, 235)
+      doc.text("RECOMENDACIONES", margin, yPos)
+      yPos += 10
 
       let recomendacion = ""
       if (resultado != null) {
         if (resultado >= 0.95) {
           recomendacion =
-            "Se recomienda referencia inmediata a un centro médico especializado para evaluación y manejo por especialista en ginecología."
+            "Se recomienda referencia inmediata a un centro medico especializado para evaluacion y manejo por especialista en ginecologia."
         } else if (resultado < 0.01) {
           recomendacion =
-            "Se recomienda seguimiento médico continuo con su ginecólogo de confianza para monitoreo del embarazo."
+            "Se recomienda seguimiento medico continuo con su ginecologo de confianza para monitoreo del embarazo."
         } else {
-          recomendacion = `Se recomienda guardar el código de consulta (${idSeguimiento}) y regresar en 48-72 horas con nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento.`
+          recomendacion = `Se recomienda guardar el codigo de consulta (${idSeguimiento}) y regresar en 48-72 horas con nueva ecografia transvaginal y nueva prueba de B-hCG para seguimiento.`
         }
       } else {
-        recomendacion = "Consulte con su médico tratante para evaluación completa."
+        recomendacion = "Consulte con su medico tratante para evaluacion completa."
       }
 
-      doc.setFillColor(240, 253, 244) // Light green background
-      doc.rect(margin - 5, yPos - 5, pageWidth - 2 * margin + 10, 25, "F")
+      doc.setFillColor(240, 253, 244)
+      doc.setDrawColor(34, 197, 94)
+      doc.setLineWidth(0.5)
       const recomLines = doc.splitTextToSize(recomendacion, pageWidth - 2 * margin - 10)
+      const boxHeight = recomLines.length * 6 + 10
+      doc.rect(margin - 5, yPos - 5, pageWidth - 2 * margin + 10, boxHeight, "FD")
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(0, 0, 0)
       doc.text(recomLines, margin, yPos)
-      yPos += recomLines.length * 5 + 10
+      yPos += boxHeight + 5
 
       // Footer disclaimer
-      if (yPos > 240) {
+      if (yPos > 230) {
         doc.addPage()
         yPos = 20
       }
-      yPos += 10
-      doc.setFillColor(243, 244, 246) // Gray background
-      doc.rect(margin - 5, yPos - 5, pageWidth - 2 * margin + 10, 30, "F")
+      yPos += 5
+      doc.setFillColor(243, 244, 246)
+      doc.setDrawColor(209, 213, 219)
+      doc.setLineWidth(0.3)
+      const footerText =
+        "Esta herramienta es unicamente de apoyo clinico y no reemplaza el juicio medico profesional. El diagnostico y tratamiento final siempre debe ser determinado por el medico tratante. Esta aplicacion no constituye un dispositivo medico de diagnostico."
+      const footerLines = doc.splitTextToSize(footerText, pageWidth - 2 * margin - 10)
+      const footerHeight = footerLines.length * 4 + 15
+      doc.rect(margin - 5, yPos - 5, pageWidth - 2 * margin + 10, footerHeight, "FD")
       doc.setFontSize(8)
       doc.setFont("helvetica", "bold")
+      doc.setTextColor(75, 85, 99)
       doc.text("DESCARGO DE RESPONSABILIDAD:", margin, yPos)
       yPos += 5
       doc.setFont("helvetica", "normal")
-      const footerText =
-        "Esta herramienta es únicamente de apoyo clínico y no reemplaza el juicio médico profesional. El diagnóstico y tratamiento final siempre debe ser determinado por el médico tratante. Esta aplicación no constituye un dispositivo médico de diagnóstico."
-      const footerLines = doc.splitTextToSize(footerText, pageWidth - 2 * margin - 10)
       doc.text(footerLines, margin, yPos)
-      yPos += footerLines.length * 3 + 5
+      yPos += footerLines.length * 4 + 5
       doc.setFontSize(7)
-      doc.setTextColor(100, 100, 100)
-      doc.text("Desarrollado por CMG Health Solutions - Herramienta de Apoyo Clínico", pageWidth / 2, yPos, {
+      doc.setTextColor(107, 114, 128)
+      doc.text("Desarrollado por CMG Health Solutions - Herramienta de Apoyo Clinico", pageWidth / 2, yPos, {
         align: "center",
       })
 
@@ -1126,7 +1227,7 @@ export default function CalculadoraEctopico() {
       alert("Reporte PDF generado y descargado exitosamente")
     } catch (error) {
       console.error("Error al generar el reporte:", error)
-      alert("Error al generar el reporte. Por favor, inténtelo de nuevo.")
+      alert("Error al generar el reporte. Por favor, intentelo de nuevo.")
     }
   }
 

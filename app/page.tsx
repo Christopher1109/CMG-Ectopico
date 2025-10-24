@@ -941,9 +941,21 @@ export default function CalculadoraEctopico() {
     setSeccion(seccion + 1)
   }
 
-  const generarInformePDF = () => {
+  const generarInformePDF = async () => {
     try {
-      const { jsPDF } = window.jspdf
+      // Load jsPDF dynamically from CDN
+      if (!(window as any).jspdf) {
+        const script = document.createElement("script")
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+        document.head.appendChild(script)
+
+        await new Promise((resolve, reject) => {
+          script.onload = resolve
+          script.onerror = reject
+        })
+      }
+
+      const { jsPDF } = (window as any).jspdf
       const doc = new jsPDF()
 
       let y = 20
@@ -1073,11 +1085,11 @@ export default function CalculadoraEctopico() {
       doc.setFontSize(9)
       doc.text("Desarrollado por CMG Health Solutions - Herramienta de Apoyo Clinico", 20, y)
 
+      // Save PDF
       doc.save(`Reporte_Ectopico_${idSeguimiento}_${new Date().toISOString().split("T")[0]}.pdf`)
-      alert("Reporte generado y descargado exitosamente")
     } catch (error) {
       console.error("Error al generar el reporte:", error)
-      alert("Error al generar el reporte. Por favor, intentelo de nuevo.")
+      alert("Error al generar el reporte: " + (error as Error).message)
     }
   }
 

@@ -890,7 +890,7 @@ export default function CalculadoraEctopico() {
     setEsConsultaSeguimiento(true)
 
     setPantalla("formulario")
-    setSeccion(5) // Start at section 5 (symptoms and risk factors)
+    setSeccion(6) // Start at section 6 (symptoms and risk factors), skipping transabdominal
     setMostrarResumenConsulta(false)
     setMostrarPantallaBienvenida(false)
     setModoCargarConsulta(false)
@@ -943,70 +943,141 @@ export default function CalculadoraEctopico() {
 
   const generarInformePDF = () => {
     try {
-      const recomendacionTexto =
+      const { jsPDF } = window.jspdf
+      const doc = new jsPDF()
+
+      let y = 20
+      const lineHeight = 7
+      const pageHeight = doc.internal.pageSize.height
+      const margin = 20
+
+      // Helper function to add text with page break
+      const addText = (text: string, fontSize = 10, isBold = false) => {
+        if (y > pageHeight - margin) {
+          doc.addPage()
+          y = 20
+        }
+        doc.setFontSize(fontSize)
+        doc.setFont("helvetica", isBold ? "bold" : "normal")
+        doc.text(text, 20, y)
+        y += lineHeight
+      }
+
+      // Header
+      addText("REPORTE DE APOYO CLINICO", 16, true)
+      addText("Herramienta de Evaluacion - Embarazo Ectopico", 12)
+      y += 5
+
+      // Important notice
+      doc.setFillColor(240, 240, 255)
+      doc.rect(15, y - 5, 180, 15, "F")
+      doc.setFontSize(9)
+      doc.text("IMPORTANTE: Esta herramienta es unicamente de apoyo y no constituye un diagnostico medico.", 20, y)
+      y += lineHeight
+      doc.text("La decision final siempre corresponde al medico tratante.", 20, y)
+      y += 12
+
+      // Consultation info
+      addText(`ID de Consulta: ${idSeguimiento}`, 10, true)
+      addText(`Fecha: ${new Date().toLocaleDateString()}`)
+      addText(`Medico: ${nombreUsuario}`)
+      y += 5
+
+      // Patient data
+      addText("DATOS DEL PACIENTE", 12, true)
+      addText(`Nombre: ${nombrePaciente}`)
+      addText(`Edad: ${edadPaciente} anos`)
+      y += 5
+
+      // Vital signs
+      addText("SIGNOS VITALES", 12, true)
+      addText(`Frecuencia Cardiaca: ${frecuenciaCardiaca} lpm`)
+      addText(`Presion Arterial: ${presionSistolica}/${presionDiastolica} mmHg`)
+      addText(`Estado de Conciencia: ${estadoConciencia}`)
+      y += 5
+
+      // Complementary studies
+      addText("ESTUDIOS COMPLEMENTARIOS", 12, true)
+      addText(`Ecografia Transvaginal (TVUS): ${obtenerNombreTVUS(tvus)}`)
+      addText(`B-hCG en sangre: ${hcgValor} mUI/mL`)
+      if (hcgAnterior) {
+        addText(`B-hCG Anterior: ${hcgAnterior} mUI/mL`)
+      }
+      y += 5
+
+      // Symptoms
+      addText("SINTOMAS PRESENTES", 12, true)
+      if (sintomasSeleccionados.length > 0) {
+        sintomasSeleccionados.forEach((s) => {
+          addText(`• ${obtenerNombreSintoma(s)}`)
+        })
+      } else {
+        addText("• Sin sintomas")
+      }
+      y += 5
+
+      // Risk factors
+      addText("FACTORES DE RIESGO", 12, true)
+      if (factoresSeleccionados.length > 0) {
+        factoresSeleccionados.forEach((f) => {
+          addText(`• ${obtenerNombreFactorRiesgo(f)}`)
+        })
+      } else {
+        addText("• Sin factores de riesgo")
+      }
+      y += 5
+
+      // Result
+      addText("RESULTADO DE LA EVALUACION", 12, true)
+      if (resultado != null) {
+        addText(`Estimacion de Riesgo: ${(resultado * 100).toFixed(1)}%`, 11, true)
+        const clasificacion =
+          resultado >= 0.95
+            ? "Alta probabilidad de embarazo ectopico"
+            : resultado < 0.01
+              ? "Baja probabilidad de embarazo ectopico"
+              : "Probabilidad intermedia de embarazo ectopico"
+        addText(`Clasificacion: ${clasificacion}`)
+      }
+      y += 5
+
+      // Recommendations
+      addText("RECOMENDACIONES", 12, true)
+      const recomendacion =
         resultado != null
           ? resultado >= 0.95
-            ? "Se sugiere considerar alta probabilidad - Evaluación médica recomendada"
+            ? "Se recomienda referencia inmediata a centro especializado para evaluacion y manejo."
             : resultado < 0.01
-              ? "Se sugiere considerar baja probabilidad - Seguimiento médico recomendado"
-              : "Probabilidad intermedia - Seguimiento médico requerido"
-          : "Evaluación en proceso"
+              ? "Se recomienda seguimiento con ginecologo de confianza y monitoreo constante."
+              : "Se recomienda guardar el codigo de consulta y regresar en 48-72 horas con nueva ecografia transvaginal y nueva prueba de B-hCG para seguimiento."
+          : "Evaluacion en proceso"
 
-      const contenidoInforme = `
-REPORTE DE APOYO CLÍNICO - HERRAMIENTA DE EVALUACIÓN
-===================================================
+      const lines = doc.splitTextToSize(recomendacion, 170)
+      lines.forEach((line: string) => addText(line))
+      y += 10
 
-IMPORTANTE: Esta herramienta es únicamente de apoyo y no constituye un diagnóstico médico.
-La decisión final siempre corresponde al médico tratante.
+      // Disclaimer
+      doc.setFillColor(250, 250, 250)
+      doc.rect(15, y - 5, 180, 25, "F")
+      doc.setFontSize(8)
+      doc.text("DESCARGO DE RESPONSABILIDAD:", 20, y)
+      y += lineHeight
+      doc.text("Esta herramienta es unicamente de apoyo clinico y no reemplaza el juicio medico profesional.", 20, y)
+      y += lineHeight
+      doc.text("El diagnostico y tratamiento final siempre debe ser determinado por el medico tratante.", 20, y)
+      y += lineHeight
+      doc.text("Esta aplicacion no constituye un dispositivo medico de diagnostico.", 20, y)
+      y += 10
 
-ID de Consulta: ${idSeguimiento}
-Fecha: ${new Date().toLocaleDateString()}
-Médico: ${nombreUsuario}
+      // Footer
+      doc.setFontSize(9)
+      doc.text("Desarrollado por CMG Health Solutions - Herramienta de Apoyo Clinico", 20, y)
 
-DATOS DEL PACIENTE:
-- Nombre: ${nombrePaciente}
-- Edad: ${edadPaciente} años
-
-SIGNOS VITALES:
-- Frecuencia Cardíaca: ${frecuenciaCardiaca} lpm
-- Presión Arterial: ${presionSistolica}/${presionDiastolica} mmHg
-- Estado de Conciencia: ${estadoConciencia}
-
-ESTUDIOS COMPLEMENTARIOS:
-- Ecografía Transvaginal (TVUS): ${obtenerNombreTVUS(tvus)}
-- β-hCG: ${hcgValor} mUI/mL
-${hcgAnterior ? `- β-hCG Anterior: ${hcgAnterior} mUI/mL` : ""}
-
-SÍNTOMAS PRESENTES:
-${sintomasSeleccionados.map((s) => `- ${obtenerNombreSintoma(s)}`).join("\n")}
-
-FACTORES DE RIESGO:
-${factoresSeleccionados.map((f) => `- ${obtenerNombreFactorRiesgo(f)}`).join("\n")}
-
-RESULTADO DE LA HERRAMIENTA:
-${resultado != null ? `Estimación de riesgo: ${(resultado * 100).toFixed(1)}%` : "No calculado"}
-
-RECOMENDACIÓN DE APOYO:
-${recomendacionTexto}
-
-DESCARGO DE RESPONSABILIDAD:
-Esta herramienta es<bos>únicamente de apoyo clínico y no reemplaza el juicio médico profesional.
-El diagnóstico y tratamiento final siempre debe ser determinado por el médico tratante.
-
-===================================================
-Desarrollado por CMG Health Solutions
-Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
-      `
-      const a = document.createElement("a")
-      const archivo = new Blob([contenidoInforme], { type: "text/plain" })
-      a.href = URL.createObjectURL(archivo)
-      a.download = `Reporte_Apoyo_Ectopico_${idSeguimiento}_${new Date().toISOString().split("T")[0]}.txt`
-      document.body.appendChild(a)
-      document.body.removeChild(a)
-      alert("Reporte de apoyo generado y descargado exitosamente")
+      doc.save(`Reporte_Ectopico_${idSeguimiento}_${new Date().toISOString().split("T")[0]}.pdf`)
+      alert("Reporte generado y descargado exitosamente")
     } catch (error) {
       console.error("Error al generar el reporte:", error)
-      alert("Error al generar el reporte. Por favor, inténtelo de nuevo.")
+      alert("Error al generar el reporte. Por favor, intentelo de nuevo.")
     }
   }
 
@@ -1946,11 +2017,35 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                 </div>
 
+                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <span className="font-semibold text-green-900">Información Guardada</span>
+                  </div>
+                  <div className="text-green-800 text-sm space-y-2">
+                    <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
+                    <div className="flex items-center space-x-2">
+                      <span>📋 ID de Consulta:</span>
+                      <span className="font-mono font-bold">{idSeguimiento}</span>
+                      <Button
+                        onClick={copiarId}
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-green-100"
+                        title="Copiar ID"
+                      >
+                        <Copy className="h-3 w-3 text-green-700" />
+                      </Button>
+                    </div>
+                    <p>
+                      👤 Paciente: {nombrePaciente}, {edadPaciente} años
+                    </p>
+                    <p>💾 Sección completada: {Math.max(...seccionesCompletadas, seccionActual - 1)} de 7</p>
+                    <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
+                  </div>
+                </div>
+
                 <div className="text-center">
-                  <p className="text-base text-slate-600 mb-6">
-                    Por favor, acuda a un laboratorio clínico para realizarse los estudios solicitados y vuelva a
-                    intentarlo.
-                  </p>
                   <Button
                     onClick={volverAInicio}
                     className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 text-lg"
@@ -2494,8 +2589,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </Button>
                       <Button
                         onClick={async () => {
-                          if (guardandoConsulta) return
-
                           if (!tieneEcoTransabdominal) {
                             setErrorSeccion("Por favor, seleccione si tiene ecografía transabdominal.")
                             return

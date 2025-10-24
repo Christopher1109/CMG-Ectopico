@@ -1894,30 +1894,72 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
             </CardContent>
           </Card>
         </div>
-      ) : pantalla === "completada" ? ( // New state for completion screen
+      ) : pantalla === "completada" ? (
         <div className="max-w-4xl mx-auto p-6">
           <Card className="shadow-lg">
             <CardContent className="p-8">
-              <div className="space-y-6 text-center">
+              <div className="space-y-6">
                 <div className="flex items-center justify-center space-x-3 mb-6">
                   <CheckCircle className="h-8 w-8 text-green-600" />
                   <h2 className="text-3xl font-bold text-slate-800">Evaluación Incompleta</h2>
                 </div>
-                <p className="text-xl text-slate-700 max-w-lg mx-auto">
-                  {mensajeFinal ||
-                    "No se puede completar la evaluación en este momento debido a que faltan estudios complementarios."}
-                </p>
-                <p className="text-base text-slate-600">
-                  Por favor, acuda a un laboratorio clínico para realizarse los estudios solicitados y vuelva a
-                  intentarlo.
-                </p>
-                <Button
-                  onClick={volverAInicio}
-                  className="mt-8 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 text-lg"
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  Regresar al Inicio
-                </Button>
+
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                  <div className="text-blue-900">
+                    {typeof mensajeFinal === "string" ? (
+                      <div className="space-y-4">
+                        <p className="font-medium text-lg">
+                          {mensajeFinal.includes("tres estudios")
+                            ? "Se necesitan realizar los siguientes estudios para poder continuar con la evaluación:"
+                            : mensajeFinal.includes("siguientes estudios")
+                              ? "Se necesitan realizar los siguientes estudios para poder continuar con la evaluación:"
+                              : mensajeFinal}
+                        </p>
+                        {(mensajeFinal.includes("prueba de embarazo") ||
+                          mensajeFinal.includes("ecografía transvaginal") ||
+                          mensajeFinal.includes("β-hCG")) && (
+                          <ul className="list-none space-y-2 ml-4">
+                            {mensajeFinal.includes("prueba de embarazo") && (
+                              <li className="flex items-start">
+                                <span className="text-blue-600 mr-2">•</span>
+                                <span>Prueba de embarazo cuantitativa</span>
+                              </li>
+                            )}
+                            {mensajeFinal.includes("ecografía transvaginal") && (
+                              <li className="flex items-start">
+                                <span className="text-blue-600 mr-2">•</span>
+                                <span>Ecografía transvaginal (TVUS)</span>
+                              </li>
+                            )}
+                            {mensajeFinal.includes("β-hCG") && (
+                              <li className="flex items-start">
+                                <span className="text-blue-600 mr-2">•</span>
+                                <span>β-hCG en sangre</span>
+                              </li>
+                            )}
+                          </ul>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="font-medium">{mensajeFinal}</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <p className="text-base text-slate-600 mb-6">
+                    Por favor, acuda a un laboratorio clínico para realizarse los estudios solicitados y vuelva a
+                    intentarlo.
+                  </p>
+                  <Button
+                    onClick={volverAInicio}
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 text-lg"
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Regresar al Inicio
+                  </Button>
+                </div>
+
                 <CMGFooter />
               </div>
             </CardContent>

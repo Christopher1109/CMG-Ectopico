@@ -21,6 +21,10 @@ import {
   ClipboardList,
   ChevronRight,
   ChevronLeft,
+  Stethoscope,
+  AlertCircle,
+  Droplet,
+  Check,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type React from "react"
@@ -30,16 +34,16 @@ import { crearConsulta, actualizarConsulta, obtenerConsulta } from "@/lib/api/co
 const factoresRiesgo = [
   { id: "infertilidad", label: "Historia de infertilidad" },
   { id: "ectopico_previo", label: "Embarazo ectópico previo" },
-  { id: "enfermedad_pelvica", label: "Enfermedad inflamatoria pélvica previa" },
+  { id: "enfermedad_inflamatoria", label: "Enfermedad inflamatoria pélvica previa" }, // Corrected ID
   { id: "cirugia_tubarica", label: "Cirugía tubárica previa" },
   { id: "sin_factores", label: "Sin factores de riesgo" },
 ]
 
 const sintomas = [
-  { id: "dolor", label: "Dolor" },
-  { id: "sangrado", label: "Sangrado" },
-  { id: "dolor_sangrado", label: "Dolor y sangrado" },
-  { id: "sincope", label: "Síncope" },
+  { id: "dolor_abdominal", label: "Dolor abdominal" }, // Corrected ID
+  { id: "sangrado_vaginal", label: "Sangrado vaginal" }, // Corrected ID
+  { id: "mareo", label: "Mareo/Síncope" }, // Corrected ID
+  { id: "dolor_hombro", label: "Dolor de hombro" }, // Corrected ID
   { id: "sin_sintomas", label: "Sin síntomas" },
 ]
 
@@ -269,8 +273,8 @@ export default function CalculadoraEctopico() {
   const [presionSistolica, setPresionSistolica] = useState("")
   const [presionDiastolica, setPresionDiastolica] = useState("")
   const [estadoConciencia, setEstadoConciencia] = useState("")
-  const [pruebaEmbarazoRealizada, setPruebaEmbarazoRealizada] = useState("")
-  const [resultadoPruebaEmbarazo, setResultadoPruebaEmbarazo] = useState("")
+  const [pruebaEmbarazoRealizada, setPruebaEmbarazoRealizada] = useState("") // Used for the result of the test
+  const [resultadoPruebaEmbarazo, setResultadoPruebaEmbarazo] = useState("") // Used for the result of the test
   const [hallazgosExploracion, setHallazgosExploracion] = useState("")
   const [tieneEcoTransabdominal, setTieneEcoTransabdominal] = useState("")
   const [resultadoEcoTransabdominal, setResultadoEcoTransabdominal] = useState("")
@@ -318,6 +322,16 @@ export default function CalculadoraEctopico() {
   const [tieneBetaHCG, setTieneBetaHCG] = useState<string>("") // Indicates if betaHCG result is available
   const [tieneTVUS, setTieneTVUS] = useState<string>("") // Indicates if TVUS result is available
   const [tieneHCG, setTieneHCG] = useState<string>("") // This state seems unused, but kept for consistency
+
+  // New states for checklist in Section 3
+  const [tienePruebaEmbarazoDisponible, setTienePruebaEmbarazoDisponible] = useState<string>("")
+  const [tieneEcoDisponible, setTieneEcoDisponible] = useState<string>("")
+  const [tieneBetaDisponible, setTieneBetaDisponible] = useState<string>("")
+
+  // New states for sections with updated designs
+  const [tienePruebaEmbarazo, setTienePruebaEmbarazo] = useState<string>("")
+  const [hallazgosTVUS, setHallazgosTVUS] = useState<string>("")
+  const [nivelBetaHCG, setNivelBetaHCG] = useState<string>("")
 
   const [guardandoConsulta, setGuardandoConsulta] = useState(false)
 
@@ -532,7 +546,11 @@ export default function CalculadoraEctopico() {
   }
 
   const calcular = async () => {
-    if (!resultadoTVUS || !betaHcg) {
+    // Combine the new states with the old ones for calculation
+    const currentBetaHcg = betaHcg || nivelBetaHCG // Use new state if available, otherwise fallback to old
+    const currentTvus = tvus || hallazgosTVUS // Use new state if available, otherwise fallback to old
+
+    if (!currentTvus || !currentBetaHcg) {
       alert("Por favor complete todos los campos requeridos: TVUS y β-hCG")
       return
     }
@@ -557,15 +575,15 @@ export default function CalculadoraEctopico() {
         resultadoV2c,
         pretestAjustado,
         hcgAnterior,
-        hcgValor: betaHcg, // Use betaHcg here
-        tvus: resultadoTVUS, // Use resultadoTVUS here
+        hcgValor: currentBetaHcg, // Use combined betaHcg here
+        tvus: currentTvus, // Use combined tvus here
       })
 
       const respuesta = await clienteSeguro.calcularRiesgo({
         sintomasSeleccionados: sintomasSeleccionados,
         factoresSeleccionados: factoresSeleccionados,
-        tvus: resultadoTVUS, // Use resultadoTVUS here
-        hcgValor: betaHcg, // Use betaHcg here
+        tvus: currentTvus, // Use combined tvus here
+        hcgValor: currentBetaHcg, // Use combined betaHcg here
         hcgAnterior: hcgAnterior,
         esConsultaSeguimiento: esConsultaSeguimiento,
         numeroConsultaActual: numeroConsultaActual,
@@ -618,8 +636,8 @@ export default function CalculadoraEctopico() {
         resultadoEcoTransabdominal,
         sintomasSeleccionados,
         factoresSeleccionados,
-        tvus: resultadoTVUS, // Use resultadoTVUS here
-        hcgValor: betaHcg ? Number.parseFloat(betaHcg) : null, // Use betaHcg here
+        tvus: currentTvus, // Use combined tvus here
+        hcgValor: currentBetaHcg ? Number.parseFloat(currentBetaHcg) : null, // Use combined betaHcg here
         variacionHcg: respuesta.variacionHcg || null,
         hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
         resultado: probPost,
@@ -670,9 +688,11 @@ export default function CalculadoraEctopico() {
       if (respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo") {
         setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
         setProtocoloFinalizado(true)
+        setPantalla("finalizado")
       } else {
         setMostrarResultados(true)
         setMostrarIdSeguimiento(true)
+        setPantalla("resultados")
       }
     } catch (error) {
       console.error("Error en el cálculo:", error)
@@ -739,6 +759,14 @@ export default function CalculadoraEctopico() {
     setTieneBetaSangre("")
     setTienePruebaEmbarazoChecklist("")
     setTieneEcoTVUSChecklist("")
+
+    // Resetting states for updated designs
+    setTienePruebaEmbarazoDisponible("")
+    setTieneEcoDisponible("")
+    setTieneBetaDisponible("")
+    setTienePruebaEmbarazo("")
+    setHallazgosTVUS("")
+    setNivelBetaHCG("")
   }
 
   const buscarConsulta = async () => {
@@ -1091,7 +1119,7 @@ export default function CalculadoraEctopico() {
 
       addTitle("ESTUDIOS COMPLEMENTARIOS", [156, 39, 176])
       addInfoBox("Ecografía Transvaginal", obtenerNombreTVUS(tvus), [243, 229, 245])
-      addInfoBox("β-hCG en sangre", hcgValor ? `${hcgValor} mUI/mL` : "No disponible", [243, 229, 245])
+      addInfoBox("β-hCG en sangre", nivelBetaHCG ? `${nivelBetaHCG} mUI/mL` : "No disponible", [243, 229, 245])
       if (hcgAnterior) {
         addInfoBox("β-hCG Anterior", `${hcgAnterior} mUI/mL`, [243, 229, 245])
       }
@@ -1275,7 +1303,7 @@ export default function CalculadoraEctopico() {
 
   // IMPROVED PROGRESS BAR COMPONENT
   const ProgressBar = () => {
-    const totalSecciones = 7 // Assuming 7 sections in total for the form
+    const totalSecciones = 8 // Updated to 8 sections
     const progreso = (seccionesCompletadas.length / totalSecciones) * 100
 
     return (
@@ -1950,7 +1978,7 @@ export default function CalculadoraEctopico() {
                     <p>
                       👤 Paciente: {nombrePaciente}, {edadPaciente} años
                     </p>
-                    <p>💾 Sección completada: {Math.max(...seccionesCompletadas, seccionActual - 1)} de 7</p>
+                    <p>💾 Sección completada: {Math.max(...seccionesCompletadas, seccionActual - 1)} de 8</p>
                     <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
                   </div>
                 </div>
@@ -2157,7 +2185,7 @@ export default function CalculadoraEctopico() {
                     <p>
                       👤 Paciente: {nombrePaciente}, {edadPaciente} años
                     </p>
-                    <p>💾 Sección completada: {Math.max(...seccionesCompletadas, seccionActual - 1)} de 7</p>
+                    <p>💾 Sección completada: {Math.max(...seccionesCompletadas, seccionActual - 1)} de 8</p>
                     <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
                   </div>
                 </div>
@@ -2182,7 +2210,7 @@ export default function CalculadoraEctopico() {
           <div className="max-w-4xl mx-auto p-6">
             <Card className="shadow-lg">
               <CardContent className="p-8">
-                {/* seccionActual === 1 */}
+                {/* SECCION 1: Datos del Paciente */}
                 {seccionActual === 1 && (
                   <div className="space-y-6">
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
@@ -2191,38 +2219,40 @@ export default function CalculadoraEctopico() {
                           <User className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <h2 className="text-2xl font-bold text-slate-800">Expediente Clínico</h2>
-                          <p className="text-sm text-slate-600">Información básica del paciente</p>
+                          <h2 className="text-2xl font-bold text-slate-800">Datos del Paciente</h2>
+                          <p className="text-sm text-slate-600">Información básica de la paciente</p>
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-5">
-                      <div className="space-y-2">
-                        <Label className="text-base font-semibold text-slate-700 flex items-center space-x-2">
-                          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                          <span>Nombre del Paciente</span>
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                        <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span>Nombre Completo</span>
                         </Label>
                         <input
                           type="text"
-                          placeholder="Ingrese el nombre completo"
+                          placeholder="Ingrese el nombre de la paciente"
                           value={nombrePaciente}
                           onChange={(e) => setNombrePaciente(e.target.value)}
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 text-slate-700 placeholder-slate-400"
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-base font-semibold text-slate-700 flex items-center space-x-2">
-                          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                          <span>Edad del Paciente</span>
+
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                        <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span>Edad</span>
                         </Label>
                         <input
                           type="number"
                           placeholder="Edad en años"
                           value={edadPaciente}
                           onChange={(e) => setEdadPaciente(e.target.value)}
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 text-slate-700 placeholder-slate-400"
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200"
                         />
+                        <span className="text-xs text-slate-500 mt-1 block">años</span>
                       </div>
                     </div>
 
@@ -2237,15 +2267,13 @@ export default function CalculadoraEctopico() {
 
                     <div className="flex justify-end pt-4">
                       <Button
-                        onClick={async () => {
+                        onClick={() => {
                           if (!nombrePaciente || !edadPaciente) {
-                            setErrorSeccion("Por favor, complete todos los campos requeridos.")
+                            setErrorSeccion("Por favor, complete todos los campos.")
                             return
                           }
-                          if (await validarEdadPaciente()) {
-                            setSeccion(2)
-                            completarSeccion(1)
-                          }
+                          setSeccion(2)
+                          completarSeccion(1)
                         }}
                         className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                       >
@@ -2257,9 +2285,10 @@ export default function CalculadoraEctopico() {
                   </div>
                 )}
 
-                {/* SECCION 2 */}
+                {/* SECCION 2: Signos Vitales */}
                 {seccionActual === 2 && (
                   <div className="space-y-6">
+                    {/* Applied modern card design to vital signs section */}
                     <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-6 rounded-xl border border-emerald-100">
                       <div className="flex items-center space-x-3">
                         <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
@@ -2286,9 +2315,9 @@ export default function CalculadoraEctopico() {
                       </div>
                     )}
 
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white p-4 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                        <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-emerald-200 transition-all duration-200 shadow-sm hover:shadow-md">
                           <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
                             <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
                             <span>Frecuencia Cardíaca</span>
@@ -2298,11 +2327,11 @@ export default function CalculadoraEctopico() {
                             placeholder="60-100"
                             value={frecuenciaCardiaca}
                             onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
-                            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
+                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
                           />
                           <span className="text-xs text-slate-500 mt-1 block">lpm</span>
                         </div>
-                        <div className="bg-white p-4 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                        <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-emerald-200 transition-all duration-200 shadow-sm hover:shadow-md">
                           <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
                             <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
                             <span>Presión Sistólica</span>
@@ -2312,11 +2341,11 @@ export default function CalculadoraEctopico() {
                             placeholder="90-140"
                             value={presionSistolica}
                             onChange={(e) => setPresionSistolica(e.target.value)}
-                            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
+                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
                           />
                           <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
                         </div>
-                        <div className="bg-white p-4 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                        <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-emerald-200 transition-all duration-200 shadow-sm hover:shadow-md">
                           <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
                             <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
                             <span>Presión Diastólica</span>
@@ -2326,14 +2355,14 @@ export default function CalculadoraEctopico() {
                             placeholder="60-90"
                             value={presionDiastolica}
                             onChange={(e) => setPresionDiastolica(e.target.value)}
-                            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
+                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
                           />
                           <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <Label className="text-base font-semibold text-slate-700 flex items-center space-x-2">
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
+                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
                           <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
                           <span>Estado de Conciencia</span>
                         </Label>
@@ -2420,134 +2449,171 @@ export default function CalculadoraEctopico() {
                 {/* Section 3: Estudios Disponibles (NEW CHECKLIST) */}
                 {seccionActual === 3 && (
                   <div className="space-y-6">
-                    <div className="flex items-center space-x-3 mb-6">
-                      <div className="bg-blue-100 p-3 rounded-full">
-                        <ClipboardList className="h-6 w-6 text-blue-600" />
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
+                          <ClipboardList className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-slate-800">Estudios Disponibles</h2>
+                          <p className="text-sm text-slate-600">Verificación de estudios realizados</p>
+                        </div>
                       </div>
-                      <h2 className="text-2xl font-bold text-slate-800">Estudios Disponibles</h2>
                     </div>
 
-                    <p className="text-slate-600 mb-6">
+                    <p className="text-slate-600 bg-blue-50 p-4 rounded-lg border border-blue-100">
                       Por favor, indique si la paciente cuenta con los siguientes estudios realizados:
                     </p>
 
-                    <div className="space-y-6">
-                      {/* Prueba embarazo */}
-                      <div className="border border-gray-200 rounded-lg p-4">
-                        <Label className="text-base font-medium text-slate-700 mb-3 block">
-                          ¿Cuenta con prueba de embarazo cuantitativa?
+                    <div className="space-y-4">
+                      {/* Prueba de embarazo */}
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                          <span>¿Cuenta con prueba de embarazo cuantitativa?</span>
                         </Label>
-                        <div className="flex gap-4">
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="pruebaEmbarazoChecklist"
-                              value="si"
-                              checked={tienePruebaEmbarazoChecklist === "si"}
-                              onChange={(e) => setTienePruebaEmbarazoChecklist(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">Sí</span>
-                          </label>
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="pruebaEmbarazoChecklist"
-                              value="no"
-                              checked={tienePruebaEmbarazoChecklist === "no"}
-                              onChange={(e) => setTienePruebaEmbarazoChecklist(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">No</span>
-                          </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {["si", "no"].map((opcion) => (
+                            <label
+                              key={opcion}
+                              className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                tienePruebaEmbarazoDisponible === opcion
+                                  ? "border-purple-500 bg-purple-50 shadow-md"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="tienePruebaEmbarazoDisponible"
+                                value={opcion}
+                                checked={tienePruebaEmbarazoDisponible === opcion}
+                                onChange={(e) => setTienePruebaEmbarazoDisponible(e.target.value)}
+                                className="sr-only"
+                              />
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                  tienePruebaEmbarazoDisponible === opcion
+                                    ? "border-purple-500 bg-purple-500"
+                                    : "border-gray-300"
+                                }`}
+                              >
+                                {tienePruebaEmbarazoDisponible === opcion && (
+                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                )}
+                              </div>
+                              <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
+                            </label>
+                          ))}
                         </div>
                       </div>
 
-                      {/* Eco TVUS second */}
-                      <div className="border border-gray-200 rounded-lg p-4">
-                        <Label className="text-base font-medium text-slate-700 mb-3 block">
-                          ¿Cuenta con ecografía transvaginal (TVUS)?
+                      {/* Eco TVUS */}
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                          <span>¿Cuenta con ecografía transvaginal (TVUS)?</span>
                         </Label>
-                        <div className="flex gap-4">
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="ecoTVUSChecklist"
-                              value="si"
-                              checked={tieneEcoTVUSChecklist === "si"}
-                              onChange={(e) => setTieneEcoTVUSChecklist(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">Sí</span>
-                          </label>
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="ecoTVUSChecklist"
-                              value="no"
-                              checked={tieneEcoTVUSChecklist === "no"}
-                              onChange={(e) => setTieneEcoTVUSChecklist(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">No</span>
-                          </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {["si", "no"].map((opcion) => (
+                            <label
+                              key={opcion}
+                              className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                tieneEcoDisponible === opcion
+                                  ? "border-purple-500 bg-purple-50 shadow-md"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="tieneEcoDisponible"
+                                value={opcion}
+                                checked={tieneEcoDisponible === opcion}
+                                onChange={(e) => setTieneEcoDisponible(e.target.value)}
+                                className="sr-only"
+                              />
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                  tieneEcoDisponible === opcion ? "border-purple-500 bg-purple-500" : "border-gray-300"
+                                }`}
+                              >
+                                {tieneEcoDisponible === opcion && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                              </div>
+                              <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
+                            </label>
+                          ))}
                         </div>
                       </div>
 
-                      {/* Beta sangre third */}
-                      <div className="border border-gray-200 rounded-lg p-4">
-                        <Label className="text-base font-medium text-slate-700 mb-3 block">
-                          ¿Cuenta con resultado de β-hCG en sangre?
+                      {/* Beta hCG */}
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                          <span>¿Cuenta con resultado de β-hCG en sangre?</span>
                         </Label>
-                        <div className="flex gap-4">
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="betaSangre"
-                              value="si"
-                              checked={tieneBetaSangre === "si"}
-                              onChange={(e) => setTieneBetaSangre(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">Sí</span>
-                          </label>
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="betaSangre"
-                              value="no"
-                              checked={tieneBetaSangre === "no"}
-                              onChange={(e) => setTieneBetaSangre(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">No</span>
-                          </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {["si", "no"].map((opcion) => (
+                            <label
+                              key={opcion}
+                              className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                tieneBetaDisponible === opcion
+                                  ? "border-purple-500 bg-purple-50 shadow-md"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="tieneBetaDisponible"
+                                value={opcion}
+                                checked={tieneBetaDisponible === opcion}
+                                onChange={(e) => setTieneBetaDisponible(e.target.value)}
+                                className="sr-only"
+                              />
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                  tieneBetaDisponible === opcion ? "border-purple-500 bg-purple-500" : "border-gray-300"
+                                }`}
+                              >
+                                {tieneBetaDisponible === opcion && (
+                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                )}
+                              </div>
+                              <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
+                            </label>
+                          ))}
                         </div>
                       </div>
                     </div>
 
                     {errorSeccion && (
-                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center space-x-2">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <p className="text-red-700 font-medium">{errorSeccion}</p>
+                        </div>
                       </div>
                     )}
 
-                    <div className="flex justify-between">
-                      <Button onClick={() => setSeccion(2)} variant="outline">
+                    <div className="flex justify-between pt-4">
+                      <Button
+                        onClick={() => setSeccion(2)}
+                        variant="outline"
+                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                      >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
                         Anterior
                       </Button>
                       <Button
                         onClick={async () => {
-                          if (!tieneBetaSangre || !tienePruebaEmbarazoChecklist || !tieneEcoTVUSChecklist) {
+                          if (!tienePruebaEmbarazoDisponible || !tieneEcoDisponible || !tieneBetaDisponible) {
                             setErrorSeccion("Por favor llene todos los campos")
                             return
                           }
 
                           // Check how many are "no"
                           const faltantes = []
-                          if (tienePruebaEmbarazoChecklist === "no") faltantes.push("prueba de embarazo cuantitativa")
-                          if (tieneEcoTVUSChecklist === "no") faltantes.push("ecografía transvaginal (TVUS)")
-                          if (tieneBetaSangre === "no") faltantes.push("β-hCG en sangre")
+                          if (tienePruebaEmbarazoDisponible === "no") faltantes.push("prueba de embarazo cuantitativa")
+                          if (tieneEcoDisponible === "no") faltantes.push("ecografía transvaginal (TVUS)")
+                          if (tieneBetaDisponible === "no") faltantes.push("β-hCG en sangre")
 
                           if (faltantes.length > 0) {
                             let mensaje = ""
@@ -2568,84 +2634,106 @@ export default function CalculadoraEctopico() {
                           } else {
                             // All are "si", continue
                             setErrorSeccion("")
-                            if (!seccionesCompletadas.includes(3)) {
-                              setSeccionesCompletadas([...seccionesCompletadas, 3])
-                            }
+                            completarSeccion(3)
                             setSeccion(4)
                           }
                         }}
-                        disabled={guardandoConsulta}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                       >
-                        {guardandoConsulta ? "Guardando..." : "Continuar"}
+                        Continuar
+                        <ChevronRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
                     <CMGFooter />
                   </div>
                 )}
 
+                {/* SECCION 4: Prueba de Embarazo */}
                 {seccionActual === 4 && (
                   <div className="space-y-6">
-                    <div className="flex items-center space-x-3">
-                      <FileText className="h-6 w-6 text-blue-600" />
-                      <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo</h2>
+                    <div className="bg-gradient-to-r from-rose-50 to-pink-50 p-6 rounded-xl border border-rose-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-rose-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
+                          <FileText className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo</h2>
+                          <p className="text-sm text-slate-600">Resultado de la prueba cuantitativa</p>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <Label className="text-base font-medium text-slate-700">Resultado de la prueba de embarazo</Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
-                          <input
-                            type="radio"
-                            name="resultadoPrueba"
-                            value="positiva"
-                            checked={resultadoPruebaEmbarazo === "positiva"}
-                            onChange={(e) => {
-                              setResultadoPruebaEmbarazo(e.target.value)
-                              setMostrarAlerta(false)
-                              setMensajeAlerta("")
-                            }}
-                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <span className="text-base font-medium text-slate-700">Positiva</span>
-                        </label>
-
-                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
-                          <input
-                            type="radio"
-                            name="resultadoPrueba"
-                            value="negativa"
-                            checked={resultadoPruebaEmbarazo === "negativa"}
-                            onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
-                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <span className="text-base font-medium text-slate-700">Negativa</span>
-                        </label>
+                    <div className="space-y-5">
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
+                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-rose-500 rounded-full"></div>
+                          <span>Resultado de la prueba</span>
+                        </Label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { value: "positiva", label: "Positiva", color: "rose" },
+                            { value: "negativa", label: "Negativa", color: "gray" },
+                          ].map((opcion) => (
+                            <label
+                              key={opcion.value}
+                              className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                tienePruebaEmbarazo === opcion.value
+                                  ? `border-${opcion.color}-500 bg-${opcion.color}-50 shadow-md`
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="tienePruebaEmbarazo"
+                                value={opcion.value}
+                                checked={tienePruebaEmbarazo === opcion.value}
+                                onChange={(e) => setTienePruebaEmbarazo(e.target.value)}
+                                className="sr-only"
+                              />
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                  tienePruebaEmbarazo === opcion.value
+                                    ? `border-${opcion.color}-500 bg-${opcion.color}-500`
+                                    : "border-gray-300"
+                                }`}
+                              >
+                                {tienePruebaEmbarazo === opcion.value && (
+                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                )}
+                              </div>
+                              <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
                     {errorSeccion && (
-                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center space-x-2">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <p className="text-red-700 font-medium">{errorSeccion}</p>
+                        </div>
                       </div>
                     )}
 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between pt-4">
                       <Button
                         onClick={() => setSeccion(3)}
                         variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
                       >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
                         Anterior
                       </Button>
                       <Button
                         onClick={async () => {
-                          if (!resultadoPruebaEmbarazo) {
+                          if (!tienePruebaEmbarazo) {
                             setErrorSeccion("Por favor, seleccione el resultado de la prueba de embarazo.")
                             return
                           }
 
-                          if (resultadoPruebaEmbarazo === "negativa") {
+                          if (tienePruebaEmbarazo === "negativa") {
                             await guardarDatosIncompletos("prueba_embarazo_negativa", 4)
                             setMensajeFinal(
                               <div className="text-center">
@@ -2661,119 +2749,150 @@ export default function CalculadoraEctopico() {
                             completarSeccion(4)
                           }
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                       >
                         Continuar
+                        <ChevronRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
+                    <CMGFooter />
                   </div>
                 )}
 
+                {/* SECCION 5: Eco Transabdominal */}
                 {seccionActual === 5 && (
                   <div className="space-y-6">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-3 bg-blue-100 rounded-lg">
-                        <Activity className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <h2 className="text-2xl font-bold text-slate-800">Evaluación Previa</h2>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="hallazgosExploracion" className="text-base font-medium text-slate-700">
-                        Hallazgos de Exploración Física
-                      </Label>
-                      <textarea
-                        id="hallazgosExploracion"
-                        value={hallazgosExploracion}
-                        onChange={(e) => setHallazgosExploracion(e.target.value)}
-                        placeholder="Describa los hallazgos relevantes..."
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-700 min-h-[100px]"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label className="text-base font-medium text-slate-700">¿Tiene ecografía transabdominal?</Label>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
-                          <input
-                            type="radio"
-                            name="tieneEcoTransabdominal"
-                            value="si"
-                            checked={tieneEcoTransabdominal === "si"}
-                            onChange={(e) => {
-                              setTieneEcoTransabdominal(e.target.value)
-                              setErrorSeccion("")
-                            }}
-                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <span className="text-base font-medium text-slate-700">Sí</span>
-                        </label>
-
-                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
-                          <input
-                            type="radio"
-                            name="tieneEcoTransabdominal"
-                            value="no"
-                            checked={tieneEcoTransabdominal === "no"}
-                            onChange={(e) => {
-                              setTieneEcoTransabdominal(e.target.value)
-                              setResultadoEcoTransabdominal("")
-                              setErrorSeccion("")
-                            }}
-                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <span className="text-base font-medium text-slate-700">No</span>
-                        </label>
+                    <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl border border-cyan-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                          <Stethoscope className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-slate-800">Evaluación Previa</h2>
+                          <p className="text-sm text-slate-600">Ecografía transabdominal y exploración física</p>
+                        </div>
                       </div>
                     </div>
 
-                    {tieneEcoTransabdominal === "si" && (
-                      <div className="space-y-3">
-                        <Label className="text-base font-medium text-slate-700">Resultado de la ecografía</Label>
+                    <div className="space-y-5">
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-cyan-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                        <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                          <span>Hallazgos de Exploración Física</span>
+                        </Label>
+                        <textarea
+                          placeholder="Describa los hallazgos relevantes..."
+                          value={hallazgosExploracion}
+                          onChange={(e) => setHallazgosExploracion(e.target.value)}
+                          rows={4}
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 transition-all duration-200 resize-none"
+                        />
+                      </div>
+
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
+                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                          <span>¿Tiene ecografía transabdominal?</span>
+                        </Label>
                         <div className="grid grid-cols-2 gap-3">
-                          {[
-                            { value: "saco_embrionario_fc", label: "Saco embrionario con FC" },
-                            { value: "saco_vitelino_embrion", label: "Saco vitelino con embrión" },
-                            { value: "saco_vitelino_sin_embrion", label: "Saco vitelino sin embrión" },
-                            { value: "saco_sin_embrion", label: "Saco sin embrión" },
-                            { value: "saco_10mm_anillo_2mm", label: "Saco ≥10mm con anillo decidual ≥2mm" },
-                            { value: "ausencia_saco", label: "Ausencia de saco" },
-                          ].map((opcion) => (
+                          {["si", "no"].map((opcion) => (
                             <label
-                              key={opcion.value}
-                              className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
+                              key={opcion}
+                              className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                tieneEcoTransabdominal === opcion
+                                  ? "border-cyan-500 bg-cyan-50 shadow-md"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
                             >
                               <input
                                 type="radio"
-                                name="resultadoEcoTransabdominal"
-                                value={opcion.value}
-                                checked={resultadoEcoTransabdominal === opcion.value}
-                                onChange={(e) => {
-                                  setResultadoEcoTransabdominal(e.target.value)
-                                  setErrorSeccion("")
-                                }}
-                                className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                name="tieneEcoTransabdominal"
+                                value={opcion}
+                                checked={tieneEcoTransabdominal === opcion}
+                                onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
+                                className="sr-only"
                               />
-                              <span className="text-base font-medium text-slate-700">{opcion.label}</span>
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                  tieneEcoTransabdominal === opcion ? "border-cyan-500 bg-cyan-500" : "border-gray-300"
+                                }`}
+                              >
+                                {tieneEcoTransabdominal === opcion && (
+                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                )}
+                              </div>
+                              <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
                             </label>
                           ))}
                         </div>
                       </div>
-                    )}
+
+                      {tieneEcoTransabdominal === "si" && (
+                        <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
+                          <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                            <span>Resultado de la ecografía</span>
+                          </Label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {[
+                              { value: "saco_embrionario_fc", label: "Saco embrionario con FC" },
+                              { value: "saco_vitelino_embrion", label: "Saco vitelino con embrión" },
+                              { value: "saco_vitelino_sin_embrion", label: "Saco vitelino sin embrión" },
+                              { value: "saco_sin_embrion", label: "Saco sin embrión" },
+                              { value: "saco_10mm_anillo_2mm", label: "Saco ≥10mm con anillo decidual ≥2mm" },
+                              { value: "ausencia_saco", label: "Ausencia de saco" },
+                            ].map((opcion) => (
+                              <label
+                                key={opcion.value}
+                                className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                  resultadoEcoTransabdominal === opcion.value
+                                    ? "border-cyan-500 bg-cyan-50 shadow-md"
+                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="resultadoEcoTransabdominal"
+                                  value={opcion.value}
+                                  checked={resultadoEcoTransabdominal === opcion.value}
+                                  onChange={(e) => setResultadoEcoTransabdominal(e.target.value)}
+                                  className="sr-only"
+                                />
+                                <div
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                    resultadoEcoTransabdominal === opcion.value
+                                      ? "border-cyan-500 bg-cyan-500"
+                                      : "border-gray-300"
+                                  }`}
+                                >
+                                  {resultadoEcoTransabdominal === opcion.value && (
+                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                  )}
+                                </div>
+                                <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     {errorSeccion && (
-                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center space-x-2">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <p className="text-red-700 font-medium">{errorSeccion}</p>
+                        </div>
                       </div>
                     )}
 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between pt-4">
                       <Button
                         onClick={() => setSeccion(4)}
                         variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
                       >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
                         Anterior
                       </Button>
                       <Button
@@ -2814,124 +2933,144 @@ export default function CalculadoraEctopico() {
                             setPantalla("completada")
                             setMostrarResumen(false)
                           } else {
-                            completarSeccion(5)
                             setSeccion(6)
+                            completarSeccion(5)
                           }
                         }}
-                        disabled={guardandoConsulta}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                        className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                       >
-                        {guardandoConsulta ? "Guardando..." : "Continuar"}
+                        Continuar
+                        <ChevronRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
+                    <CMGFooter />
                   </div>
                 )}
 
+                {/* SECCION 6: Síntomas y Factores de Riesgo */}
                 {seccionActual === 6 && (
                   <div className="space-y-6">
-                    <div className="flex items-center space-x-3 mb-6">
-                      <div className="bg-blue-100 p-3 rounded-full">
-                        <AlertTriangle className="h-6 w-6 text-blue-600" />
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-xl border border-amber-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
+                          <AlertCircle className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-slate-800">Síntomas y Factores de Riesgo</h2>
+                          <p className="text-sm text-slate-600">Evaluación clínica de la paciente</p>
+                        </div>
                       </div>
-                      <h3 className="text-2xl font-bold text-gray-800">Síntomas y Factores de Riesgo</h3>
                     </div>
 
-                    {/* Síntomas Presentes */}
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4">Seleccione los síntomas presentes</h4>
-                      {esConsultaSeguimiento && (
-                        <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mb-4">
-                          Mantenidos de consulta anterior
-                        </div>
-                      )}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {sintomas.map((sintoma) => (
-                          <label
-                            key={sintoma.id}
-                            className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                          >
-                            <div className="relative">
+                    <div className="space-y-5">
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
+                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                          <span>Síntomas Presentes</span>
+                        </Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {[
+                            { value: "dolor_abdominal", label: "Dolor abdominal" },
+                            { value: "sangrado_vaginal", label: "Sangrado vaginal" },
+                            { value: "mareo", label: "Mareo/Síncope" },
+                            { value: "dolor_hombro", label: "Dolor de hombro" },
+                          ].map((sintoma) => (
+                            <label
+                              key={sintoma.value}
+                              className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                sintomasSeleccionados.includes(sintoma.value)
+                                  ? "border-amber-500 bg-amber-50 shadow-md"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
                               <input
                                 type="checkbox"
-                                checked={sintomasSeleccionados.includes(sintoma.id)}
-                                onChange={(e) =>
-                                  setSintomasSeleccionados((prev) =>
-                                    e.target.checked ? [...prev, sintoma.id] : prev.filter((id) => id !== sintoma.id),
-                                  )
-                                }
+                                checked={sintomasSeleccionados.includes(sintoma.value)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSintomasSeleccionados([...sintomasSeleccionados, sintoma.value])
+                                  } else {
+                                    setSintomasSeleccionados(sintomasSeleccionados.filter((s) => s !== sintoma.value))
+                                  }
+                                }}
                                 className="sr-only"
                               />
                               <div
-                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                  sintomasSeleccionados.includes(sintoma.id)
-                                    ? "bg-blue-600 border-blue-600"
-                                    : "border-gray-300 hover:border-blue-400"
+                                className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                  sintomasSeleccionados.includes(sintoma.value)
+                                    ? "border-amber-500 bg-amber-500"
+                                    : "border-gray-300"
                                 }`}
                               >
-                                {sintomasSeleccionados.includes(sintoma.id) && (
-                                  <div className="w-2 h-2 bg-white rounded-full" />
+                                {sintomasSeleccionados.includes(sintoma.value) && (
+                                  <Check className="h-3 w-3 text-white" />
                                 )}
                               </div>
-                            </div>
-                            <span className="text-sm font-medium text-gray-700">{sintoma.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Factores de Riesgo */}
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                        Seleccione los factores de riesgo presentes
-                      </h4>
-                      {esConsultaSeguimiento && (
-                        <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mb-4">
-                          Mantenidos de consulta anterior
+                              <span className="text-sm font-medium text-slate-700">{sintoma.label}</span>
+                            </label>
+                          ))}
                         </div>
-                      )}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {factoresRiesgo.map((factor) => (
-                          <label
-                            key={factor.id}
-                            className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                          >
-                            <div className="relative">
+                      </div>
+
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
+                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                          <span>Factores de Riesgo</span>
+                        </Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {[
+                            { value: "ectopico_previo", label: "Embarazo ectópico previo" },
+                            { value: "cirugia_tubarica", label: "Cirugía tubárica previa" },
+                            { value: "enfermedad_inflamatoria", label: "Enfermedad inflamatoria pélvica" },
+                            { value: "diu", label: "DIU in situ" },
+                            { value: "fertilizacion", label: "Fertilización in vitro" },
+                            { value: "tabaquismo", label: "Tabaquismo" },
+                          ].map((factor) => (
+                            <label
+                              key={factor.value}
+                              className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                factoresSeleccionados.includes(factor.value)
+                                  ? "border-amber-500 bg-amber-50 shadow-md"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
                               <input
                                 type="checkbox"
-                                checked={factoresSeleccionados.includes(factor.id)}
-                                onChange={(e) =>
-                                  setFactoresSeleccionados((prev) =>
-                                    e.target.checked ? [...prev, factor.id] : prev.filter((id) => id !== factor.id),
-                                  )
-                                }
+                                checked={factoresSeleccionados.includes(factor.value)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setFactoresSeleccionados([...factoresSeleccionados, factor.value])
+                                  } else {
+                                    setFactoresSeleccionados(factoresSeleccionados.filter((f) => f !== factor.value))
+                                  }
+                                }}
                                 className="sr-only"
                               />
                               <div
-                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                  factoresSeleccionados.includes(factor.id)
-                                    ? "bg-blue-600 border-blue-600"
-                                    : "border-gray-300 hover:border-blue-400"
+                                className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                  factoresSeleccionados.includes(factor.value)
+                                    ? "border-amber-500 bg-amber-500"
+                                    : "border-gray-300"
                                 }`}
                               >
-                                {factoresSeleccionados.includes(factor.id) && (
-                                  <div className="w-2 h-2 bg-white rounded-full" />
+                                {factoresSeleccionados.includes(factor.value) && (
+                                  <Check className="h-3 w-3 text-white" />
                                 )}
                               </div>
-                            </div>
-                            <span className="text-sm font-medium text-gray-700">{factor.label}</span>
-                          </label>
-                        ))}
+                              <span className="text-sm font-medium text-slate-700">{factor.label}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
-                    {errorSeccion && (
-                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                        <p className="text-red-700 font-medium">{errorSeccion}</p>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
-                      <Button onClick={() => setSeccion(5)} variant="outline">
+                    <div className="flex justify-between pt-4">
+                      <Button
+                        onClick={() => setSeccion(5)}
+                        variant="outline"
+                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                      >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
                         Anterior
                       </Button>
                       <Button
@@ -2948,131 +3087,181 @@ export default function CalculadoraEctopico() {
                           setSeccion(7)
                           completarSeccion(6)
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                        className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                       >
                         Continuar
+                        <ChevronRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
+                    <CMGFooter />
                   </div>
                 )}
 
+                {/* SECCION 7: TVUS */}
                 {seccionActual === 7 && (
                   <div className="space-y-6">
-                    <div className="flex items-center space-x-3">
-                      <Activity className="h-6 w-6 text-blue-600" />
-                      <h2 className="text-2xl font-bold text-slate-800">Ecografía Transvaginal (TVUS)</h2>
+                    <div className="bg-gradient-to-r from-violet-50 to-purple-50 p-6 rounded-xl border border-violet-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                          <FileText className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-slate-800">Ecografía Transvaginal (TVUS)</h2>
+                          <p className="text-sm text-slate-600">Hallazgos ecográficos</p>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <Label className="text-base font-medium text-slate-700">
-                        Resultado de la Ecografía Transvaginal
-                      </Label>
-                      <div className="grid grid-cols-1 gap-3">
-                        {[
-                          { value: "normal", label: "Normal" },
-                          { value: "libre", label: "Líquido libre" },
-                          { value: "masa", label: "Masa anexial" },
-                          { value: "masa_libre", label: "Masa anexial + Líquido libre" },
-                        ].map((opcion) => (
-                          <label
-                            key={opcion.value}
-                            className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
-                          >
-                            <input
-                              type="radio"
-                              name="tvus"
-                              value={opcion.value}
-                              checked={tvus === opcion.value}
-                              onChange={(e) => setTvus(e.target.value)}
-                              className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-base font-medium text-slate-700">{opcion.label}</span>
-                          </label>
-                        ))}
+                    <div className="space-y-5">
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
+                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-violet-500 rounded-full"></div>
+                          <span>Hallazgos en TVUS</span>
+                        </Label>
+                        <div className="grid grid-cols-1 gap-3">
+                          {[
+                            { value: "masa_anexial", label: "Masa anexial" },
+                            { value: "liquido_libre", label: "Líquido libre" },
+                            { value: "saco_extrauterino", label: "Saco extrauterino" },
+                            { value: "ausencia_saco_intrauterino", label: "Ausencia de saco intrauterino" },
+                            { value: "normal", label: "Normal" },
+                          ].map((hallazgo) => (
+                            <label
+                              key={hallazgo.value}
+                              className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                hallazgosTVUS === hallazgo.value
+                                  ? "border-violet-500 bg-violet-50 shadow-md"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="hallazgosTVUS"
+                                value={hallazgo.value}
+                                checked={hallazgosTVUS === hallazgo.value}
+                                onChange={(e) => setHallazgosTVUS(e.target.value)}
+                                className="sr-only"
+                              />
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                  hallazgosTVUS === hallazgo.value
+                                    ? "border-violet-500 bg-violet-500"
+                                    : "border-gray-300"
+                                }`}
+                              >
+                                {hallazgosTVUS === hallazgo.value && (
+                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                )}
+                              </div>
+                              <span className="text-sm font-medium text-slate-700">{hallazgo.label}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
                     {errorSeccion && (
-                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center space-x-2">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <p className="text-red-700 font-medium">{errorSeccion}</p>
+                        </div>
                       </div>
                     )}
 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between pt-4">
                       <Button
                         onClick={() => setSeccion(6)}
                         variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
                       >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
                         Anterior
                       </Button>
                       <Button
                         onClick={() => {
-                          if (!tvus) {
-                            setErrorSeccion("Por favor, seleccione el resultado de la ecografía transvaginal.")
+                          if (!hallazgosTVUS) {
+                            setErrorSeccion("Por favor, seleccione un hallazgo de TVUS.")
                             return
                           }
-                          setResultadoTVUS(tvus)
                           setSeccion(8)
                           completarSeccion(7)
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                        className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                       >
                         Continuar
+                        <ChevronRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
+                    <CMGFooter />
                   </div>
                 )}
 
+                {/* SECCION 8: β-hCG */}
                 {seccionActual === 8 && (
                   <div className="space-y-6">
-                    <div className="flex items-center space-x-3">
-                      <Activity className="h-6 w-6 text-blue-600" />
-                      <h2 className="text-2xl font-bold text-slate-800">β-hCG en Sangre</h2>
+                    <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
+                          <Droplet className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-slate-800">β-hCG en Sangre</h2>
+                          <p className="text-sm text-slate-600">Nivel cuantitativo de β-hCG</p>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <Label htmlFor="betaHcg" className="text-base font-medium text-slate-700">
-                        Valor de β-hCG (mUI/mL)
-                      </Label>
-                      <input
-                        id="betaHcg"
-                        type="number"
-                        value={betaHcg}
-                        onChange={(e) => setBetaHcg(e.target.value)}
-                        placeholder="Ingrese el valor"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-700"
-                      />
+                    <div className="space-y-5">
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-teal-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                        <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                          <span>Valor de β-hCG</span>
+                        </Label>
+                        <input
+                          type="number"
+                          placeholder="Ingrese el valor"
+                          value={nivelBetaHCG}
+                          onChange={(e) => setNivelBetaHCG(e.target.value)}
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all duration-200"
+                        />
+                        <span className="text-xs text-slate-500 mt-1 block">mUI/mL</span>
+                      </div>
                     </div>
 
                     {errorSeccion && (
-                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center space-x-2">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <p className="text-red-700 font-medium">{errorSeccion}</p>
+                        </div>
                       </div>
                     )}
 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between pt-4">
                       <Button
                         onClick={() => setSeccion(7)}
                         variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
                       >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
                         Anterior
                       </Button>
                       <Button
                         onClick={async () => {
-                          if (!betaHcg) {
+                          if (!nivelBetaHCG) {
                             setErrorSeccion("Por favor, ingrese el valor de β-hCG.")
                             return
                           }
                           await calcular()
-                          setPantalla("finalizado")
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                        className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                       >
-                        Continuar
+                        Calcular Riesgo
+                        <ChevronRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
+                    <CMGFooter />
                   </div>
                 )}
               </CardContent>

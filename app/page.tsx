@@ -7,6 +7,7 @@ import { clienteSeguro } from "@/lib/api/clienteSeguro"
 import { calcularRiesgo, validarEmbarazo, validarEcografia } from "@/lib/api/calculos"
 import {
   Heart,
+  Stethoscope,
   FileText,
   Calculator,
   User,
@@ -18,7 +19,7 @@ import {
   EyeOff,
   CheckCircle,
   Download,
-  ClipboardList,
+  AlertCircle,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type React from "react"
@@ -288,7 +289,7 @@ export default function CalculadoraEctopico() {
 
   // Navegación y secciones
   const [pantalla, setPantalla] = useState<
-    "bienvenida" | "cargar" | "resumen" | "formulario" | "finalizado" | "resultados" | "completada"
+    "bienvenida" | "cargar" | "resumen" | "formulario" | "finalizado" | "resultados"
   >("bienvenida")
   const [seccionActual, setSeccion] = useState(1) // Renamed from seccionActual for clarity in the new flow
   const [seccionesCompletadas, setSeccionesCompletadas] = useState<number[]>([])
@@ -308,7 +309,6 @@ export default function CalculadoraEctopico() {
   const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
   const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
   const [mostrarPantallaBienvenida, setMostrarPantallaBienvenida] = useState(false)
-  const [mostrarResumen, setMostrarResumen] = useState(false) // Added for new state
 
   // Estados específicos para el cálculo
   const [resultadoTVUS, setResultadoTVUS] = useState<string>("") // Renamed from 'tvus' for clarity
@@ -316,12 +316,6 @@ export default function CalculadoraEctopico() {
   const [tieneBetaHCG, setTieneBetaHCG] = useState<string>("") // Indicates if betaHCG result is available
   const [tieneTVUS, setTieneTVUS] = useState<string>("") // Indicates if TVUS result is available
   const [tieneHCG, setTieneHCG] = useState<string>("") // This state seems unused, but kept for consistency
-
-  const [guardandoConsulta, setGuardandoConsulta] = useState(false)
-
-  const [tieneBetaSangre, setTieneBetaSangre] = useState<string>("")
-  const [tienePruebaEmbarazoChecklist, setTienePruebaEmbarazoChecklist] = useState<string>("")
-  const [tieneEcoTVUSChecklist, setTieneEcoTVUSChecklist] = useState<string>("")
 
   // ✅ Verificar autenticación al cargar
   useEffect(() => {
@@ -343,13 +337,6 @@ export default function CalculadoraEctopico() {
 
   // ==================== GUARDAR DATOS INCOMPLETOS ====================
   async function guardarDatosIncompletos(motivoFinalizacion: string, seccionCompletada: number): Promise<boolean> {
-    if (guardandoConsulta) {
-      console.log("[v0] ⚠️ Ya se está guardando una consulta, evitando duplicado")
-      return false
-    }
-
-    setGuardandoConsulta(true)
-
     try {
       const fechaActual = new Date().toISOString()
       const datosIncompletos = {
@@ -360,7 +347,7 @@ export default function CalculadoraEctopico() {
         edadPaciente: edadPaciente ? Number.parseInt(edadPaciente) : null,
         frecuenciaCardiaca: frecuenciaCardiaca ? Number.parseInt(frecuenciaCardiaca) : null,
         presionSistolica: presionSistolica ? Number.parseInt(presionSistolica) : null,
-        presionDiastolica: presionDiastolica ? Number.parseInt(presionDiastolica) : null,
+        presionDiastolica: presionDiastolica ? Number.parseInt(presionDiastolica) : null, // Corrected typo here
         estadoConciencia: estadoConciencia || null,
         pruebaEmbarazoRealizada: pruebaEmbarazoRealizada || null,
         resultadoPruebaEmbarazo: resultadoPruebaEmbarazo || null,
@@ -369,7 +356,7 @@ export default function CalculadoraEctopico() {
         resultadoEcoTransabdominal: resultadoEcoTransabdominal || null,
         sintomasSeleccionados: sintomasSeleccionados || [],
         factoresSeleccionados: factoresSeleccionados || [],
-        tvus: tvus || null,
+        tvus: tvus || null, // Using 'tvus' here as it's the actual TVUS result field
         hcgValor: hcgValor ? Number.parseFloat(hcgValor) : null,
         variacionHcg: variacionHcg || null,
         hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
@@ -401,8 +388,6 @@ export default function CalculadoraEctopico() {
     } catch (error) {
       console.error("Error al guardar datos incompletos:", error)
       return false
-    } finally {
-      setGuardandoConsulta(false)
     }
   }
 
@@ -691,7 +676,6 @@ export default function CalculadoraEctopico() {
     setResultado(null)
     setSeccion(1)
     setSeccionesCompletadas([])
-    setGuardandoConsulta(false)
     setNombrePaciente("")
     setEdadPaciente("")
     setFrecuenciaCardiaca("")
@@ -728,15 +712,9 @@ export default function CalculadoraEctopico() {
     setMensajeAlerta("")
     setTieneBetaHCG("") // Reset tieneBetaHCG state
     setErrorSeccion("")
-    setMostrarResumen(false) // Resetting new state
 
     // Resetting states related to the calculation itself
     setResultadoTVUS("")
-
-    // Resetting new checklist states
-    setTieneBetaSangre("")
-    setTienePruebaEmbarazoChecklist("")
-    setTieneEcoTVUSChecklist("")
   }
 
   const buscarConsulta = async () => {
@@ -1078,8 +1056,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
       pantalla === "cargar" ||
       pantalla === "resumen" ||
       pantalla === "finalizado" ||
-      pantalla === "resultados" ||
-      pantalla === "completada"
+      pantalla === "resultados"
     ) {
       return null
     }
@@ -1093,7 +1070,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700">Progreso de la Evaluación</span>
             <span className="text-sm text-gray-500">
-              {seccionesCompletadas.length}/{totalSecciones} secciones
+              {seccionesCompletas}/{totalSecciones} secciones
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -1691,41 +1668,12 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   <h2 className="text-2xl font-bold text-slate-800">Evaluación Completada</h2>
                 </div>
 
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 text-center">
                   <p className="text-blue-900 font-medium">
                     {mensajeFinal ||
-                      (resultado !== null ? (
-                        resultado < 0.01 ? (
-                          // Baja probabilidad
-                          <>
-                            <strong>Bajas probabilidades de embarazo ectópico.</strong>
-                            <br />
-                            <br />
-                            Se recomienda mantener un monitoreo constante con su ginecólogo de confianza y estar atenta
-                            a cualquier cambio en los síntomas.
-                          </>
-                        ) : resultado >= 0.95 ? (
-                          // Alta probabilidad
-                          <>
-                            <strong>Alta probabilidad de embarazo ectópico.</strong>
-                            <br />
-                            <br />
-                            Se recomienda referencia inmediata a un centro médico especializado para evaluación y manejo
-                            apropiado.
-                          </>
-                        ) : (
-                          // Probabilidad intermedia
-                          <>
-                            <strong>Probabilidad intermedia de embarazo ectópico.</strong>
-                            <br />
-                            <br />
-                            Guarde el código de consulta (disponible abajo para copiar) y regrese en 48 a 72 horas con
-                            nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento.
-                          </>
-                        )
-                      ) : (
-                        "Los datos de esta consulta han sido guardados exitosamente."
-                      ))}
+                      (resultado !== null
+                        ? "La evaluación ha sido completada exitosamente. Revise los resultados a continuación."
+                        : "Los datos de esta consulta han sido guardados exitosamente.")}
                   </p>
                 </div>
 
@@ -1736,19 +1684,9 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                   <div className="text-green-800 text-sm space-y-2">
                     <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
-                    <div className="flex items-center space-x-2">
-                      <span>📋 ID de Consulta:</span>
-                      <span className="font-mono font-bold">{idSeguimiento}</span>
-                      <Button
-                        onClick={copiarId}
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 hover:bg-green-100"
-                        title="Copiar ID"
-                      >
-                        <Copy className="h-3 w-3 text-green-700" />
-                      </Button>
-                    </div>
+                    <p>
+                      📋 ID de Consulta: <span className="font-mono font-bold">{idSeguimiento}</span>
+                    </p>
                     <p>
                       👤 Paciente: {nombrePaciente}, {edadPaciente} años
                     </p>
@@ -1887,77 +1825,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       Nueva Evaluación
                     </Button>
                   </div>
-                </div>
-
-                <CMGFooter />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      ) : pantalla === "completada" ? (
-        <div className="max-w-4xl mx-auto p-6">
-          <Card className="shadow-lg">
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                <div className="flex items-center justify-center space-x-3 mb-6">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                  <h2 className="text-3xl font-bold text-slate-800">Evaluación Incompleta</h2>
-                </div>
-
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                  <div className="text-blue-900">
-                    {typeof mensajeFinal === "string" ? (
-                      <div className="space-y-4">
-                        <p className="font-medium text-lg">
-                          {mensajeFinal.includes("tres estudios")
-                            ? "Se necesitan realizar los siguientes estudios para poder continuar con la evaluación:"
-                            : mensajeFinal.includes("siguientes estudios")
-                              ? "Se necesitan realizar los siguientes estudios para poder continuar con la evaluación:"
-                              : mensajeFinal}
-                        </p>
-                        {(mensajeFinal.includes("prueba de embarazo") ||
-                          mensajeFinal.includes("ecografía transvaginal") ||
-                          mensajeFinal.includes("β-hCG")) && (
-                          <ul className="list-none space-y-2 ml-4">
-                            {mensajeFinal.includes("prueba de embarazo") && (
-                              <li className="flex items-start">
-                                <span className="text-blue-600 mr-2">•</span>
-                                <span>Prueba de embarazo cuantitativa</span>
-                              </li>
-                            )}
-                            {mensajeFinal.includes("ecografía transvaginal") && (
-                              <li className="flex items-start">
-                                <span className="text-blue-600 mr-2">•</span>
-                                <span>Ecografía transvaginal (TVUS)</span>
-                              </li>
-                            )}
-                            {mensajeFinal.includes("β-hCG") && (
-                              <li className="flex items-start">
-                                <span className="text-blue-600 mr-2">•</span>
-                                <span>β-hCG en sangre</span>
-                              </li>
-                            )}
-                          </ul>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="font-medium">{mensajeFinal}</div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <p className="text-base text-slate-600 mb-6">
-                    Por favor, acuda a un laboratorio clínico para realizarse los estudios solicitados y vuelva a
-                    intentarlo.
-                  </p>
-                  <Button
-                    onClick={volverAInicio}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 text-lg"
-                  >
-                    <User className="h-4 w-4 mr-2" />
-                    Regresar al Inicio
-                  </Button>
                 </div>
 
                 <CMGFooter />
@@ -2133,174 +2000,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                 )}
 
-                {/* Section 3: Estudios Disponibles (NEW CHECKLIST) */}
                 {seccionActual === 3 && (
-                  <div className="space-y-6">
-                    <div className="flex items-center space-x-3 mb-6">
-                      <div className="bg-blue-100 p-3 rounded-full">
-                        <ClipboardList className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <h2 className="text-2xl font-bold text-slate-800">Estudios Disponibles</h2>
-                    </div>
-
-                    <p className="text-slate-600 mb-6">
-                      Por favor, indique si la paciente cuenta con los siguientes estudios realizados:
-                    </p>
-
-                    <div className="space-y-6">
-                      {/* Prueba embarazo */}
-                      <div className="border border-gray-200 rounded-lg p-4">
-                        <Label className="text-base font-medium text-slate-700 mb-3 block">
-                          ¿Cuenta con prueba de embarazo cuantitativa?
-                        </Label>
-                        <div className="flex gap-4">
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="pruebaEmbarazoChecklist"
-                              value="si"
-                              checked={tienePruebaEmbarazoChecklist === "si"}
-                              onChange={(e) => setTienePruebaEmbarazoChecklist(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">Sí</span>
-                          </label>
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="pruebaEmbarazoChecklist"
-                              value="no"
-                              checked={tienePruebaEmbarazoChecklist === "no"}
-                              onChange={(e) => setTienePruebaEmbarazoChecklist(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">No</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      {/* Eco TVUS second */}
-                      <div className="border border-gray-200 rounded-lg p-4">
-                        <Label className="text-base font-medium text-slate-700 mb-3 block">
-                          ¿Cuenta con ecografía transvaginal (TVUS)?
-                        </Label>
-                        <div className="flex gap-4">
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="ecoTVUSChecklist"
-                              value="si"
-                              checked={tieneEcoTVUSChecklist === "si"}
-                              onChange={(e) => setTieneEcoTVUSChecklist(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">Sí</span>
-                          </label>
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="ecoTVUSChecklist"
-                              value="no"
-                              checked={tieneEcoTVUSChecklist === "no"}
-                              onChange={(e) => setTieneEcoTVUSChecklist(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">No</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      {/* Beta sangre third */}
-                      <div className="border border-gray-200 rounded-lg p-4">
-                        <Label className="text-base font-medium text-slate-700 mb-3 block">
-                          ¿Cuenta con resultado de β-hCG en sangre?
-                        </Label>
-                        <div className="flex gap-4">
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="betaSangre"
-                              value="si"
-                              checked={tieneBetaSangre === "si"}
-                              onChange={(e) => setTieneBetaSangre(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">Sí</span>
-                          </label>
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="betaSangre"
-                              value="no"
-                              checked={tieneBetaSangre === "no"}
-                              onChange={(e) => setTieneBetaSangre(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">No</span>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-
-                    {errorSeccion && (
-                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                        <p className="text-red-700 font-medium">{errorSeccion}</p>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between">
-                      <Button onClick={() => setSeccion(2)} variant="outline">
-                        Anterior
-                      </Button>
-                      <Button
-                        onClick={async () => {
-                          if (!tieneBetaSangre || !tienePruebaEmbarazoChecklist || !tieneEcoTVUSChecklist) {
-                            setErrorSeccion("Por favor llene todos los campos")
-                            return
-                          }
-
-                          // Check how many are "no"
-                          const faltantes = []
-                          if (tienePruebaEmbarazoChecklist === "no") faltantes.push("prueba de embarazo cuantitativa")
-                          if (tieneEcoTVUSChecklist === "no") faltantes.push("ecografía transvaginal (TVUS)")
-                          if (tieneBetaSangre === "no") faltantes.push("β-hCG en sangre")
-
-                          if (faltantes.length > 0) {
-                            let mensaje = ""
-                            if (faltantes.length === 3) {
-                              mensaje =
-                                "Se necesitan realizar los tres estudios (prueba de embarazo cuantitativa, ecografía transvaginal y β-hCG en sangre) para poder continuar con la evaluación. Por favor, acuda a un laboratorio clínico y regrese cuando tenga los resultados."
-                            } else if (faltantes.length === 2) {
-                              mensaje = `Se necesitan realizar los siguientes estudios para poder continuar con la evaluación: ${faltantes.join(" y ")}. Por favor, acuda a un laboratorio clínico y regrese cuando tenga los resultados.`
-                            } else {
-                              mensaje = `Se necesita realizar ${faltantes[0]} para poder continuar con la evaluación. Por favor, acuda a un laboratorio clínico y regrese cuando tenga el resultado.`
-                            }
-
-                            setMensajeFinal(mensaje)
-                            await guardarDatosIncompletos("estudios_faltantes", 3)
-                            setPantalla("completada")
-                            setMostrarResumen(false)
-                            setProtocoloFinalizado(true)
-                          } else {
-                            // All are "si", continue
-                            setErrorSeccion("")
-                            if (!seccionesCompletadas.includes(3)) {
-                              setSeccionesCompletadas([...seccionesCompletadas, 3])
-                            }
-                            setSeccion(4)
-                          }
-                        }}
-                        disabled={guardandoConsulta}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
-                      >
-                        {guardandoConsulta ? "Guardando..." : "Continuar"}
-                      </Button>
-                    </div>
-                    <CMGFooter />
-                  </div>
-                )}
-
-                {seccionActual === 4 && (
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
                       <FileText className="h-6 w-6 text-blue-600" />
@@ -2308,104 +2008,19 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     </div>
 
                     <div className="space-y-3">
-                      <Label className="text-base font-medium text-slate-700">Resultado de la prueba de embarazo</Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
-                          <input
-                            type="radio"
-                            name="resultadoPrueba"
-                            value="positiva"
-                            checked={resultadoPruebaEmbarazo === "positiva"}
-                            onChange={(e) => {
-                              setResultadoPruebaEmbarazo(e.target.value)
-                              setMostrarAlerta(false)
-                              setMensajeAlerta("")
-                            }}
-                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <span className="text-base font-medium text-slate-700">Positiva</span>
-                        </label>
-
-                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
-                          <input
-                            type="radio"
-                            name="resultadoPrueba"
-                            value="negativa"
-                            checked={resultadoPruebaEmbarazo === "negativa"}
-                            onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
-                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <span className="text-base font-medium text-slate-700">Negativa</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {errorSeccion && (
-                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                        <p className="text-red-700 font-medium">{errorSeccion}</p>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between">
-                      <Button
-                        onClick={() => setSeccion(3)}
-                        variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                      >
-                        Anterior
-                      </Button>
-                      <Button
-                        onClick={async () => {
-                          if (!resultadoPruebaEmbarazo) {
-                            setErrorSeccion("Por favor, seleccione el resultado de la prueba de embarazo.")
-                            return
-                          }
-
-                          if (resultadoPruebaEmbarazo === "negativa") {
-                            await guardarDatosIncompletos("prueba_embarazo_negativa", 4)
-                            setMensajeFinal(
-                              <div className="text-center">
-                                Con prueba de embarazo negativa, es muy poco probable un embarazo ectópico. Se sugiere
-                                buscar otras causas de los síntomas presentados.
-                              </div>,
-                            )
-                            setProtocoloFinalizado(true)
-                            setPantalla("completada")
-                            setMostrarResumen(false)
-                          } else {
-                            setSeccion(5)
-                            completarSeccion(4)
-                          }
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Continuar
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {seccionActual === 5 && (
-                  <div className="space-y-6">
-                    <div className="flex items-center space-x-3">
-                      <Activity className="h-6 w-6 text-blue-600" />
-                      <h2 className="text-2xl font-bold text-slate-800">Ecografía Transabdominal</h2>
-                    </div>
-
-                    <div className="space-y-3">
                       <Label className="text-base font-medium text-slate-700">
-                        ¿Se realizó ecografía transabdominal?
+                        ¿Se realizó prueba de embarazo cualitativa?
                       </Label>
 
                       <div className="grid grid-cols-2 gap-4">
                         <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
                           <input
                             type="radio"
-                            name="tieneEcoTransabdominal"
+                            name="pruebaEmbarazo"
                             value="si"
-                            checked={tieneEcoTransabdominal === "si"}
+                            checked={pruebaEmbarazoRealizada === "si"}
                             onChange={(e) => {
-                              setTieneEcoTransabdominal(e.target.value)
+                              setPruebaEmbarazoRealizada(e.target.value)
                               setMostrarAlerta(false)
                               setMensajeAlerta("")
                             }}
@@ -2417,12 +2032,12 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
                           <input
                             type="radio"
-                            name="tieneEcoTransabdominal"
+                            name="pruebaEmbarazo"
                             value="no"
-                            checked={tieneEcoTransabdominal === "no"}
+                            checked={pruebaEmbarazoRealizada === "no"}
                             onChange={(e) => {
-                              setTieneEcoTransabdominal(e.target.value)
-                              setResultadoEcoTransabdominal("")
+                              setPruebaEmbarazoRealizada(e.target.value)
+                              setResultadoPruebaEmbarazo("")
                             }}
                             className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
@@ -2431,53 +2046,51 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                       </div>
                     </div>
 
-                    {tieneEcoTransabdominal === "si" && (
+                    {pruebaEmbarazoRealizada === "si" && (
                       <div className="space-y-3">
-                        <Label className="text-base font-medium text-slate-700">Resultado de la Ecografía</Label>
-                        <div className="grid grid-cols-1 gap-3">
-                          {[
-                            { value: "saco_embrion_fc", label: "Saco gestacional con embrión y frecuencia cardíaca" },
-                            { value: "saco_vitelino_embrion", label: "Saco gestacional con saco vitelino y embrión" },
-                            {
-                              value: "saco_vitelino_sin_embrion",
-                              label: "Saco gestacional con saco vitelino sin embrión",
-                            },
-                            { value: "saco_sin_embrion", label: "Saco gestacional sin embrión ni saco vitelino" },
-                            { value: "saco_10mm_decidual_2mm", label: "Saco gestacional >10mm con decidua >2mm" },
-                            { value: "normal", label: "Normal / Sin hallazgos" },
-                            { value: "otros", label: "Otros hallazgos" },
-                          ].map((opcion) => (
-                            <label
-                              key={opcion.value}
-                              className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
-                            >
-                              <input
-                                type="radio"
-                                name="resultadoEcoTransabdominal"
-                                value={opcion.value}
-                                checked={resultadoEcoTransabdominal === opcion.value}
-                                onChange={(e) => setResultadoEcoTransabdominal(e.target.value)}
-                                className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
-                              />
-                              <span className="text-base font-medium text-slate-700">{opcion.label}</span>
-                            </label>
-                          ))}
-                        </div>
-
-                        {resultadoEcoTransabdominal === "otros" && (
-                          <div className="space-y-2">
-                            <Label htmlFor="hallazgosExploracion" className="text-base font-medium text-slate-700">
-                              Describa los hallazgos encontrados
-                            </Label>
-                            <textarea
-                              id="hallazgosExploracion"
-                              value={hallazgosExploracion}
-                              onChange={(e) => setHallazgosExploracion(e.target.value)}
-                              placeholder="Ingrese los hallazgos de la ecografía transabdominal..."
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-700 min-h-[100px]"
+                        <Label className="text-base font-medium text-slate-700">Resultado de la prueba</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
+                            <input
+                              type="radio"
+                              name="resultadoPrueba"
+                              value="positiva"
+                              checked={resultadoPruebaEmbarazo === "positiva"}
+                              onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
+                              className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
-                          </div>
-                        )}
+                            <span className="text-base font-medium text-slate-700">Positiva</span>
+                          </label>
+
+                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
+                            <input
+                              type="radio"
+                              name="resultadoPrueba"
+                              value="negativa"
+                              checked={resultadoPruebaEmbarazo === "negativa"}
+                              onChange={async (e) => {
+                                setResultadoPruebaEmbarazo(e.target.value)
+                                if (e.target.value === "negativa") {
+                                  try {
+                                    const respuesta = await validarEmbarazo({
+                                      pruebaEmbarazoRealizada: "si",
+                                      resultadoPruebaEmbarazo: "negativa",
+                                    })
+                                    if (respuesta.debeDetener) {
+                                      await guardarDatosIncompletos(respuesta.motivo, 3)
+                                      setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+                                      setProtocoloFinalizado(true)
+                                    }
+                                  } catch (error) {
+                                    console.warn("Error en validación inmediata:", error)
+                                  }
+                                }
+                              }}
+                              className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-base font-medium text-slate-700">Negativa</span>
+                          </label>
+                        </div>
                       </div>
                     )}
 
@@ -2488,56 +2101,154 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     )}
 
                     <div className="flex justify-between">
-                      <Button
-                        onClick={() => setSeccion(4)}
-                        variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                      >
+                      <Button onClick={() => setSeccion(2)} variant="outline">
+                        Anterior
+                      </Button>
+                      <div className="text-center">
+                        <Button
+                          onClick={async () => {
+                            if (!pruebaEmbarazoRealizada) {
+                              setErrorSeccion("Por favor, seleccione si tiene prueba de embarazo.")
+                              return
+                            }
+                            if (pruebaEmbarazoRealizada === "si" && !resultadoPruebaEmbarazo) {
+                              setErrorSeccion("Por favor, seleccione el resultado de la prueba de embarazo.")
+                              return
+                            }
+                            if (pruebaEmbarazoRealizada === "no") {
+                              setMostrarAlerta(true)
+                              setMensajeAlerta(
+                                "Se recomienda realizar una prueba de embarazo cualitativa antes de continuar con la evaluación.",
+                              )
+
+                              setTimeout(async () => {
+                                await guardarDatosIncompletos("prueba_embarazo_no_realizada", 3)
+                                setMensajeFinal(
+                                  <div className="text-center">
+                                    Se recomienda realizar una prueba de embarazo antes de proseguir con la evaluación.
+                                  </div>,
+                                )
+                                setProtocoloFinalizado(true)
+                              }, 2000)
+                            } else {
+                              if (await validarPruebaEmbarazo()) {
+                                setSeccion(4)
+                                completarSeccion(3)
+                              }
+                            }
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                        >
+                          Continuar
+                        </Button>
+                      </div>
+                    </div>
+                    <CMGFooter />
+                  </div>
+                )}
+
+                {seccionActual === 4 && (
+                  <div className="space-y-6">
+                    <div className="flex items-center space-x-3">
+                      <Stethoscope className="h-6 w-6 text-blue-600" />
+                      <h2 className="text-2xl font-bold text-slate-800">Evaluación Previa</h2>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <Label className="text-base font-medium text-slate-700">Hallazgos de Exploración Física</Label>
+                        <textarea
+                          placeholder="Describa los hallazgos relevantes..."
+                          value={hallazgosExploracion}
+                          onChange={(e) => setHallazgosExploracion(e.target.value)}
+                          rows={4}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-base font-medium text-slate-700">¿Tiene ecografía transabdominal?</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
+                            <input
+                              type="radio"
+                              name="tieneEco"
+                              value="si"
+                              checked={tieneEcoTransabdominal === "si"}
+                              onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
+                              className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-base font-medium text-slate-700">Sí</span>
+                          </label>
+                          <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
+                            <input
+                              type="radio"
+                              name="tieneEco"
+                              value="no"
+                              checked={tieneEcoTransabdominal === "no"}
+                              onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
+                              className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-base font-medium text-slate-700">No</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {tieneEcoTransabdominal === "si" && (
+                        <div className="space-y-3">
+                          <Label className="text-base font-medium text-slate-700">Resultado de la ecografía</Label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {[
+                              { value: "saco_embrion_fc", label: "Saco embrionario con FC" },
+                              { value: "saco_vitelino_embrion", label: "Saco vitelino con embrión" },
+                              { value: "saco_vitelino_sin_embrion", label: "Saco vitelino sin embrión" },
+                              { value: "saco_sin_embrion", label: "Saco sin embrión" },
+                              { value: "saco_10mm_decidual_2mm", label: "Saco ≥10mm con anillo decidual ≥2mm" },
+                              { value: "ausencia_saco", label: "Ausencia de saco" },
+                            ].map((opcion) => (
+                              <label
+                                key={opcion.value}
+                                className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                              >
+                                <input
+                                  type="radio"
+                                  name="resultadoEco"
+                                  value={opcion.value}
+                                  checked={resultadoEcoTransabdominal === opcion.value}
+                                  onChange={(e) => setResultadoEcoTransabdominal(e.target.value)}
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                />
+                                <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {errorSeccion && (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between">
+                      <Button onClick={() => setSeccion(3)} variant="outline">
                         Anterior
                       </Button>
                       <Button
                         onClick={async () => {
                           if (!tieneEcoTransabdominal) {
-                            setErrorSeccion("Por favor, seleccione si se realizó ecografía transabdominal.")
+                            setErrorSeccion("Por favor, seleccione si tiene ecografía transabdominal.")
                             return
                           }
-
                           if (tieneEcoTransabdominal === "si" && !resultadoEcoTransabdominal) {
                             setErrorSeccion("Por favor, seleccione el resultado de la ecografía.")
                             return
                           }
-
-                          if (resultadoEcoTransabdominal === "otros" && !hallazgosExploracion.trim()) {
-                            setErrorSeccion("Por favor, describa los hallazgos encontrados.")
-                            return
-                          }
-
-                          // Validate if findings indicate intrauterine pregnancy
-                          const opcionesConfirmatorias = [
-                            "saco_embrion_fc",
-                            "saco_vitelino_embrion",
-                            "saco_vitelino_sin_embrion",
-                            "saco_sin_embrion",
-                            "saco_10mm_decidual_2mm",
-                          ]
-
-                          if (
-                            tieneEcoTransabdominal === "si" &&
-                            opcionesConfirmatorias.includes(resultadoEcoTransabdominal)
-                          ) {
-                            await guardarDatosIncompletos("embarazo_intrauterino_confirmado", 5)
-                            setMensajeFinal(
-                              <div className="text-center">
-                                Los hallazgos ecográficos son compatibles con embarazo intrauterino. Se recomienda
-                                seguimiento obstétrico apropiado.
-                              </div>,
-                            )
-                            setProtocoloFinalizado(true)
-                            setPantalla("completada")
-                            setMostrarResumen(false)
-                          } else {
-                            setSeccion(6)
-                            completarSeccion(5)
+                          if (await validarEcoTransabdominal()) {
+                            setSeccion(5)
+                            completarSeccion(4)
                           }
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
@@ -2545,10 +2256,11 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         Continuar
                       </Button>
                     </div>
+                    <CMGFooter />
                   </div>
                 )}
 
-                {seccionActual === 6 && (
+                {seccionActual === 5 && (
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3 mb-6">
                       <div className="bg-blue-100 p-3 rounded-full">
@@ -2652,22 +2364,141 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     )}
 
                     <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
-                      <Button onClick={() => setSeccion(5)} variant="outline">
+                      <Button onClick={() => setSeccion(4)} variant="outline">
                         Anterior
                       </Button>
                       <Button
                         onClick={() => {
                           if (sintomasSeleccionados.length === 0) {
-                            setErrorSeccion("Por favor seleccione al menos un síntoma")
+                            setErrorSeccion("Por favor llene todos los campos")
                             return
                           }
                           if (factoresSeleccionados.length === 0) {
-                            setErrorSeccion("Por favor seleccione al menos un factor de riesgo")
+                            setErrorSeccion("Por favor llene todos los campos")
                             return
                           }
                           setErrorSeccion("")
-                          setSeccion(7)
-                          completarSeccion(6)
+                          setSeccion(6)
+                          completarSeccion(5)
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                      >
+                        Continuar
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {seccionActual === 6 && (
+                  <div className="space-y-6">
+                    <div className="flex items-center space-x-3">
+                      <Activity className="h-6 w-6 text-blue-600" />
+                      <h2 className="text-2xl font-bold text-slate-800">Ecografía Transvaginal (TVUS)</h2>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-base font-medium text-slate-700">
+                        ¿Cuenta con una Ecografía Transvaginal (TVUS)?
+                      </Label>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
+                          <input
+                            type="radio"
+                            name="tieneTVUS"
+                            value="si"
+                            checked={tieneTVUS === "si"}
+                            onChange={(e) => {
+                              setTieneTVUS(e.target.value)
+                            }}
+                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <span className="text-base font-medium text-slate-700">Sí</span>
+                        </label>
+
+                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
+                          <input
+                            type="radio"
+                            name="tieneTVUS"
+                            value="no"
+                            checked={tieneTVUS === "no"}
+                            onChange={(e) => {
+                              setTieneTVUS(e.target.value)
+                              setTvus("") // Resetting original tvus state
+                            }}
+                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <span className="text-base font-medium text-slate-700">No</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {tieneTVUS === "si" && (
+                      <div className="space-y-3">
+                        <Label className="text-base font-medium text-slate-700">Resultado de la Ecografía</Label>
+                        <div className="grid grid-cols-1 gap-3">
+                          {[
+                            { value: "normal", label: "Normal" },
+                            { value: "libre", label: "Líquido libre" },
+                            { value: "masa", label: "Masa anexial" },
+                            { value: "masa_libre", label: "Masa anexial + Líquido libre" },
+                          ].map((opcion) => (
+                            <label
+                              key={opcion.value}
+                              className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
+                            >
+                              <input
+                                type="radio"
+                                name="tvus"
+                                value={opcion.value}
+                                checked={tvus === opcion.value}
+                                onChange={(e) => setTvus(e.target.value)}
+                                className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                              />
+                              <span className="text-base font-medium text-slate-700">{opcion.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {errorSeccion && (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between">
+                      <Button
+                        onClick={() => setSeccion(5)}
+                        variant="outline"
+                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        onClick={async () => {
+                          if (!tieneTVUS) {
+                            setErrorSeccion("Por favor, seleccione si tiene ecografía transvaginal.")
+                            return
+                          }
+                          if (tieneTVUS === "no") {
+                            await guardarDatosIncompletos("tvus_no_realizada", 6)
+                            setMensajeFinal(
+                              <div className="text-center">
+                                Se recomienda realizar una ecografía transvaginal (TVUS) con un ginecólogo antes de
+                                proseguir con la evaluación.
+                              </div>,
+                            )
+                            setProtocoloFinalizado(true)
+                          } else if (tieneTVUS === "si" && !tvus) {
+                            setErrorSeccion("Por favor, seleccione el resultado de la ecografía transvaginal.")
+                          } else {
+                            // Before moving to the next section, set the result of TVUS
+                            setResultadoTVUS(tvus) // Setting the result to the new state variable
+                            setSeccion(7)
+                            completarSeccion(6)
+                          }
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
                       >
@@ -2681,37 +2512,74 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
                       <Activity className="h-6 w-6 text-blue-600" />
-                      <h2 className="text-2xl font-bold text-slate-800">Ecografía Transvaginal (TVUS)</h2>
+                      <h2 className="text-2xl font-bold text-slate-800">β-hCG en Sangre</h2>
                     </div>
 
                     <div className="space-y-3">
                       <Label className="text-base font-medium text-slate-700">
-                        Resultado de la Ecografía Transvaginal
+                        ¿Cuenta con resultado de β-hCG en sangre?
                       </Label>
-                      <div className="grid grid-cols-1 gap-3">
-                        {[
-                          { value: "normal", label: "Normal" },
-                          { value: "libre", label: "Líquido libre" },
-                          { value: "masa", label: "Masa anexial" },
-                          { value: "masa_libre", label: "Masa anexial + Líquido libre" },
-                        ].map((opcion) => (
-                          <label
-                            key={opcion.value}
-                            className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200"
-                          >
-                            <input
-                              type="radio"
-                              name="tvus"
-                              value={opcion.value}
-                              checked={tvus === opcion.value}
-                              onChange={(e) => setTvus(e.target.value)}
-                              className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-base font-medium text-slate-700">{opcion.label}</span>
-                          </label>
-                        ))}
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
+                          <input
+                            type="radio"
+                            name="tieneBetaHCG"
+                            value="si"
+                            checked={tieneBetaHCG === "si"}
+                            onChange={(e) => {
+                              setTieneBetaHCG(e.target.value)
+                              setMostrarAlerta(false)
+                              setMensajeAlerta("")
+                            }}
+                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <span className="text-base font-medium text-slate-700">Sí</span>
+                        </label>
+
+                        <label className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 min-h-[60px]">
+                          <input
+                            type="radio"
+                            name="tieneBetaHCG"
+                            value="no"
+                            checked={tieneBetaHCG === "no"}
+                            onChange={(e) => {
+                              setTieneBetaHCG(e.target.value)
+                              setBetaHcg("") // Resetting betaHcg state
+                            }}
+                            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <span className="text-base font-medium text-slate-700">No</span>
+                        </label>
                       </div>
                     </div>
+
+                    {tieneBetaHCG === "si" && (
+                      <div className="space-y-3">
+                        <Label htmlFor="betaHcg" className="text-base font-medium text-slate-700">
+                          Valor de β-hCG (mUI/mL)
+                        </Label>
+                        <input
+                          id="betaHcg"
+                          type="number"
+                          value={betaHcg}
+                          onChange={(e) => setBetaHcg(e.target.value)}
+                          placeholder="Ingrese el valor"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-700"
+                        />
+                      </div>
+                    )}
+
+                    {mostrarAlerta && mensajeAlerta && (
+                      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                        <div className="flex">
+                          <AlertCircle className="h-5 w-5 text-yellow-400" />
+                          <div className="ml-3">
+                            <p className="text-sm text-yellow-700">{mensajeAlerta}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {errorSeccion && (
                       <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
@@ -2728,66 +2596,26 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         Anterior
                       </Button>
                       <Button
-                        onClick={() => {
-                          if (!tvus) {
-                            setErrorSeccion("Por favor, seleccione el resultado de la ecografía transvaginal.")
-                            return
-                          }
-                          setResultadoTVUS(tvus)
-                          setSeccion(8)
-                          completarSeccion(7)
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
-                      >
-                        Continuar
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {seccionActual === 8 && (
-                  <div className="space-y-6">
-                    <div className="flex items-center space-x-3">
-                      <Activity className="h-6 w-6 text-blue-600" />
-                      <h2 className="text-2xl font-bold text-slate-800">β-hCG en Sangre</h2>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="betaHcg" className="text-base font-medium text-slate-700">
-                        Valor de β-hCG (mUI/mL)
-                      </Label>
-                      <input
-                        id="betaHcg"
-                        type="number"
-                        value={betaHcg}
-                        onChange={(e) => setBetaHcg(e.target.value)}
-                        placeholder="Ingrese el valor"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-700"
-                      />
-                    </div>
-
-                    {errorSeccion && (
-                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                        <p className="text-red-700 font-medium">{errorSeccion}</p>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between">
-                      <Button
-                        onClick={() => setSeccion(7)}
-                        variant="outline"
-                        className="border-gray-300 text-gray-600 hover:bg-gray-50"
-                      >
-                        Anterior
-                      </Button>
-                      <Button
                         onClick={async () => {
-                          if (!betaHcg) {
-                            setErrorSeccion("Por favor, ingrese el valor de β-hCG.")
+                          if (!tieneBetaHCG) {
+                            setErrorSeccion("Por favor, seleccione si tiene análisis de β-hCG.")
                             return
                           }
-                          await calcular()
-                          setPantalla("finalizado")
+                          if (tieneBetaHCG === "no") {
+                            await guardarDatosIncompletos("beta_hcg_no_realizada", 7)
+                            setMensajeFinal(
+                              <div className="text-center">
+                                Se recomienda realizar un análisis de β-hCG en sangre antes de proseguir con la
+                                evaluación. Por favor, acuda a un laboratorio clínico.
+                              </div>,
+                            )
+                            setProtocoloFinalizado(true)
+                          } else if (tieneBetaHCG === "si" && !betaHcg) {
+                            setErrorSeccion("Por favor, ingrese el valor de β-hCG.")
+                          } else {
+                            await calcular()
+                            setPantalla("finalizado")
+                          }
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
                       >

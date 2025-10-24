@@ -19,6 +19,8 @@ import {
   CheckCircle,
   Download,
   ClipboardList,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type React from "react"
@@ -1271,35 +1273,32 @@ export default function CalculadoraEctopico() {
     </div>
   )
 
+  // IMPROVED PROGRESS BAR COMPONENT
   const ProgressBar = () => {
-    if (
-      pantalla === "bienvenida" ||
-      pantalla === "cargar" ||
-      pantalla === "resumen" ||
-      pantalla === "finalizado" ||
-      pantalla === "resultados" ||
-      pantalla === "completada"
-    ) {
-      return null
-    }
-    const totalSecciones = 7
-    const seccionesCompletas = seccionesCompletadas.length
-    const progreso = (seccionesCompletas / totalSecciones) * 100
+    const totalSecciones = 7 // Assuming 7 sections in total for the form
+    const progreso = (seccionesCompletadas.length / totalSecciones) * 100
 
     return (
-      <div className="bg-gray-50 py-4">
+      <div className="bg-gradient-to-r from-blue-50 via-sky-50 to-indigo-50 py-6 border-b border-blue-100">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Progreso de la Evaluación</span>
-            <span className="text-sm text-gray-500">
-              {seccionesCompletadas.length}/{totalSecciones} secciones
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
+                <span className="text-white text-xs font-bold">{seccionesCompletadas.length}</span>
+              </div>
+              <span className="text-sm font-semibold text-slate-700">Progreso de la Evaluación</span>
+            </div>
+            <span className="text-sm font-medium text-slate-600 bg-white px-3 py-1 rounded-full shadow-sm">
+              {seccionesCompletadas.length} de {totalSecciones} completadas
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="relative w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-in-out"
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 rounded-full transition-all duration-500 ease-out shadow-sm"
               style={{ width: `${progreso}%` }}
-            ></div>
+            >
+              <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -2057,37 +2056,27 @@ export default function CalculadoraEctopico() {
                         <ul className="text-slate-700 text-sm space-y-1">
                           <li>• Se sugiere regresar en 48-72 horas para continuar con la evaluación</li>
                           <li>• Mantener vigilancia de los síntomas durante este tiempo</li>
-                          <li>
-                            • Acudir de inmediato si presenta dolor severo, sangrado abundante o síntomas de shock
-                          </li>
-                          <li>• La decisión final siempre corresponde al médico tratante</li>
+                          <li>• Acudir de</li>
                         </ul>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Botones */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                  <div className="flex space-x-4 justify-center">
-                    <Button
-                      onClick={generarInformePDF}
-                      variant="outline"
-                      className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-white shadow-sm"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Generar Reporte
-                    </Button>
-                    <Button
-                      onClick={volverAInicio}
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-sm"
-                    >
-                      <User className="h-4 w-4 mr-2" />
-                      Nueva Evaluación
-                    </Button>
-                  </div>
+                <div className="flex space-x-4">
+                  <Button
+                    onClick={generarInformePDF}
+                    variant="outline"
+                    className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Generar Reporte
+                  </Button>
+                  <Button onClick={volverAInicio} className="bg-green-600 hover:bg-green-700 text-white">
+                    <User className="h-4 w-4 mr-2" />
+                    Nueva Evaluación
+                  </Button>
                 </div>
-
                 <CMGFooter />
               </div>
             </CardContent>
@@ -2193,40 +2182,60 @@ export default function CalculadoraEctopico() {
           <div className="max-w-4xl mx-auto p-6">
             <Card className="shadow-lg">
               <CardContent className="p-8">
+                {/* seccionActual === 1 */}
                 {seccionActual === 1 && (
                   <div className="space-y-6">
-                    <div className="flex items-center space-x-3">
-                      <User className="h-6 w-6 text-blue-600" />
-                      <h2 className="text-2xl font-bold text-slate-800">Expediente Clínico</h2>
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
+                          <User className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-slate-800">Expediente Clínico</h2>
+                          <p className="text-sm text-slate-600">Información básica del paciente</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-4">
+
+                    <div className="space-y-5">
                       <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">Nombre del Paciente:</Label>
+                        <Label className="text-base font-semibold text-slate-700 flex items-center space-x-2">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                          <span>Nombre del Paciente</span>
+                        </Label>
                         <input
                           type="text"
-                          placeholder="Nombre"
+                          placeholder="Ingrese el nombre completo"
                           value={nombrePaciente}
                           onChange={(e) => setNombrePaciente(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 text-slate-700 placeholder-slate-400"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-base font-medium text-slate-700">Edad del Paciente:</Label>
+                        <Label className="text-base font-semibold text-slate-700 flex items-center space-x-2">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                          <span>Edad del Paciente</span>
+                        </Label>
                         <input
                           type="number"
                           placeholder="Edad en años"
                           value={edadPaciente}
                           onChange={(e) => setEdadPaciente(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 text-slate-700 placeholder-slate-400"
                         />
                       </div>
                     </div>
+
                     {errorSeccion && (
-                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center space-x-2">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <p className="text-red-700 font-medium">{errorSeccion}</p>
+                        </div>
                       </div>
                     )}
-                    <div className="flex justify-end">
+
+                    <div className="flex justify-end pt-4">
                       <Button
                         onClick={async () => {
                           if (!nombrePaciente || !edadPaciente) {
@@ -2238,78 +2247,110 @@ export default function CalculadoraEctopico() {
                             completarSeccion(1)
                           }
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6"
+                        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                       >
                         Continuar
+                        <ChevronRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
                     <CMGFooter />
                   </div>
                 )}
 
+                {/* SECCION 2 */}
                 {seccionActual === 2 && (
                   <div className="space-y-6">
-                    <div className="flex items-center space-x-3">
-                      <Activity className="h-6 w-6 text-blue-600" />
-                      <h2 className="text-2xl font-bold text-slate-800">Signos Vitales</h2>
+                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-6 rounded-xl border border-emerald-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
+                          <Activity className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-slate-800">Signos Vitales</h2>
+                          <p className="text-sm text-slate-600">Mediciones clínicas actuales</p>
+                        </div>
+                      </div>
                     </div>
 
                     {mostrarAlerta && (
-                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                          <span className="font-medium text-yellow-900">Sugerencia</span>
+                      <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-5 rounded-xl border border-amber-200 shadow-sm">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <AlertTriangle className="h-5 w-5 text-amber-600" />
+                          </div>
+                          <div>
+                            <span className="font-semibold text-amber-900 block mb-1">Sugerencia Clínica</span>
+                            <p className="text-amber-800 text-sm leading-relaxed">{mensajeAlerta}</p>
+                          </div>
                         </div>
-                        <p className="text-yellow-800 text-sm">{mensajeAlerta}</p>
                       </div>
                     )}
 
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">Frecuencia Cardíaca (lpm)</Label>
+                        <div className="bg-white p-4 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                          <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                            <span>Frecuencia Cardíaca</span>
+                          </Label>
                           <input
                             type="number"
                             placeholder="60-100"
                             value={frecuenciaCardiaca}
                             onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
                           />
+                          <span className="text-xs text-slate-500 mt-1 block">lpm</span>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">Presión Sistólica (mmHg)</Label>
+                        <div className="bg-white p-4 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                          <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                            <span>Presión Sistólica</span>
+                          </Label>
                           <input
                             type="number"
                             placeholder="90-140"
                             value={presionSistolica}
                             onChange={(e) => setPresionSistolica(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
                           />
+                          <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-base font-medium text-slate-700">Presión Diastólica (mmHg)</Label>
+                        <div className="bg-white p-4 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                          <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                            <span>Presión Diastólica</span>
+                          </Label>
                           <input
                             type="number"
                             placeholder="60-90"
                             value={presionDiastolica}
                             onChange={(e) => setPresionDiastolica(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
                           />
+                          <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
                         </div>
                       </div>
 
                       <div className="space-y-3">
-                        <Label className="text-base font-medium text-slate-700">Estado de Conciencia</Label>
+                        <Label className="text-base font-semibold text-slate-700 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                          <span>Estado de Conciencia</span>
+                        </Label>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                           {[
-                            { value: "alerta", label: "Alerta" },
-                            { value: "somnolienta", label: "Somnolienta" },
-                            { value: "estuporosa", label: "Estuporosa" },
-                            { value: "comatosa", label: "Comatosa" },
+                            { value: "alerta", label: "Alerta", color: "emerald" },
+                            { value: "somnolienta", label: "Somnolienta", color: "amber" },
+                            { value: "estuporosa", label: "Estuporosa", color: "orange" },
+                            { value: "comatosa", label: "Comatosa", color: "red" },
                           ].map((opcion) => (
                             <label
                               key={opcion.value}
-                              className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                              className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                estadoConciencia === opcion.value
+                                  ? `border-${opcion.color}-500 bg-${opcion.color}-50 shadow-md`
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
                             >
                               <input
                                 type="radio"
@@ -2317,8 +2358,19 @@ export default function CalculadoraEctopico() {
                                 value={opcion.value}
                                 checked={estadoConciencia === opcion.value}
                                 onChange={(e) => setEstadoConciencia(e.target.value)}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                className="sr-only"
                               />
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                  estadoConciencia === opcion.value
+                                    ? `border-${opcion.color}-500 bg-${opcion.color}-500`
+                                    : "border-gray-300"
+                                }`}
+                              >
+                                {estadoConciencia === opcion.value && (
+                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                )}
+                              </div>
                               <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
                             </label>
                           ))}
@@ -2327,13 +2379,21 @@ export default function CalculadoraEctopico() {
                     </div>
 
                     {errorSeccion && (
-                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center space-x-2">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <p className="text-red-700 font-medium">{errorSeccion}</p>
+                        </div>
                       </div>
                     )}
 
-                    <div className="flex justify-between">
-                      <Button onClick={() => setSeccion(1)} variant="outline">
+                    <div className="flex justify-between pt-4">
+                      <Button
+                        onClick={() => setSeccion(1)}
+                        variant="outline"
+                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                      >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
                         Anterior
                       </Button>
                       <Button
@@ -2347,9 +2407,10 @@ export default function CalculadoraEctopico() {
                             completarSeccion(2)
                           }
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
+                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                       >
                         Continuar
+                        <ChevronRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
                     <CMGFooter />

@@ -1026,8 +1026,8 @@ export default function CalculadoraEctopico() {
         doc.setFont("helvetica", "bold")
         doc.text(label + ":", margin + 3, y + 2)
         doc.setFont("helvetica", "normal")
-        const labelWidth = doc.getTextWidth(label + ": ")
-        doc.text(value, margin + 3 + labelWidth, y + 2)
+        const fixedLabelWidth = 60 // Fixed width for all labels
+        doc.text(value, margin + 3 + fixedLabelWidth, y + 2)
         y += 13
       }
 
@@ -1051,21 +1051,6 @@ export default function CalculadoraEctopico() {
       doc.setTextColor(0, 0, 0)
       y = 45
 
-      doc.setFillColor(255, 243, 224)
-      doc.setDrawColor(255, 152, 0)
-      doc.setLineWidth(1)
-      doc.roundedRect(margin, y, pageWidth - 2 * margin, 20, 3, 3, "FD")
-      doc.setFontSize(9)
-      doc.setFont("helvetica", "bold")
-      doc.setTextColor(230, 81, 0)
-      doc.text("⚠ IMPORTANTE", margin + 5, y + 7)
-      doc.setFont("helvetica", "normal")
-      doc.setTextColor(80, 80, 80)
-      doc.text("Esta herramienta es únicamente de apoyo y no constituye un diagnóstico médico.", margin + 5, y + 13)
-      doc.text("La decisión final siempre corresponde al médico tratante.", margin + 5, y + 18)
-      doc.setTextColor(0, 0, 0)
-      y += 28
-
       doc.setFillColor(232, 245, 233)
       doc.roundedRect(margin, y, (pageWidth - 2 * margin - 5) / 2, 25, 2, 2, "F")
       doc.setFontSize(9)
@@ -1078,7 +1063,7 @@ export default function CalculadoraEctopico() {
       doc.setFontSize(9)
       doc.setFont("helvetica", "normal")
       doc.setTextColor(100, 100, 100)
-      doc.text("Fecha: " + new Date().toLocaleDateString(), margin + 5, y + 19)
+      doc.text("Fecha:  " + new Date().toLocaleDateString(), margin + 5, y + 19)
 
       doc.setFillColor(227, 242, 253)
       doc.roundedRect(margin + (pageWidth - 2 * margin + 5) / 2, y, (pageWidth - 2 * margin - 5) / 2, 25, 2, 2, "F")
@@ -1103,8 +1088,8 @@ export default function CalculadoraEctopico() {
       y += 3
 
       addTitle("ESTUDIOS COMPLEMENTARIOS", [156, 39, 176])
-      addInfoBox("Ecografía Transvaginal (TVUS)", obtenerNombreTVUS(tvus), [243, 229, 245])
-      addInfoBox("β-hCG en sangre", `${hcgValor} mUI/mL`, [243, 229, 245])
+      addInfoBox("Ecografía Transvaginal", obtenerNombreTVUS(tvus), [243, 229, 245])
+      addInfoBox("β-hCG en sangre", hcgValor ? `${hcgValor} mUI/mL` : "No disponible", [243, 229, 245])
       if (hcgAnterior) {
         addInfoBox("β-hCG Anterior", `${hcgAnterior} mUI/mL`, [243, 229, 245])
       }
@@ -1116,7 +1101,7 @@ export default function CalculadoraEctopico() {
           addBullet(obtenerNombreSintoma(s))
         })
       } else {
-        addText("Sin síntomas reportados", 5, 10)
+        addBullet("Sin síntomas reportados")
       }
       y += 3
 
@@ -1126,7 +1111,7 @@ export default function CalculadoraEctopico() {
           addBullet(obtenerNombreFactorRiesgo(f))
         })
       } else {
-        addText("Sin factores de riesgo identificados", 5, 10)
+        addBullet("Sin factores de riesgo identificados")
       }
       y += 3
 
@@ -2773,7 +2758,7 @@ export default function CalculadoraEctopico() {
                           }
                         }}
                         disabled={guardandoConsulta}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 disabled:opacity-50"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8"
                       >
                         {guardandoConsulta ? "Guardando..." : "Continuar"}
                       </Button>

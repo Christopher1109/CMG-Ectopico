@@ -22,9 +22,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Stethoscope,
-  AlertCircle,
   Droplet,
-  Check,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type React from "react"
@@ -2949,131 +2947,169 @@ export default function CalculadoraEctopico() {
 
                 {/* SECCION 6: Síntomas y Factores de Riesgo */}
                 {seccionActual === 6 && (
-                  <div className="space-y-6">
-                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-xl border border-amber-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
-                          <AlertCircle className="h-6 w-6 text-white" />
+                  <div className="space-y-8">
+                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
+                          <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
                         </div>
                         <div>
-                          <h2 className="text-2xl font-bold text-slate-800">Síntomas y Factores de Riesgo</h2>
-                          <p className="text-sm text-slate-600">Evaluación clínica de la paciente</p>
+                          <h2 className="text-2xl font-bold text-gray-900">Síntomas y Factores de Riesgo</h2>
+                          <p className="text-sm text-gray-600 mt-1">Evaluación clínica de la paciente</p>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="space-y-5">
-                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
-                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                          <span>Síntomas Presentes</span>
-                        </Label>
+                      {/* Síntomas Presentes */}
+                      <div className="space-y-4 mb-8">
+                        <label className="flex items-center gap-2 text-sm font-semibold text-orange-900">
+                          <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                          Síntomas Presentes
+                        </label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {[
-                            { value: "dolor_abdominal", label: "Dolor abdominal" },
-                            { value: "sangrado_vaginal", label: "Sangrado vaginal" },
-                            { value: "mareo", label: "Mareo/Síncope" },
-                            { value: "dolor_hombro", label: "Dolor de hombro" },
-                          ].map((sintoma) => (
-                            <label
-                              key={sintoma.value}
-                              className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                                sintomasSeleccionados.includes(sintoma.value)
-                                  ? "border-amber-500 bg-amber-50 shadow-md"
-                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                              }`}
+                          {sintomas.map((sintoma) => (
+                            <button
+                              key={sintoma.id}
+                              type="button"
+                              onClick={() => {
+                                if (sintoma.id === "sin_sintomas") {
+                                  setSintomasSeleccionados(["sin_sintomas"])
+                                } else {
+                                  setSintomasSeleccionados((prev) => {
+                                    const filtered = prev.filter((s) => s !== "sin_sintomas")
+                                    if (filtered.includes(sintoma.id)) {
+                                      const newSelection = filtered.filter((s) => s !== sintoma.id)
+                                      return newSelection.length === 0 ? ["sin_sintomas"] : newSelection
+                                    }
+                                    return [...filtered, sintoma.id]
+                                  })
+                                }
+                              }}
+                              className={`
+                                relative px-4 py-3.5 rounded-xl border-2 transition-all duration-200
+                                flex items-center gap-3 text-left
+                                ${
+                                  sintomasSeleccionados.includes(sintoma.id)
+                                    ? "border-orange-500 bg-orange-50 shadow-md"
+                                    : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
+                                }
+                              `}
                             >
-                              <input
-                                type="checkbox"
-                                checked={sintomasSeleccionados.includes(sintoma.value)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSintomasSeleccionados([...sintomasSeleccionados, sintoma.value])
-                                  } else {
-                                    setSintomasSeleccionados(sintomasSeleccionados.filter((s) => s !== sintoma.value))
-                                  }
-                                }}
-                                className="sr-only"
-                              />
                               <div
-                                className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                  sintomasSeleccionados.includes(sintoma.value)
-                                    ? "border-amber-500 bg-amber-500"
-                                    : "border-gray-300"
-                                }`}
+                                className={`
+                                  w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0
+                                  ${sintomasSeleccionados.includes(sintoma.id) ? "border-orange-500 bg-orange-500" : "border-gray-300"}
+                                `}
                               >
-                                {sintomasSeleccionados.includes(sintoma.value) && (
-                                  <Check className="h-3 w-3 text-white" />
+                                {sintomasSeleccionados.includes(sintoma.id) && (
+                                  <svg
+                                    className="w-3 h-3 text-white"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={3}
+                                      d="M5 13l4 4L19 7"
+                                    />
+                                  </svg>
                                 )}
                               </div>
-                              <span className="text-sm font-medium text-slate-700">{sintoma.label}</span>
-                            </label>
+                              <span className="text-sm font-medium text-gray-700">{sintoma.label}</span>
+                            </button>
                           ))}
                         </div>
                       </div>
 
-                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
-                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                          <span>Factores de Riesgo</span>
-                        </Label>
+                      {/* Factores de Riesgo */}
+                      <div className="space-y-4">
+                        <label className="flex items-center gap-2 text-sm font-semibold text-orange-900">
+                          <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                          Factores de Riesgo
+                        </label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {[
-                            { value: "ectopico_previo", label: "Embarazo ectópico previo" },
-                            { value: "cirugia_tubarica", label: "Cirugía tubárica previa" },
-                            { value: "enfermedad_inflamatoria", label: "Enfermedad inflamatoria pélvica" },
-                            { value: "diu", label: "DIU in situ" },
-                            { value: "fertilizacion", label: "Fertilización in vitro" },
-                            { value: "tabaquismo", label: "Tabaquismo" },
-                          ].map((factor) => (
-                            <label
-                              key={factor.value}
-                              className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                                factoresSeleccionados.includes(factor.value)
-                                  ? "border-amber-500 bg-amber-50 shadow-md"
-                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                              }`}
+                          {factoresRiesgo.map((factor) => (
+                            <button
+                              key={factor.id}
+                              type="button"
+                              onClick={() => {
+                                if (factor.id === "sin_factores") {
+                                  setFactoresSeleccionados(["sin_factores"])
+                                } else {
+                                  setFactoresSeleccionados((prev) => {
+                                    const filtered = prev.filter((f) => f !== "sin_factores")
+                                    if (filtered.includes(factor.id)) {
+                                      const newSelection = filtered.filter((f) => f !== factor.id)
+                                      return newSelection.length === 0 ? ["sin_factores"] : newSelection
+                                    }
+                                    return [...filtered, factor.id]
+                                  })
+                                }
+                              }}
+                              className={`
+                                relative px-4 py-3.5 rounded-xl border-2 transition-all duration-200
+                                flex items-center gap-3 text-left
+                                ${
+                                  factoresSeleccionados.includes(factor.id)
+                                    ? "border-orange-500 bg-orange-50 shadow-md"
+                                    : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
+                                }
+                              `}
                             >
-                              <input
-                                type="checkbox"
-                                checked={factoresSeleccionados.includes(factor.value)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setFactoresSeleccionados([...factoresSeleccionados, factor.value])
-                                  } else {
-                                    setFactoresSeleccionados(factoresSeleccionados.filter((f) => f !== factor.value))
-                                  }
-                                }}
-                                className="sr-only"
-                              />
                               <div
-                                className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                  factoresSeleccionados.includes(factor.value)
-                                    ? "border-amber-500 bg-amber-500"
-                                    : "border-gray-300"
-                                }`}
+                                className={`
+                                  w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0
+                                  ${factoresSeleccionados.includes(factor.id) ? "border-orange-500 bg-orange-500" : "border-gray-300"}
+                                `}
                               >
-                                {factoresSeleccionados.includes(factor.value) && (
-                                  <Check className="h-3 w-3 text-white" />
+                                {factoresSeleccionados.includes(factor.id) && (
+                                  <svg
+                                    className="w-3 h-3 text-white"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={3}
+                                      d="M5 13l4 4L19 7"
+                                    />
+                                  </svg>
                                 )}
                               </div>
-                              <span className="text-sm font-medium text-slate-700">{factor.label}</span>
-                            </label>
+                              <span className="text-sm font-medium text-gray-700">{factor.label}</span>
+                            </button>
                           ))}
                         </div>
                       </div>
                     </div>
+
+                    {errorSeccion && (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                        <p className="text-sm text-red-700">{errorSeccion}</p>
+                      </div>
+                    )}
 
                     <div className="flex justify-between pt-4">
-                      <Button
-                        onClick={() => setSeccion(5)}
-                        variant="outline"
-                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                      <button
+                        onClick={() => setSeccion(seccionActual - 1)}
+                        className="px-6 py-2.5 rounded-xl border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-all flex items-center gap-2"
                       >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
                         Anterior
-                      </Button>
-                      <Button
+                      </button>
+                      <button
                         onClick={() => {
                           if (sintomasSeleccionados.length === 0) {
                             setErrorSeccion("Por favor seleccione al menos un síntoma")
@@ -3087,11 +3123,13 @@ export default function CalculadoraEctopico() {
                           setSeccion(7)
                           completarSeccion(6)
                         }}
-                        className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                        className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
                       >
                         Continuar
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
                     </div>
                     <CMGFooter />
                   </div>
@@ -3099,101 +3137,93 @@ export default function CalculadoraEctopico() {
 
                 {/* SECCION 7: TVUS */}
                 {seccionActual === 7 && (
-                  <div className="space-y-6">
-                    <div className="bg-gradient-to-r from-violet-50 to-purple-50 p-6 rounded-xl border border-violet-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-                          <FileText className="h-6 w-6 text-white" />
+                  <div className="space-y-8">
+                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 border border-purple-100 shadow-sm">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                          <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
                         </div>
                         <div>
-                          <h2 className="text-2xl font-bold text-slate-800">Ecografía Transvaginal (TVUS)</h2>
-                          <p className="text-sm text-slate-600">Hallazgos ecográficos</p>
+                          <h2 className="text-2xl font-bold text-gray-900">Ecografía Transvaginal (TVUS)</h2>
+                          <p className="text-sm text-gray-600 mt-1">Hallazgos ecográficos</p>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="space-y-5">
-                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
-                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-violet-500 rounded-full"></div>
-                          <span>Hallazgos en TVUS</span>
-                        </Label>
-                        <div className="grid grid-cols-1 gap-3">
+                      <div className="space-y-4">
+                        <label className="flex items-center gap-2 text-sm font-semibold text-purple-900">
+                          <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                          Hallazgos en TVUS
+                        </label>
+                        <div className="space-y-3">
                           {[
-                            { value: "masa_anexial", label: "Masa anexial" },
-                            { value: "liquido_libre", label: "Líquido libre" },
-                            { value: "saco_extrauterino", label: "Saco extrauterino" },
-                            { value: "ausencia_saco_intrauterino", label: "Ausencia de saco intrauterino" },
+                            { value: "masa", label: "Masa anexial" },
+                            { value: "libre", label: "Líquido libre" },
+                            { value: "masa_libre", label: "Saco extrauterino" },
+                            { value: "ausencia_saco", label: "Ausencia de saco intrauterino" },
                             { value: "normal", label: "Normal" },
-                          ].map((hallazgo) => (
-                            <label
-                              key={hallazgo.value}
-                              className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                                hallazgosTVUS === hallazgo.value
-                                  ? "border-violet-500 bg-violet-50 shadow-md"
-                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                              }`}
+                          ].map((opcion) => (
+                            <button
+                              key={opcion.value}
+                              type="button"
+                              onClick={() => setTvus(opcion.value)}
+                              className={`
+                                w-full px-4 py-3.5 rounded-xl border-2 transition-all duration-200
+                                flex items-center gap-3 text-left
+                                ${
+                                  tvus === opcion.value
+                                    ? "border-purple-500 bg-purple-50 shadow-md"
+                                    : "border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50"
+                                }
+                              `}
                             >
-                              <input
-                                type="radio"
-                                name="hallazgosTVUS"
-                                value={hallazgo.value}
-                                checked={hallazgosTVUS === hallazgo.value}
-                                onChange={(e) => setHallazgosTVUS(e.target.value)}
-                                className="sr-only"
-                              />
                               <div
-                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                  hallazgosTVUS === hallazgo.value
-                                    ? "border-violet-500 bg-violet-500"
-                                    : "border-gray-300"
-                                }`}
+                                className={`
+                                  w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0
+                                  ${tvus === opcion.value ? "border-purple-500 bg-purple-500" : "border-gray-300"}
+                                `}
                               >
-                                {hallazgosTVUS === hallazgo.value && (
-                                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                                )}
+                                {tvus === opcion.value && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
                               </div>
-                              <span className="text-sm font-medium text-slate-700">{hallazgo.label}</span>
-                            </label>
+                              <span className="text-sm font-medium text-gray-700">{opcion.label}</span>
+                            </button>
                           ))}
                         </div>
                       </div>
                     </div>
 
                     {errorSeccion && (
-                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center space-x-2">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <p className="text-red-700 font-medium">{errorSeccion}</p>
-                        </div>
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                        <p className="text-sm text-red-700">{errorSeccion}</p>
                       </div>
                     )}
 
                     <div className="flex justify-between pt-4">
-                      <Button
-                        onClick={() => setSeccion(6)}
-                        variant="outline"
-                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                      <button
+                        onClick={() => setSeccion(seccionActual - 1)}
+                        className="px-6 py-2.5 rounded-xl border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-all flex items-center gap-2"
                       >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
                         Anterior
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          if (!hallazgosTVUS) {
-                            setErrorSeccion("Por favor, seleccione un hallazgo de TVUS.")
-                            return
-                          }
-                          setSeccion(8)
-                          completarSeccion(7)
-                        }}
-                        className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                      </button>
+                      <button
+                        onClick={() => completarSeccion(7)}
+                        className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
                       >
                         Continuar
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
                     </div>
-                    <CMGFooter />
                   </div>
                 )}
 

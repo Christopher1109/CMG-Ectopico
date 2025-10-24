@@ -289,7 +289,7 @@ export default function CalculadoraEctopico() {
 
   // Navegación y secciones
   const [pantalla, setPantalla] = useState<
-    "bienvenida" | "cargar" | "resumen" | "formulario" | "finalizado" | "resultados"
+    "bienvenida" | "cargar" | "resumen" | "formulario" | "finalizado" | "resultados" | "completada"
   >("bienvenida")
   const [seccionActual, setSeccion] = useState(1) // Renamed from seccionActual for clarity in the new flow
   const [seccionesCompletadas, setSeccionesCompletadas] = useState<number[]>([])
@@ -309,6 +309,7 @@ export default function CalculadoraEctopico() {
   const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
   const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
   const [mostrarPantallaBienvenida, setMostrarPantallaBienvenida] = useState(false)
+  const [mostrarResumen, setMostrarResumen] = useState(false) // Added for new state
 
   // Estados específicos para el cálculo
   const [resultadoTVUS, setResultadoTVUS] = useState<string>("") // Renamed from 'tvus' for clarity
@@ -728,6 +729,7 @@ export default function CalculadoraEctopico() {
     setMensajeAlerta("")
     setTieneBetaHCG("") // Reset tieneBetaHCG state
     setErrorSeccion("")
+    setMostrarResumen(false) // Resetting new state
 
     // Resetting states related to the calculation itself
     setResultadoTVUS("")
@@ -1077,7 +1079,8 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
       pantalla === "cargar" ||
       pantalla === "resumen" ||
       pantalla === "finalizado" ||
-      pantalla === "resultados"
+      pantalla === "resultados" ||
+      pantalla === "completada"
     ) {
       return null
     }
@@ -1892,6 +1895,35 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
             </CardContent>
           </Card>
         </div>
+      ) : pantalla === "completada" ? ( // New state for completion screen
+        <div className="max-w-4xl mx-auto p-6">
+          <Card className="shadow-lg">
+            <CardContent className="p-8">
+              <div className="space-y-6 text-center">
+                <div className="flex items-center justify-center space-x-3 mb-6">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                  <h2 className="text-3xl font-bold text-slate-800">Evaluación Incompleta</h2>
+                </div>
+                <p className="text-xl text-slate-700 max-w-lg mx-auto">
+                  {mensajeFinal ||
+                    "No se puede completar la evaluación en este momento debido a que faltan estudios complementarios."}
+                </p>
+                <p className="text-base text-slate-600">
+                  Por favor, acuda a un laboratorio clínico para realizarse los estudios solicitados y vuelva a
+                  intentarlo.
+                </p>
+                <Button
+                  onClick={volverAInicio}
+                  className="mt-8 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 text-lg"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Regresar al Inicio
+                </Button>
+                <CMGFooter />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       ) : (
         <div>
           <div className="max-w-4xl mx-auto p-6">
@@ -2075,37 +2107,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                     </p>
 
                     <div className="space-y-6">
-                      {/* Beta sangre */}
-                      <div className="border border-gray-200 rounded-lg p-4">
-                        <Label className="text-base font-medium text-slate-700 mb-3 block">
-                          ¿Cuenta con resultado de β-hCG en sangre?
-                        </Label>
-                        <div className="flex gap-4">
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="betaSangre"
-                              value="si"
-                              checked={tieneBetaSangre === "si"}
-                              onChange={(e) => setTieneBetaSangre(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">Sí</span>
-                          </label>
-                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
-                            <input
-                              type="radio"
-                              name="betaSangre"
-                              value="no"
-                              checked={tieneBetaSangre === "no"}
-                              onChange={(e) => setTieneBetaSangre(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <span className="text-sm font-medium text-slate-700">No</span>
-                          </label>
-                        </div>
-                      </div>
-
                       {/* Prueba embarazo */}
                       <div className="border border-gray-200 rounded-lg p-4">
                         <Label className="text-base font-medium text-slate-700 mb-3 block">
@@ -2137,7 +2138,7 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         </div>
                       </div>
 
-                      {/* Eco TVUS */}
+                      {/* Eco TVUS second */}
                       <div className="border border-gray-200 rounded-lg p-4">
                         <Label className="text-base font-medium text-slate-700 mb-3 block">
                           ¿Cuenta con ecografía transvaginal (TVUS)?
@@ -2167,6 +2168,37 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                           </label>
                         </div>
                       </div>
+
+                      {/* Beta sangre third */}
+                      <div className="border border-gray-200 rounded-lg p-4">
+                        <Label className="text-base font-medium text-slate-700 mb-3 block">
+                          ¿Cuenta con resultado de β-hCG en sangre?
+                        </Label>
+                        <div className="flex gap-4">
+                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
+                            <input
+                              type="radio"
+                              name="betaSangre"
+                              value="si"
+                              checked={tieneBetaSangre === "si"}
+                              onChange={(e) => setTieneBetaSangre(e.target.value)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-sm font-medium text-slate-700">Sí</span>
+                          </label>
+                          <label className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer flex-1">
+                            <input
+                              type="radio"
+                              name="betaSangre"
+                              value="no"
+                              checked={tieneBetaSangre === "no"}
+                              onChange={(e) => setTieneBetaSangre(e.target.value)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-sm font-medium text-slate-700">No</span>
+                          </label>
+                        </div>
+                      </div>
                     </div>
 
                     {errorSeccion && (
@@ -2183,7 +2215,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                         onClick={async () => {
                           if (guardandoConsulta) return
 
-                          // Validation: all three must be answered
                           if (!tieneBetaSangre || !tienePruebaEmbarazoChecklist || !tieneEcoTVUSChecklist) {
                             setErrorSeccion("Por favor llene todos los campos")
                             return
@@ -2191,30 +2222,33 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
 
                           // Check how many are "no"
                           const faltantes = []
-                          if (tieneBetaSangre === "no") faltantes.push("β-hCG en sangre")
                           if (tienePruebaEmbarazoChecklist === "no") faltantes.push("prueba de embarazo cuantitativa")
                           if (tieneEcoTVUSChecklist === "no") faltantes.push("ecografía transvaginal (TVUS)")
+                          if (tieneBetaSangre === "no") faltantes.push("β-hCG en sangre")
 
                           if (faltantes.length > 0) {
-                            // Block and show completion screen
                             let mensaje = ""
                             if (faltantes.length === 3) {
                               mensaje =
-                                "Se necesitan realizar los tres estudios (β-hCG en sangre, prueba de embarazo cuantitativa y ecografía transvaginal) para poder continuar con la evaluación. Por favor, acuda a un laboratorio clínico y regrese cuando tenga los resultados."
+                                "Se necesitan realizar los tres estudios (prueba de embarazo cuantitativa, ecografía transvaginal y β-hCG en sangre) para poder continuar con la evaluación. Por favor, acuda a un laboratorio clínico y regrese cuando tenga los resultados."
                             } else if (faltantes.length === 2) {
                               mensaje = `Se necesitan realizar los siguientes estudios para poder continuar con la evaluación: ${faltantes.join(" y ")}. Por favor, acuda a un laboratorio clínico y regrese cuando tenga los resultados.`
                             } else {
                               mensaje = `Se necesita realizar ${faltantes[0]} para poder continuar con la evaluación. Por favor, acuda a un laboratorio clínico y regrese cuando tenga el resultado.`
                             }
 
+                            setMensajeFinal(mensaje)
                             await guardarDatosIncompletos("estudios_faltantes", 3)
-                            setMensajeFinal(<div className="text-center">{mensaje}</div>)
+                            setPantalla("completada")
+                            setMostrarResumen(false)
                             setProtocoloFinalizado(true)
                           } else {
                             // All are "si", continue
                             setErrorSeccion("")
+                            if (!seccionesCompletadas.includes(3)) {
+                              setSeccionesCompletadas([...seccionesCompletadas, 3])
+                            }
                             setSeccion(4)
-                            completarSeccion(3)
                           }
                         }}
                         disabled={guardandoConsulta}
@@ -2227,7 +2261,6 @@ Herramienta de Apoyo Clínico - No es un dispositivo médico de diagnóstico
                   </div>
                 )}
 
-                {/* Section 4: Prueba de Embarazo (was section 3) */}
                 {seccionActual === 4 && (
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">

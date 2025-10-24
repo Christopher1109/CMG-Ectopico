@@ -38,11 +38,11 @@ const factoresRiesgo = [
 ]
 
 const sintomas = [
-  { id: "dolor_abdominal", label: "Dolor abdominal" }, // Corrected ID
-  { id: "sangrado_vaginal", label: "Sangrado vaginal" }, // Corrected ID
-  { id: "mareo", label: "Mareo/Síncope" }, // Corrected ID
-  { id: "dolor_hombro", label: "Dolor de hombro" }, // Corrected ID
-  { id: "sin_sintomas", label: "Sin síntomas" },
+  { id: "dolor", label: "Dolor abdominal" },
+  { id: "sangrado", label: "Sangrado vaginal" },
+  { id: "dolor_sangrado", label: "Dolor abdominal + Sangrado vaginal" },
+  { id: "sincope", label: "Mareo/Síncope" },
+  { id: "asintomatica", label: "Sin síntomas" },
 ]
 
 // ==================== HELPERS API - SIN LÓGICA DE NEGOCIO ====================
@@ -1305,7 +1305,7 @@ export default function CalculadoraEctopico() {
     const progreso = (seccionesCompletadas.length / totalSecciones) * 100
 
     return (
-      <div className="bg-gradient-to-r from-blue-50 via-sky-50 to-indigo-50 py-6 border-b border-blue-100">
+      <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-6 border-b border-blue-100">
         <div className="max-w-4xl mx-auto px-6">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
@@ -2864,7 +2864,7 @@ export default function CalculadoraEctopico() {
                                   }`}
                                 >
                                   {resultadoEcoTransabdominal === opcion.value && (
-                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
                                   )}
                                 </div>
                                 <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
@@ -2978,14 +2978,14 @@ export default function CalculadoraEctopico() {
                               key={sintoma.id}
                               type="button"
                               onClick={() => {
-                                if (sintoma.id === "sin_sintomas") {
-                                  setSintomasSeleccionados(["sin_sintomas"])
+                                if (sintoma.id === "asintomatica") {
+                                  setSintomasSeleccionados(["asintomatica"])
                                 } else {
                                   setSintomasSeleccionados((prev) => {
-                                    const filtered = prev.filter((s) => s !== "sin_sintomas")
+                                    const filtered = prev.filter((s) => s !== "asintomatica")
                                     if (filtered.includes(sintoma.id)) {
                                       const newSelection = filtered.filter((s) => s !== sintoma.id)
-                                      return newSelection.length === 0 ? ["sin_sintomas"] : newSelection
+                                      return newSelection.length === 0 ? ["asintomatica"] : newSelection
                                     }
                                     return [...filtered, sintoma.id]
                                   })
@@ -3165,8 +3165,7 @@ export default function CalculadoraEctopico() {
                           {[
                             { value: "masa", label: "Masa anexial" },
                             { value: "libre", label: "Líquido libre" },
-                            { value: "masa_libre", label: "Saco extrauterino" },
-                            { value: "ausencia_saco", label: "Ausencia de saco intrauterino" },
+                            { value: "masa_libre", label: "Masa anexial + Líquido libre" },
                             { value: "normal", label: "Normal" },
                           ].map((opcion) => (
                             <button

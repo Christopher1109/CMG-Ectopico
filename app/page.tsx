@@ -2124,7 +2124,7 @@ export default function CalculadoraEctopico() {
                       <div className="space-y-4">
                         <p className="font-medium text-lg">
                           {mensajeFinal.includes("tres estudios")
-                            ? "Se necesitan realizar los siguientes estudios para poder continuar con la evaluación:"
+                            ? "Se necesitan realizar los tres estudios (prueba de embarazo cuantitativa, ecografía transvaginal y β-hCG en sangre) para poder continuar con la evaluación."
                             : mensajeFinal.includes("siguientes estudios")
                               ? "Se necesitan realizar los siguientes estudios para poder continuar con la evaluación:"
                               : mensajeFinal}
@@ -2136,7 +2136,7 @@ export default function CalculadoraEctopico() {
                             {mensajeFinal.includes("prueba de embarazo") && (
                               <li className="flex items-start">
                                 <span className="text-blue-600 mr-2">•</span>
-                                <span>Prueba de embarazo cuantitativa</span>
+                                <span>Prueba de embarazo cualitativa (PIE)</span>
                               </li>
                             )}
                             {mensajeFinal.includes("ecografía transvaginal") && (
@@ -2444,7 +2444,7 @@ export default function CalculadoraEctopico() {
                   </div>
                 )}
 
-                {/* Section 3: Estudios Disponibles (NEW CHECKLIST) */}
+                {/* Section 3: PIE - Prueba de Embarazo Cualitativa */}
                 {seccionActual === 3 && (
                   <div className="space-y-6">
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100">
@@ -2453,22 +2453,22 @@ export default function CalculadoraEctopico() {
                           <ClipboardList className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <h2 className="text-2xl font-bold text-slate-800">Estudios Disponibles</h2>
-                          <p className="text-sm text-slate-600">Verificación de estudios realizados</p>
+                          <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo</h2>
+                          <p className="text-sm text-slate-600">Verificación de prueba cualitativa</p>
                         </div>
                       </div>
                     </div>
 
                     <p className="text-slate-600 bg-blue-50 p-4 rounded-lg border border-blue-100">
-                      Por favor, indique si la paciente cuenta con los siguientes estudios realizados:
+                      Por favor, indique si la paciente cuenta con el siguiente estudio:
                     </p>
 
                     <div className="space-y-4">
-                      {/* Prueba de embarazo */}
+                      {/* PIE - Prueba de Embarazo Cualitativa */}
                       <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
                         <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
                           <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                          <span>¿Cuenta con prueba de embarazo cuantitativa?</span>
+                          <span>¿Tiene PIE positivo? (Prueba de Embarazo Cualitativa)</span>
                         </Label>
                         <div className="grid grid-cols-2 gap-3">
                           {["si", "no"].map((opcion) => (
@@ -2504,7 +2504,77 @@ export default function CalculadoraEctopico() {
                           ))}
                         </div>
                       </div>
+                    </div>
 
+                    {errorSeccion && (
+                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center space-x-2">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <p className="text-red-700 font-medium">{errorSeccion}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between pt-4">
+                      <Button
+                        onClick={() => setSeccion(2)}
+                        variant="outline"
+                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                      >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        Anterior
+                      </Button>
+                      <Button
+                        onClick={async () => {
+                          if (!tienePruebaEmbarazoDisponible) {
+                            setErrorSeccion("Por favor seleccione una opción")
+                            return
+                          }
+
+                          if (tienePruebaEmbarazoDisponible === "no") {
+                            setMensajeFinal(
+                              "Se necesita realizar una prueba de embarazo cualitativa (PIE) para poder continuar con la evaluación. Por favor, acuda a un laboratorio clínico y regrese cuando tenga el resultado.",
+                            )
+                            await guardarDatosIncompletos("estudios_faltantes", 3)
+                            setPantalla("completada")
+                            setMostrarResumen(false)
+                            setProtocoloFinalizado(true)
+                          } else {
+                            setErrorSeccion("")
+                            completarSeccion(3)
+                            setSeccion(4)
+                          }
+                        }}
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                      >
+                        Continuar
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                    <CMGFooter />
+                  </div>
+                )}
+
+                {/* Section 4: TVUS y β-hCG Disponibles */}
+                {seccionActual === 4 && (
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
+                          <ClipboardList className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-slate-800">Estudios Complementarios</h2>
+                          <p className="text-sm text-slate-600">Verificación de estudios realizados</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-slate-600 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                      Por favor, indique si la paciente cuenta con los siguientes estudios realizados:
+                    </p>
+
+                    <div className="space-y-4">
                       {/* Eco TVUS */}
                       <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
                         <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
@@ -2593,130 +2663,6 @@ export default function CalculadoraEctopico() {
 
                     <div className="flex justify-between pt-4">
                       <Button
-                        onClick={() => setSeccion(2)}
-                        variant="outline"
-                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                      >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Anterior
-                      </Button>
-                      <Button
-                        onClick={async () => {
-                          if (!tienePruebaEmbarazoDisponible || !tieneEcoDisponible || !tieneBetaDisponible) {
-                            setErrorSeccion("Por favor llene todos los campos")
-                            return
-                          }
-
-                          // Check how many are "no"
-                          const faltantes = []
-                          if (tienePruebaEmbarazoDisponible === "no") faltantes.push("prueba de embarazo cuantitativa")
-                          if (tieneEcoDisponible === "no") faltantes.push("ecografía transvaginal (TVUS)")
-                          if (tieneBetaDisponible === "no") faltantes.push("β-hCG en sangre")
-
-                          if (faltantes.length > 0) {
-                            let mensaje = ""
-                            if (faltantes.length === 3) {
-                              mensaje =
-                                "Se necesitan realizar los tres estudios (prueba de embarazo cuantitativa, ecografía transvaginal y β-hCG en sangre) para poder continuar con la evaluación. Por favor, acuda a un laboratorio clínico y regrese cuando tenga los resultados."
-                            } else if (faltantes.length === 2) {
-                              mensaje = `Se necesitan realizar los siguientes estudios para poder continuar con la evaluación: ${faltantes.join(" y ")}. Por favor, acuda a un laboratorio clínico y regrese cuando tenga los resultados.`
-                            } else {
-                              mensaje = `Se necesita realizar ${faltantes[0]} para poder continuar con la evaluación. Por favor, acuda a un laboratorio clínico y regrese cuando tenga el resultado.`
-                            }
-
-                            setMensajeFinal(mensaje)
-                            await guardarDatosIncompletos("estudios_faltantes", 3)
-                            setPantalla("completada")
-                            setMostrarResumen(false)
-                            setProtocoloFinalizado(true)
-                          } else {
-                            // All are "si", continue
-                            setErrorSeccion("")
-                            completarSeccion(3)
-                            setSeccion(4)
-                          }
-                        }}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                      >
-                        Continuar
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                    <CMGFooter />
-                  </div>
-                )}
-
-                {/* SECCION 4: Prueba de Embarazo */}
-                {seccionActual === 4 && (
-                  <div className="space-y-6">
-                    <div className="bg-gradient-to-r from-rose-50 to-pink-50 p-6 rounded-xl border border-rose-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-rose-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
-                          <FileText className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo</h2>
-                          <p className="text-sm text-slate-600">Resultado de la prueba cuantitativa</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-5">
-                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
-                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-rose-500 rounded-full"></div>
-                          <span>Resultado de la prueba</span>
-                        </Label>
-                        <div className="grid grid-cols-2 gap-3">
-                          {[
-                            { value: "positiva", label: "Positiva", color: "rose" },
-                            { value: "negativa", label: "Negativa", color: "gray" },
-                          ].map((opcion) => (
-                            <label
-                              key={opcion.value}
-                              className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                                tienePruebaEmbarazo === opcion.value
-                                  ? `border-${opcion.color}-500 bg-${opcion.color}-50 shadow-md`
-                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="tienePruebaEmbarazo"
-                                value={opcion.value}
-                                checked={tienePruebaEmbarazo === opcion.value}
-                                onChange={(e) => setTienePruebaEmbarazo(e.target.value)}
-                                className="sr-only"
-                              />
-                              <div
-                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  tienePruebaEmbarazo === opcion.value
-                                    ? `border-${opcion.color}-500 bg-${opcion.color}-500`
-                                    : "border-gray-300"
-                                }`}
-                              >
-                                {tienePruebaEmbarazo === opcion.value && (
-                                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                                )}
-                              </div>
-                              <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {errorSeccion && (
-                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center space-x-2">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <p className="text-red-700 font-medium">{errorSeccion}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between pt-4">
-                      <Button
                         onClick={() => setSeccion(3)}
                         variant="outline"
                         className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
@@ -2726,28 +2672,38 @@ export default function CalculadoraEctopico() {
                       </Button>
                       <Button
                         onClick={async () => {
-                          if (!tienePruebaEmbarazo) {
-                            setErrorSeccion("Por favor, seleccione el resultado de la prueba de embarazo.")
+                          if (!tieneEcoDisponible || !tieneBetaDisponible) {
+                            setErrorSeccion("Por favor llene todos los campos")
                             return
                           }
 
-                          if (tienePruebaEmbarazo === "negativa") {
-                            await guardarDatosIncompletos("prueba_embarazo_negativa", 4)
-                            setMensajeFinal(
-                              <div className="text-center">
-                                Con prueba de embarazo negativa, es muy poco probable un embarazo ectópico. Se sugiere
-                                buscar otras causas de los síntomas presentados.
-                              </div>,
-                            )
-                            setProtocoloFinalizado(true)
+                          // Check how many are "no"
+                          const faltantes = []
+                          if (tieneEcoDisponible === "no") faltantes.push("ecografía transvaginal (TVUS)")
+                          if (tieneBetaDisponible === "no") faltantes.push("β-hCG en sangre")
+
+                          if (faltantes.length > 0) {
+                            let mensaje = ""
+                            if (faltantes.length === 2) {
+                              mensaje =
+                                "Se necesitan realizar los siguientes estudios para poder continuar con la evaluación: ecografía transvaginal (TVUS) y β-hCG en sangre. Por favor, acuda a un laboratorio clínico y regrese cuando tenga los resultados."
+                            } else {
+                              mensaje = `Se necesita realizar ${faltantes[0]} para poder continuar con la evaluación. Por favor, acuda a un laboratorio clínico y regrese cuando tenga el resultado.`
+                            }
+
+                            setMensajeFinal(mensaje)
+                            await guardarDatosIncompletos("estudios_faltantes", 4)
                             setPantalla("completada")
                             setMostrarResumen(false)
+                            setProtocoloFinalizado(true)
                           } else {
-                            setSeccion(5)
+                            // All are "si", continue
+                            setErrorSeccion("")
                             completarSeccion(4)
+                            setSeccion(5)
                           }
                         }}
-                        className="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                       >
                         Continuar
                         <ChevronRight className="ml-2 h-4 w-4" />

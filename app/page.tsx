@@ -93,7 +93,7 @@ async function actualizarDatosEnBackend(
       sintomas_seleccionados: datosCompletos.sintomas || [],
       factores_seleccionados: datosCompletos.factores || [],
       tvus: datosCompletos.tvus || null,
-      hcg_valor: datosCompletos.hcgValor || 0,
+      hcg_valor: datosCompletos.hcgValor ? Number(datosCompletos.hcgValor) : null,
       variacion_hcg: datosCompletos.variacionHcg || null,
       resultado: datosCompletos.resultado || null,
     }
@@ -711,11 +711,11 @@ export default function CalculadoraEctopico() {
           console.log(`[v0] 📝 Guardando como consulta ${visitaNo}`)
 
           const payloadParaBackend = {
-            sintomas_seleccionados: sintomasSeleccionados,
-            factores_seleccionados: factoresSeleccionados,
+            sintomas: sintomasSeleccionados,
+            factores: factoresSeleccionados,
             tvus: currentTvus,
-            hcg_valor: Number.parseFloat(currentBetaHcg),
-            variacion_hcg: respuesta.variacionHcg || null,
+            hcgValor: currentBetaHcg ? Number(currentBetaHcg) : null,
+            variacionHcg: respuesta.variacionHcg,
             resultado: probPost,
           }
 

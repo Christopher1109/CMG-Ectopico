@@ -473,6 +473,7 @@ export default function CalculadoraEctopico() {
         await guardarDatosIncompletos("signos_vitales_criticos", 2)
         setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
         setProtocoloFinalizado(true)
+        setPantalla("completada")
         return false
       }
 
@@ -489,6 +490,7 @@ export default function CalculadoraEctopico() {
         </div>,
       )
       setProtocoloFinalizado(true)
+      setPantalla("completada")
       return false
     }
   }

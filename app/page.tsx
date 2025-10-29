@@ -561,9 +561,8 @@ export default function CalculadoraEctopico() {
   }
 
   const calcular = async () => {
-    // Combine the new states with the old ones for calculation
-    const currentBetaHcg = nivelBetaHCG || hcgValor // Use new state if available, otherwise fallback to old
-    const currentTvus = tvus // Use the specific tvus state for calculation
+    const currentBetaHcg = nivelBetaHCG || hcgValor
+    const currentTvus = tvus
 
     if (!currentTvus || !currentBetaHcg) {
       alert("Por favor complete todos los campos requeridos: TVUS y β-hCG")
@@ -580,7 +579,6 @@ export default function CalculadoraEctopico() {
       const resultadoV2c = consultaCargada?.resultado_2
       const hcgValorVisita1 = consultaCargada?.hcg_valor
 
-      // For C3, use C2 result as pretest (not C1)
       const pretestAjustado = numeroConsultaActual === 3 && resultadoV2c != null ? resultadoV2c : resultadoV1b
 
       console.log("[v0] Calculando riesgo con:", {
@@ -610,8 +608,8 @@ export default function CalculadoraEctopico() {
         presionSistolica: presionSistolica,
         presionDiastolica: presionDiastolica,
         estadoConciencia: estadoConciencia,
-        pruebaEmbarazoRealizada: tienePruebaEmbarazoDisponible, // Using the new state
-        resultadoPruebaEmbarazo: resultadoPIE, // Using the new state
+        pruebaEmbarazoRealizada: tienePruebaEmbarazoDisponible,
+        resultadoPruebaEmbarazo: resultadoPIE,
         tieneEcoTransabdominal: tieneEcoTransabdominal,
         resultadoEcoTransabdominal: resultadoEcoTransabdominal,
       })
@@ -644,18 +642,45 @@ export default function CalculadoraEctopico() {
         presionSistolica: Number.parseInt(presionSistolica),
         presionDiastolica: Number.parseInt(presionDiastolica),
         estadoConciencia,
-        pruebaEmbarazoRealizada: tienePruebaEmbarazoDisponible, // Using new state
-        resultadoPruebaEmbarazo: resultadoPIE, // Using new state
+        pruebaEmbarazoRealizada: tienePruebaEmbarazoDisponible,
+        resultadoPruebaEmbarazo: resultadoPIE,
         hallazgosExploracion,
         tieneEcoTransabdominal,
         resultadoEcoTransabdominal,
         sintomasSeleccionados,
         factoresSeleccionados,
-        tvus: currentTvus, // Use combined tvus here
-        hcgValor: currentBetaHcg ? Number.parseFloat(currentBetaHcg) : null, // Use combined betaHcg here
+        tvus: currentTvus,
+        hcgValor: currentBetaHcg ? Number.parseFloat(currentBetaHcg) : null,
         variacionHcg: respuesta.variacionHcg || null,
         hcgAnterior: hcgAnterior ? Number.parseFloat(hcgAnterior) : null,
         resultado: probPost,
+      }
+
+      if (numeroConsultaActual > 1 && consultaCargada) {
+        const tieneC2 = existeConsulta(consultaCargada, 2)
+        const tieneC3 = existeConsulta(consultaCargada, 3)
+        const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
+
+        const consultaActualizada = { ...consultaCargada }
+
+        if (visitaNo === 2) {
+          consultaActualizada.sintomas_seleccionados_2 = sintomasSeleccionados
+          consultaActualizada.factores_seleccionados_2 = factoresSeleccionados
+          consultaActualizada.tvus_2 = currentTvus
+          consultaActualizada.hcg_valor_2 = Number.parseFloat(currentBetaHcg)
+          consultaActualizada.variacion_hcg_2 = respuesta.variacionHcg || null
+          consultaActualizada.resultado_2 = probPost
+        } else {
+          consultaActualizada.sintomas_seleccionados_3 = sintomasSeleccionados
+          consultaActualizada.factores_seleccionados_3 = factoresSeleccionados
+          consultaActualizada.tvus_3 = currentTvus
+          consultaActualizada.hcg_valor_3 = Number.parseFloat(currentBetaHcg)
+          consultaActualizada.variacion_hcg_3 = respuesta.variacionHcg || null
+          consultaActualizada.resultado_3 = probPost
+        }
+
+        setConsultaCargada(consultaActualizada)
+        console.log("[v0] ✅ consultaCargada actualizada localmente con datos calculados")
       }
 
       try {
@@ -691,48 +716,40 @@ export default function CalculadoraEctopico() {
           const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
           console.log(`📝 Guardando como consulta ${visitaNo}`)
 
-          const updateResult = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
-          result.success = updateResult.success
+          actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos).then((updateResult) => {
+            if (updateResult.success) {
+              console.log("[v0] ✅ Datos guardados en backend exitosamente")
+            } else {
+              console.error("[v0] ❌ Error al guardar en backend")
+            }
+          })
 
-          if (updateResult.success && updateResult.data) {
-            setConsultaCargada(updateResult.data)
-            console.log("[v0] ✅ consultaCargada actualizada con datos del backend")
-          }
+          result.success = true
         } else {
           result.success = true
         }
+
         if (!result.success) {
           alert("Advertencia: Falló la sincronización con la base de datos.")
         }
       } catch (e) {
         console.error("Error al sincronizar con el backend:", e)
-        alert("Advertencia: Falló la sincronización con la base de datos.")
       }
 
-      console.log("[v0] 🎯 Antes de cambiar pantalla:", {
+      console.log("[v0] 🎯 Cambiando pantalla:", {
         tipoResultado: respuesta.tipoResultado,
         resultado: probPost,
-        pantallaActual: pantalla,
       })
 
-      requestAnimationFrame(() => {
-        if (respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo") {
-          setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-          setProtocoloFinalizado(true)
-          console.log("[v0] 📺 Cambiando a pantalla: finalizado")
-          setPantalla("finalizado")
-        } else {
-          setMostrarResultados(true)
-          setMostrarIdSeguimiento(true)
-          console.log("[v0] 📺 Cambiando a pantalla: resultados")
-          setPantalla("resultados")
-        }
-
-        console.log(
-          "[v0] 🎯 Después de cambiar pantalla, nueva pantalla debería ser:",
-          respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo" ? "finalizado" : "resultados",
-        )
-      })
+      if (respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo") {
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+        setProtocoloFinalizado(true)
+        setPantalla("finalizado")
+      } else {
+        setMostrarResultados(true)
+        setMostrarIdSeguimiento(true)
+        setPantalla("resultados")
+      }
     } catch (error) {
       console.error("Error en el cálculo:", error)
       alert("Error al realizar el cálculo. Por favor, inténtelo de nuevo.")

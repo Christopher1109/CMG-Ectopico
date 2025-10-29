@@ -23,6 +23,7 @@ import {
   ChevronLeft,
   Stethoscope,
   Droplet,
+  AlertCircle,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type React from "react"
@@ -322,20 +323,23 @@ export default function CalculadoraEctopico() {
   const [tieneHCG, setTieneHCG] = useState<string>("") // This state seems unused, but kept for consistency
 
   // New states for checklist in Section 3
+  // const [tienePruebaEmbarazoDisponible, setTienePruebaEmbarazoDisponible] = useState<string>("") // Already defined below
+  // const [tieneEcoDisponible, setTieneEcoDisponible] = useState<string>("") // Already defined below
+  // const [tieneBetaDisponible, setTieneBetaDisponible] = useState<string>("") // Already defined below
+
+  // New states for sections with updated designs
   const [tienePruebaEmbarazoDisponible, setTienePruebaEmbarazoDisponible] = useState<string>("")
   const [tieneEcoDisponible, setTieneEcoDisponible] = useState<string>("")
   const [tieneBetaDisponible, setTieneBetaDisponible] = useState<string>("")
-
-  // New states for sections with updated designs
   const [tienePruebaEmbarazo, setTienePruebaEmbarazo] = useState<string>("")
   const [hallazgosTVUS, setHallazgosTVUS] = useState<string>("")
   const [nivelBetaHCG, setNivelBetaHCG] = useState<string>("")
 
   const [guardandoConsulta, setGuardandoConsulta] = useState(false)
 
-  const [tieneBetaSangre, setTieneBetaSangre] = useState("")
-  const [tienePruebaEmbarazoChecklist, setTienePruebaEmbarazoChecklist] = useState("")
-  const [tieneEcoTVUSChecklist, setTieneEcoTVUSChecklist] = useState("")
+  // New states for section 6: Estidios Disponibles
+  const [tieneTVUSDisponible, setTieneTVUSDisponible] = useState<string>("")
+  const [tieneBetaHCGDisponible, setTieneBetaHCGDisponible] = useState<string>("")
 
   // ✅ Verificar autenticación al cargar
   useEffect(() => {
@@ -594,9 +598,9 @@ export default function CalculadoraEctopico() {
         presionDiastolica: presionDiastolica,
         estadoConciencia: estadoConciencia,
         pruebaEmbarazoRealizada: pruebaEmbarazoRealizada,
-        resultadoPruebaEmbarazo: resultadoPruebaEmbarazo,
-        tieneEcoTransabdominal: tieneEcoTransabdominal,
-        resultadoEcoTransabdominal: resultadoEcoTransabdominal,
+        resultadoPruebaEmbarazo,
+        tieneEcoTransabdominal,
+        resultadoEcoTransabdominal,
       })
 
       if (respuesta.error) {
@@ -754,9 +758,9 @@ export default function CalculadoraEctopico() {
     setResultadoTVUS("")
 
     // Resetting new checklist states
-    setTieneBetaSangre("")
-    setTienePruebaEmbarazoChecklist("")
-    setTieneEcoTVUSChecklist("")
+    // setTieneBetaSangre("") // Undeclared, removed
+    // setTienePruebaEmbarazoChecklist("") // Undeclared, removed
+    // setTieneEcoTVUSChecklist("") // Undeclared, removed
 
     // Resetting states for updated designs
     setTienePruebaEmbarazoDisponible("")
@@ -765,6 +769,10 @@ export default function CalculadoraEctopico() {
     setTienePruebaEmbarazo("")
     setHallazgosTVUS("")
     setNivelBetaHCG("")
+
+    // Resetting section 6 states
+    setTieneTVUSDisponible("")
+    setTieneBetaHCGDisponible("")
   }
 
   const buscarConsulta = async () => {
@@ -1301,7 +1309,7 @@ export default function CalculadoraEctopico() {
 
   // IMPROVED PROGRESS BAR COMPONENT
   const ProgressBar = () => {
-    const totalSecciones = 8 // Updated to 8 sections
+    const totalSecciones = 8
     const progreso = (seccionesCompletadas.length / totalSecciones) * 100
 
     return (
@@ -2426,7 +2434,7 @@ export default function CalculadoraEctopico() {
                             return
                           }
                           if (await validarSignosVitales()) {
-                            setSeccion(3) // Changed from 2 to 3
+                            setSeccion(3)
                             completarSeccion(2)
                           }
                         }}
@@ -2440,684 +2448,13 @@ export default function CalculadoraEctopico() {
                   </div>
                 )}
 
-                {/* SECCION 3: PIE - Prueba de Embarazo Cualitativa */}
+                {/* SECCION 3: Síntomas y Factores de Riesgo - MOVED HERE */}
                 {seccionActual === 3 && (
-                  <div className="space-y-6">
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
-                          <ClipboardList className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo</h2>
-                          <p className="text-sm text-slate-600">Verificación de prueba cualitativa</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="text-slate-600 bg-blue-50 p-4 rounded-lg border border-blue-100">
-                      Por favor, indique si la paciente cuenta con el siguiente estudio:
-                    </p>
-
-                    <div className="space-y-4">
-                      {/* PIE - Prueba de Embarazo Cualitativa */}
-                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                          <span>¿Tiene PIE positivo? (Prueba de Embarazo Cualitativa)</span>
-                        </Label>
-                        <div className="grid grid-cols-2 gap-3">
-                          {["si", "no"].map((opcion) => (
-                            <label
-                              key={opcion}
-                              className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                                tienePruebaEmbarazoDisponible === opcion
-                                  ? "border-purple-500 bg-purple-50 shadow-md"
-                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="tienePruebaEmbarazoDisponible"
-                                value={opcion}
-                                checked={tienePruebaEmbarazoDisponible === opcion}
-                                onChange={(e) => setTienePruebaEmbarazoDisponible(e.target.value)}
-                                className="sr-only"
-                              />
-                              <div
-                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  tienePruebaEmbarazoDisponible === opcion
-                                    ? "border-purple-500 bg-purple-500"
-                                    : "border-gray-300"
-                                }`}
-                              >
-                                {tienePruebaEmbarazoDisponible === opcion && (
-                                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                                )}
-                              </div>
-                              <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {errorSeccion && (
-                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center space-x-2">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <p className="text-red-700 font-medium">{errorSeccion}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between pt-4">
-                      <Button
-                        onClick={() => setSeccion(2)}
-                        variant="outline"
-                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                      >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Anterior
-                      </Button>
-                      <Button
-                        onClick={async () => {
-                          if (!tienePruebaEmbarazoDisponible) {
-                            setErrorSeccion("Por favor seleccione una opción")
-                            return
-                          }
-
-                          if (tienePruebaEmbarazoDisponible === "no") {
-                            setMensajeFinal(
-                              "Se necesita realizar una prueba de embarazo cualitativa (PIE) para poder continuar con la evaluación. Por favor, acuda a un laboratorio clínico y regrese cuando tenga el resultado.",
-                            )
-                            await guardarDatosIncompletos("estudios_faltantes", 3)
-                            setPantalla("completada")
-                            setMostrarResumen(false)
-                            setProtocoloFinalizado(true)
-                          } else {
-                            setErrorSeccion("")
-                            setSeccion(4) // Changed from 3 to 4
-                            completarSeccion(3)
-                          }
-                        }}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                      >
-                        Continuar
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                    <CMGFooter />
-                  </div>
-                )}
-
-                {/* Section 4: PIE - Prueba de Embarazo Cualitativa - UPDATED WITH TWO-STEP FLOW */}
-                {seccionActual === 4 && (
-                  <div className="space-y-6">
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
-                          <ClipboardList className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo Cualitativa</h2>
-                          <p className="text-sm text-slate-600">Verificación de PIE</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="text-slate-600 bg-blue-50 p-4 rounded-lg border border-blue-100">
-                      Por favor, indique si la paciente cuenta con el siguiente estudio:
-                    </p>
-
-                    <div className="space-y-4">
-                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                          <span>¿Cuenta con la prueba hecha?</span>
-                        </Label>
-                        <div className="grid grid-cols-2 gap-3">
-                          {["si", "no"].map((opcion) => (
-                            <label
-                              key={opcion}
-                              className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                                tienePruebaEmbarazoDisponible === opcion
-                                  ? "border-purple-500 bg-purple-50 shadow-md"
-                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="tienePruebaEmbarazoDisponible"
-                                value={opcion}
-                                checked={tienePruebaEmbarazoDisponible === opcion}
-                                onChange={(e) => {
-                                  setTienePruebaEmbarazoDisponible(e.target.value)
-                                  if (e.target.value === "no") {
-                                    setResultadoPruebaEmbarazo("")
-                                  }
-                                }}
-                                className="sr-only"
-                              />
-                              <div
-                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  tienePruebaEmbarazoDisponible === opcion
-                                    ? "border-purple-500 bg-purple-500"
-                                    : "border-gray-300"
-                                }`}
-                              >
-                                {tienePruebaEmbarazoDisponible === opcion && (
-                                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                                )}
-                              </div>
-                              <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {tienePruebaEmbarazoDisponible === "si" && (
-                        <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                          <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                            <span>¿Resultado?</span>
-                          </Label>
-                          <div className="grid grid-cols-2 gap-3">
-                            {[
-                              { value: "positivo", label: "Positivo" },
-                              { value: "negativo", label: "Negativo" },
-                            ].map((opcion) => (
-                              <label
-                                key={opcion.value}
-                                className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                                  resultadoPruebaEmbarazo === opcion.value
-                                    ? "border-purple-500 bg-purple-50 shadow-md"
-                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                                }`}
-                              >
-                                <input
-                                  type="radio"
-                                  name="resultadoPruebaEmbarazo"
-                                  value={opcion.value}
-                                  checked={resultadoPruebaEmbarazo === opcion.value}
-                                  onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
-                                  className="sr-only"
-                                />
-                                <div
-                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                    resultadoPruebaEmbarazo === opcion.value
-                                      ? "border-purple-500 bg-purple-500"
-                                      : "border-gray-300"
-                                  }`}
-                                >
-                                  {resultadoPruebaEmbarazo === opcion.value && (
-                                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                                  )}
-                                </div>
-                                <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {errorSeccion && (
-                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center space-x-2">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <p className="text-red-700 font-medium">{errorSeccion}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between pt-4">
-                      <Button
-                        onClick={() => setSeccion(3)}
-                        variant="outline"
-                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                      >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Anterior
-                      </Button>
-                      <Button
-                        onClick={async () => {
-                          if (!tienePruebaEmbarazoDisponible) {
-                            setErrorSeccion("Por favor seleccione si cuenta con la prueba")
-                            return
-                          }
-
-                          if (tienePruebaEmbarazoDisponible === "no") {
-                            setMensajeFinal(
-                              "Se necesita realizar una prueba de embarazo cualitativa (PIE) para poder continuar con la evaluación.",
-                            )
-                            await guardarDatosIncompletos("estudios_faltantes", 4)
-                            setPantalla("completada")
-                            setMostrarResumen(false)
-                            setProtocoloFinalizado(true)
-                            return
-                          }
-
-                          if (!resultadoPruebaEmbarazo) {
-                            setErrorSeccion("Por favor seleccione el resultado de la prueba")
-                            return
-                          }
-
-                          if (resultadoPruebaEmbarazo === "negativo") {
-                            setMensajeFinal(
-                              "Basándose en los resultados de su prueba de embarazo, esto no puede ser considerado un embarazo ectópico. Por favor, contacte a su médico para determinar el motivo de sus síntomas.",
-                            )
-                            await guardarDatosIncompletos("prueba_embarazo_negativa", 4)
-                            setPantalla("completada")
-                            setMostrarResumen(false)
-                            setProtocoloFinalizado(true)
-                            return
-                          }
-
-                          setErrorSeccion("")
-                          setSeccion(5) // Changed from 4 to 5
-                          completarSeccion(4)
-                        }}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                      >
-                        Continuar
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                    <CMGFooter />
-                  </div>
-                )}
-
-                {/* Section 5: TVUS y β-hCG Disponibles - RENUMBERED */}
-                {seccionActual === 5 && (
-                  <div className="space-y-6">
-                    <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl border border-cyan-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-                          <Stethoscope className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-bold text-slate-800">Evaluación Previa</h2>
-                          <p className="text-sm text-slate-600">Ecografía transabdominal y exploración física</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-5">
-                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-cyan-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                        <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
-                          <span>Hallazgos de Exploración Física</span>
-                        </Label>
-                        <textarea
-                          placeholder="Describa los hallazgos relevantes..."
-                          value={hallazgosExploracion}
-                          onChange={(e) => setHallazgosExploracion(e.target.value)}
-                          rows={4}
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 transition-all duration-200 resize-none"
-                        />
-                      </div>
-
-                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
-                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
-                          <span>¿Tiene ecografía transabdominal?</span>
-                        </Label>
-                        <div className="grid grid-cols-2 gap-3">
-                          {["si", "no"].map((opcion) => (
-                            <label
-                              key={opcion}
-                              className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                                tieneEcoTransabdominal === opcion
-                                  ? "border-cyan-500 bg-cyan-50 shadow-md"
-                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="tieneEcoTransabdominal"
-                                value={opcion}
-                                checked={tieneEcoTransabdominal === opcion}
-                                onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
-                                className="sr-only"
-                              />
-                              <div
-                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  tieneEcoTransabdominal === opcion ? "border-cyan-500 bg-cyan-500" : "border-gray-300"
-                                }`}
-                              >
-                                {tieneEcoTransabdominal === opcion && (
-                                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                                )}
-                              </div>
-                              <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {tieneEcoTransabdominal === "si" && (
-                        <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
-                          <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
-                            <span>Resultado de la ecografía</span>
-                          </Label>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {[
-                              { value: "saco_embrionario_fc", label: "Saco embrionario con FC" },
-                              { value: "saco_vitelino_embrion", label: "Saco vitelino con embrión" },
-                              { value: "saco_vitelino_sin_embrion", label: "Saco vitelino sin embrión" },
-                              { value: "saco_sin_embrion", label: "Saco sin embrión" },
-                              { value: "saco_10mm_anillo_2mm", label: "Saco ≥10mm con anillo decidual ≥2mm" },
-                              { value: "ausencia_saco", label: "Ausencia de saco" },
-                            ].map((opcion) => (
-                              <label
-                                key={opcion.value}
-                                className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                                  resultadoEcoTransabdominal === opcion.value
-                                    ? "border-cyan-500 bg-cyan-50 shadow-md"
-                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                                }`}
-                              >
-                                <input
-                                  type="radio"
-                                  name="resultadoEcoTransabdominal"
-                                  value={opcion.value}
-                                  checked={resultadoEcoTransabdominal === opcion.value}
-                                  onChange={(e) => setResultadoEcoTransabdominal(e.target.value)}
-                                  className="sr-only"
-                                />
-                                <div
-                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                    resultadoEcoTransabdominal === opcion.value
-                                      ? "border-cyan-500 bg-cyan-500"
-                                      : "border-gray-300"
-                                  }`}
-                                >
-                                  {resultadoEcoTransabdominal === opcion.value && (
-                                    <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
-                                  )}
-                                </div>
-                                <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {errorSeccion && (
-                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center space-x-2">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <p className="text-red-700 font-medium">{errorSeccion}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between pt-4">
-                      <Button
-                        onClick={() => setSeccion(4)} // Changed from 3 to 4
-                        variant="outline"
-                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                      >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Anterior
-                      </Button>
-                      <Button
-                        onClick={async () => {
-                          if (!tieneEcoTransabdominal) {
-                            setErrorSeccion("Por favor, seleccione si tiene ecografía transabdominal.")
-                            return
-                          }
-
-                          if (tieneEcoTransabdominal === "si" && !resultadoEcoTransabdominal) {
-                            setErrorSeccion("Por favor, seleccione el resultado de la ecografía.")
-                            return
-                          }
-
-                          const opcionesQueBloquean = [
-                            "saco_embrionario_fc",
-                            "saco_vitelino_embrion",
-                            "saco_vitelino_sin_embrion",
-                            "saco_sin_embrion",
-                            "saco_10mm_anillo_2mm",
-                          ]
-
-                          if (
-                            tieneEcoTransabdominal === "si" &&
-                            opcionesQueBloquean.includes(resultadoEcoTransabdominal)
-                          ) {
-                            await guardarDatosIncompletos(
-                              "Los hallazgos ecográficos transabdominales presentan evidencia que sugiere que no se trata de un embarazo ectópico. Se recomienda seguimiento obstétrico apropiado.",
-                              5, // Changed from 4 to 5 as this is section 6 now
-                            )
-                            setMensajeFinal(
-                              <div className="text-center">
-                                Los hallazgos ecográficos transabdominales presentan evidencia que sugiere que no se
-                                trata de un embarazo ectópico. Se recomienda seguimiento obstétrico apropiado.
-                              </div>,
-                            )
-                            setProtocoloFinalizado(true)
-                            setPantalla("completada")
-                            setMostrarResumen(false)
-                          } else {
-                            setSeccion(6) // Changed from 5 to 6
-                            completarSeccion(5) // Changed from 4 to 5
-                          }
-                        }}
-                        className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                      >
-                        Continuar
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                    <CMGFooter />
-                  </div>
-                )}
-
-                {/* SECCION 6: Eco Transabdominal - RENUMBERED */}
-                {seccionActual === 6 && (
-                  <div className="space-y-6">
-                    <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl border border-cyan-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-                          <Stethoscope className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-bold text-slate-800">Ecografía Transabdominal</h2>
-                          <p className="text-sm text-slate-600">Hallazgos de la ecografía transabdominal</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-5">
-                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-cyan-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                        <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
-                          <span>Hallazgos de Exploración Física</span>
-                        </Label>
-                        <textarea
-                          placeholder="Describa los hallazgos relevantes..."
-                          value={hallazgosExploracion}
-                          onChange={(e) => setHallazgosExploracion(e.target.value)}
-                          rows={4}
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 transition-all duration-200 resize-none"
-                        />
-                      </div>
-
-                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
-                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
-                          <span>¿Tiene ecografía transabdominal?</span>
-                        </Label>
-                        <div className="grid grid-cols-2 gap-3">
-                          {["si", "no"].map((opcion) => (
-                            <label
-                              key={opcion}
-                              className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                                tieneEcoTransabdominal === opcion
-                                  ? "border-cyan-500 bg-cyan-50 shadow-md"
-                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="tieneEcoTransabdominal"
-                                value={opcion}
-                                checked={tieneEcoTransabdominal === opcion}
-                                onChange={(e) => setTieneEcoTransabdominal(e.target.value)}
-                                className="sr-only"
-                              />
-                              <div
-                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  tieneEcoTransabdominal === opcion ? "border-cyan-500 bg-cyan-500" : "border-gray-300"
-                                }`}
-                              >
-                                {tieneEcoTransabdominal === opcion && (
-                                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                                )}
-                              </div>
-                              <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {tieneEcoTransabdominal === "si" && (
-                        <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
-                          <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
-                            <span>Resultado de la ecografía</span>
-                          </Label>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {[
-                              { value: "saco_embrionario_fc", label: "Saco embrionario con FC" },
-                              { value: "saco_vitelino_embrion", label: "Saco vitelino con embrión" },
-                              { value: "saco_vitelino_sin_embrion", label: "Saco vitelino sin embrión" },
-                              { value: "saco_sin_embrion", label: "Saco sin embrión" },
-                              { value: "saco_10mm_anillo_2mm", label: "Saco ≥10mm con anillo decidual ≥2mm" },
-                              { value: "ausencia_saco", label: "Ausencia de saco" },
-                            ].map((opcion) => (
-                              <label
-                                key={opcion.value}
-                                className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                                  resultadoEcoTransabdominal === opcion.value
-                                    ? "border-cyan-500 bg-cyan-50 shadow-md"
-                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                                }`}
-                              >
-                                <input
-                                  type="radio"
-                                  name="resultadoEcoTransabdominal"
-                                  value={opcion.value}
-                                  checked={resultadoEcoTransabdominal === opcion.value}
-                                  onChange={(e) => setResultadoEcoTransabdominal(e.target.value)}
-                                  className="sr-only"
-                                />
-                                <div
-                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                    resultadoEcoTransabdominal === opcion.value
-                                      ? "border-cyan-500 bg-cyan-500"
-                                      : "border-gray-300"
-                                  }`}
-                                >
-                                  {resultadoEcoTransabdominal === opcion.value && (
-                                    <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
-                                  )}
-                                </div>
-                                <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {errorSeccion && (
-                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center space-x-2">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <p className="text-red-700 font-medium">{errorSeccion}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between pt-4">
-                      <Button
-                        onClick={() => setSeccion(5)} // Changed from 4 to 5
-                        variant="outline"
-                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                      >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Anterior
-                      </Button>
-                      <Button
-                        onClick={async () => {
-                          if (!tieneEcoTransabdominal) {
-                            setErrorSeccion("Por favor, seleccione si tiene ecografía transabdominal.")
-                            return
-                          }
-
-                          if (tieneEcoTransabdominal === "si" && !resultadoEcoTransabdominal) {
-                            setErrorSeccion("Por favor, seleccione el resultado de la ecografía.")
-                            return
-                          }
-
-                          const opcionesQueBloquean = [
-                            "saco_embrionario_fc",
-                            "saco_vitelino_embrion",
-                            "saco_vitelino_sin_embrion",
-                            "saco_sin_embrion",
-                            "saco_10mm_anillo_2mm",
-                          ]
-
-                          if (
-                            tieneEcoTransabdominal === "si" &&
-                            opcionesQueBloquean.includes(resultadoEcoTransabdominal)
-                          ) {
-                            await guardarDatosIncompletos(
-                              "Los hallazgos ecográficos transabdominales presentan evidencia que sugiere que no se trata de un embarazo ectópico. Se recomienda seguimiento obstétrico apropiado.",
-                              6, // Changed from 5 to 6
-                            )
-                            setMensajeFinal(
-                              <div className="text-center">
-                                Los hallazgos ecográficos transabdominales presentan evidencia que sugiere que no se
-                                trata de un embarazo ectópico. Se recomienda seguimiento obstétrico apropiado.
-                              </div>,
-                            )
-                            setProtocoloFinalizado(true)
-                            setPantalla("completada")
-                            setMostrarResumen(false)
-                          } else {
-                            setSeccion(7) // Changed from 6 to 7
-                            completarSeccion(6) // Changed from 5 to 6
-                          }
-                        }}
-                        className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                      >
-                        Continuar
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                    <CMGFooter />
-                  </div>
-                )}
-
-                {/* SECCION 7: TVUS - RENUMBERED */}
-                {seccionActual === 7 && (
                   <div className="space-y-8">
-                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 border border-purple-100 shadow-sm">
+                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
                       <div className="flex items-center gap-4 mb-6">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
-                          <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
+                          <AlertCircle className="w-7 h-7 text-white" />
                         </div>
                         <div>
                           <h2 className="text-2xl font-bold text-gray-900">Síntomas y Factores de Riesgo</h2>
@@ -3167,18 +2504,8 @@ export default function CalculadoraEctopico() {
                                 `}
                               >
                                 {sintomasSeleccionados.includes(sintoma.id) && (
-                                  <svg
-                                    className="w-3 h-3 text-white"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={3}
-                                      d="M5 13l4 4L19 7"
-                                    />
+                                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                   </svg>
                                 )}
                               </div>
@@ -3230,18 +2557,8 @@ export default function CalculadoraEctopico() {
                                 `}
                               >
                                 {factoresSeleccionados.includes(factor.id) && (
-                                  <svg
-                                    className="w-3 h-3 text-white"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={3}
-                                      d="M5 13l4 4L19 7"
-                                    />
+                                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                   </svg>
                                 )}
                               </div>
@@ -3251,119 +2568,703 @@ export default function CalculadoraEctopico() {
                         </div>
                       </div>
                     </div>
-
-                    {errorSeccion && (
-                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
-                        <p className="text-sm text-red-700">{errorSeccion}</p>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between pt-4">
-                      <button
-                        onClick={() => setSeccion(6)} // Changed from 2 to 6
-                        className="px-6 py-2.5 rounded-xl border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-all flex items-center gap-2"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                        Anterior
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (sintomasSeleccionados.length === 0) {
-                            setErrorSeccion("Por favor seleccione al menos un síntoma")
-                            return
-                          }
-                          if (factoresSeleccionados.length === 0) {
-                            setErrorSeccion("Por favor seleccione al menos un factor de riesgo")
-                            return
-                          }
-                          setErrorSeccion("")
-                          setSeccion(8) // Changed from 3 to 8
-                          completarSeccion(7) // Changed from 6 to 7
-                        }}
-                        className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
-                      >
-                        Continuar
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    </div>
-                    <CMGFooter />
                   </div>
-                )}
 
-                {/* SECCION 8: β-hCG - RENUMBERED */}
-                {seccionActual === 8 && (
-                  <div className="space-y-6">
-                    <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
-                          <Droplet className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-bold text-slate-800">β-hCG en Sangre</h2>
-                          <p className="text-sm text-slate-600">Nivel cuantitativo de β-hCG</p>
-                        </div>
+                  {errorSeccion && (
+                    <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center space-x-2">
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                        <p className=\"text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between pt-4">
+                    <Button
+                      onClick={() => setSeccion(2)}
+                      variant="outline"
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (sintomasSeleccionados.length === 0) {
+                          setErrorSeccion("Por favor seleccione al menos un síntoma")
+                          return
+                        }
+                        if (factoresSeleccionados.length === 0) {
+                          setErrorSeccion("Por favor seleccione al menos un factor de riesgo")
+                          return
+                        }
+                        setErrorSeccion("")
+                        setSeccion(4)
+                        completarSeccion(3)
+                      }}
+                      className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      Continuar
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                  <CMGFooter />
+                </div>
+              )}
+
+              {/* SECCION 4: PIE - Prueba de Embarazo Cualitativa */}
+              {seccionActual === 4 && (
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
+                        <ClipboardList className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo Cualitativa</h2>
+                        <p className="text-sm text-slate-600">Verificación de PIE</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-slate-600 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    Por favor, indique si la paciente cuenta con el siguiente estudio:
+                  </p>
+
+                  <div className="space-y-4">
+                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                      <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <span>¿Cuenta con la prueba hecha?</span>
+                      </Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {["si", "no"].map((opcion) => (
+                          <label
+                            key={opcion}
+                            className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                              tienePruebaEmbarazoDisponible === opcion
+                                ? "border-purple-500 bg-purple-50 shadow-md"
+                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="tienePruebaEmbarazoDisponible"
+                              value={opcion}
+                              checked={tienePruebaEmbarazoDisponible === opcion}
+                              onChange={(e) => {
+                                setTienePruebaEmbarazoDisponible(e.target.value)
+                                if (e.target.value === "no") {
+                                  setResultadoPruebaEmbarazo("")
+                                }
+                              }}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                tienePruebaEmbarazoDisponible === opcion ? "border-purple-500 bg-purple-500" : "border-gray-300"
+                              }`}
+                            >
+                              {tienePruebaEmbarazoDisponible === opcion && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                            </div>
+                            <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
+                          </label>
+                        ))}
                       </div>
                     </div>
 
-                    <div className="space-y-5">
-                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-teal-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                        <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                          <span>Valor de β-hCG</span>
+                    {tienePruebaEmbarazoDisponible === "si" && (
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                          <span>¿Resultado?</span>
                         </Label>
-                        <input
-                          type="number"
-                          placeholder="Ingrese el valor"
-                          value={nivelBetaHCG}
-                          onChange={(e) => setNivelBetaHCG(e.target.value)}
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all duration-200"
-                        />
-                        <span className="text-xs text-slate-500 mt-1 block">mUI/mL</span>
-                      </div>
-                    </div>
-
-                    {errorSeccion && (
-                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center space-x-2">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <p className="text-red-700 font-medium">{errorSeccion}</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { value: "positivo", label: "Positivo" },
+                            { value: "negativo", label: "Negativo" },
+                          ].map((opcion) => (
+                            <label
+                              key={opcion.value}
+                              className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                resultadoPruebaEmbarazo === opcion.value
+                                  ? "border-purple-500 bg-purple-50 shadow-md"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="resultadoPruebaEmbarazo"
+                                value={opcion.value}
+                                checked={resultadoPruebaEmbarazo === opcion.value}
+                                onChange={(e) => setResultadoPruebaEmbarazo(e.target.value)}
+                                className="sr-only"
+                              />
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                  resultadoPruebaEmbarazo === opcion.value ? "border-purple-500 bg-purple-500" : "border-gray-300"
+                                }`}
+                              >
+                                {resultadoPruebaEmbarazo === opcion.value && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                              </div>
+                              <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
+                            </label>
+                          ))}
                         </div>
                       </div>
                     )}
-
-                    <div className="flex justify-between pt-4">
-                      <Button
-                        onClick={() => setSeccion(7)} // Changed from 6 to 7
-                        variant="outline"
-                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                      >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Anterior
-                      </Button>
-                      <Button
-                        onClick={async () => {
-                          if (!nivelBetaHCG) {
-                            setErrorSeccion("Por favor, ingrese el valor de β-hCG.")
-                            return
-                          }
-                          await calcular()
-                        }}
-                        className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                      >
-                        Calcular Riesgo
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                    <CMGFooter />
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+
+                  {errorSeccion && (
+                    <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center space-x-2">
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between pt-4">
+                    <Button
+                      onClick={() => setSeccion(3)}
+                      variant="outline"
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (!tienePruebaEmbarazoDisponible) {
+                          setErrorSeccion("Por favor seleccione si cuenta con la prueba")
+                          return
+                        }
+
+                        if (tienePruebaEmbarazoDisponible === "no") {
+                          setMensajeFinal(
+                            "Se necesita realizar una prueba de embarazo cualitativa (PIE) para poder continuar con la evaluación.",
+                          )
+                          await guardarDatosIncompletos("estudios_faltantes", 4)
+                          setPantalla("completada")
+                          setMostrarResumen(false)
+                          setProtocoloFinalizado(true)
+                          return
+                        }
+
+                        if (!resultadoPruebaEmbarazo) {
+                          setErrorSeccion("Por favor seleccione el resultado de la prueba")
+                          return
+                        }
+
+                        if (resultadoPruebaEmbarazo === "negativo") {
+                          setMensajeFinal(
+                            "Basándose en los resultados de su prueba de embarazo, esto no puede ser considerado un embarazo ectópico. Por favor, contacte a su médico para determinar el motivo de sus síntomas.",
+                          )
+                          await guardarDatosIncompletos("prueba_embarazo_negativa", 4)
+                          setPantalla("completada")
+                          setMostrarResumen(false)
+                          setProtocoloFinalizado(true)
+                          return
+                        }
+
+                        setErrorSeccion("")
+                        setSeccion(5)
+                        completarSeccion(4)
+                      }}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      Continuar
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                  <CMGFooter />
+                </div>
+              )}
+
+              {/* SECCION 5: Eco Transabdominal */}
+              {seccionActual === 5 && (
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl border border-cyan-100">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                        <Stethoscope className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-slate-800">Ecografía Transabdominal</h2>
+                        <p className="text-sm text-slate-600">Evaluación de embarazo intrauterino</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-slate-600 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    ¿Cuenta con ecografía que confirme la presencia de un embarazo normal o evidencia que descarte embarazo
+                    ectópico?
+                  </p>
+
+                  <div className="space-y-5">
+                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
+                      <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                        <span>¿Tiene ecografía transabdominal?</span>
+                      </Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {["si", "no"].map((opcion) => (
+                          <label
+                            key={opcion}
+                            className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                              tieneEcoTransabdominal === opcion
+                                ? "border-cyan-500 bg-cyan-50 shadow-md"
+                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="tieneEcoTransabdominal"
+                              value={opcion}
+                              checked={tieneEcoTransabdominal === opcion}
+                              onChange={(e) => {
+                                setTieneEcoTransabdominal(e.target.value)
+                                if (e.target.value === "no") {
+                                  setResultadoEcoTransabdominal("")
+                                }
+                              }}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                tieneEcoTransabdominal === opcion ? "border-cyan-500 bg-cyan-500" : "border-gray-300"
+                              }`}
+                            >
+                              {tieneEcoTransabdominal === opcion && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                            </div>
+                            <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {tieneEcoTransabdominal === "si" && (
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
+                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                          <span>Hallazgos ecográficos (Saco embrionario con FC, Saco vitelino con embrión, Sin embrión, Saco sin embrión, Saco ≥10mm con anillo decidual ≥2mm)</span>
+                        </Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {[
+                            { value: "saco_embrionario_fc", label: "Saco embrionario con FC" },
+                            { value: "saco_vitelino_embrion", label: "Saco vitelino con embrión" },
+                            { value: "saco_vitelino_sin_embrion", label: "Saco vitelino sin embrión" },
+                            { value: "saco_sin_embrion", label: "Saco sin embrión" },
+                            { value: "saco_10mm_anillo_2mm", label: "Saco ≥10mm con anillo decidual ≥2mm" },
+                            { value: "ausencia_saco", label: "Ausencia de saco" },
+                          ].map((opcion) => (
+                            <label
+                              key={opcion.value}
+                              className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                resultadoEcoTransabdominal === opcion.value
+                                  ? "border-cyan-500 bg-cyan-50 shadow-md"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="resultadoEcoTransabdominal"
+                                value={opcion.value}
+                                checked={resultadoEcoTransabdominal === opcion.value}
+                                onChange={(e) => setResultadoEcoTransabdominal(e.target.value)}
+                                className="sr-only"
+                              />
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                  resultadoEcoTransabdominal === opcion.value ? "border-cyan-500 bg-cyan-500" : "border-gray-300"
+                                }`}
+                              >
+                                {resultadoEcoTransabdominal === opcion.value && (
+                                  <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                                )}
+                              </div>
+                              <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {errorSeccion && (
+                    <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center space-x-2">
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between pt-4">
+                    <Button
+                      onClick={() => setSeccion(4)}
+                      variant="outline"
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (!tieneEcoTransabdominal) {
+                          setErrorSeccion("Por favor, seleccione si tiene ecografía transabdominal.")
+                          return
+                        }
+
+                        if (tieneEcoTransabdominal === "si" && !resultadoEcoTransabdominal) {
+                          setErrorSeccion("Por favor, seleccione el resultado de la ecografía.")
+                          return
+                        }
+
+                        const opcionesQueBloquean = [
+                          "saco_embrionario_fc",
+                          "saco_vitelino_embrion",
+                          "saco_vitelino_sin_embrion",
+                          "saco_sin_embrion",
+                          "saco_10mm_anillo_2mm",
+                        ]
+
+                        if (tieneEcoTransabdominal === "si" && opcionesQueBloquean.includes(resultadoEcoTransabdominal)) {
+                          await guardarDatosIncompletos(
+                            "Los hallazgos ecográficos transabdominales presentan evidencia que sugiere que no se trata de un embarazo ectópico. Se recomienda seguimiento obstétrico apropiado.",
+                            5,
+                          )
+                          setMensajeFinal(
+                            "Los hallazgos ecográficos transabdominales presentan evidencia que sugiere que no se trata de un embarazo ectópico. Se recomienda seguimiento obstétrico apropiado.",
+                          )
+                          setProtocoloFinalizado(true)
+                          setPantalla("completada")
+                          setMostrarResumen(false)
+                        } else {
+                          setSeccion(6)
+                          completarSeccion(5)
+                        }
+                      }}
+                      className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      Continuar
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                  <CMGFooter />
+                </div>
+              )}
+
+              {/* SECCION 6: TVUS y β-hCG Disponibles - RESTORED */}
+              {seccionActual === 6 && (
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-100">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                        <ClipboardList className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-slate-800">Estudios Disponibles</h2>
+                        <p className="text-sm text-slate-600">Verificación de estudios realizados</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-slate-600 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    Por favor, indique si la paciente cuenta con los siguientes estudios realizados:
+                  </p>
+
+                  <div className="space-y-4">
+                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-indigo-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                      <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                        <span>¿Cuenta con ecografía transvaginal (TVUS)?</span>
+                      </Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {["si", "no"].map((opcion) => (
+                          <label
+                            key={opcion}
+                            className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                              tieneTVUSDisponible === opcion
+                                ? "border-indigo-500 bg-indigo-50 shadow-md"
+                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="tieneTVUSDisponible"
+                              value={opcion}
+                              checked={tieneTVUSDisponible === opcion}
+                              onChange={(e) => setTieneTVUSDisponible(e.target.value)}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                tieneTVUSDisponible === opcion ? "border-indigo-500 bg-indigo-500" : "border-gray-300"
+                              }`}
+                            >
+                              {tieneTVUSDisponible === opcion && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                            </div>
+                            <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-indigo-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                      <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                        <span>¿Cuenta con resultado de β-hCG en sangre?</span>
+                      </Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {["si", "no"].map((opcion) => (
+                          <label
+                            key={opcion}
+                            className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                              tieneBetaHCGDisponible === opcion
+                                ? "border-indigo-500 bg-indigo-50 shadow-md"
+                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="tieneBetaHCGDisponible"
+                              value={opcion}
+                              checked={tieneBetaHCGDisponible === opcion}
+                              onChange={(e) => setTieneBetaHCGDisponible(e.target.value)}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                tieneBetaHCGDisponible === opcion ? "border-indigo-500 bg-indigo-500" : "border-gray-300"
+                              }`}
+                            >
+                              {tieneBetaHCGDisponible === opcion && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                            </div>
+                            <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {errorSeccion && (
+                    <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center space-x-2">
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between pt-4">
+                    <Button
+                      onClick={() => setSeccion(5)}
+                      variant="outline"
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (!tieneTVUSDisponible || !tieneBetaHCGDisponible) {
+                          setErrorSeccion("Por favor, complete todas las opciones.")
+                          return
+                        }
+
+                        if (tieneTVUSDisponible === "no" || tieneBetaHCGDisponible === "no") {
+                          await guardarDatosIncompletos("estudios_faltantes", 6)
+                          setMensajeFinal(
+                            "Se necesitan realizar los siguientes estudios para poder continuar con la evaluación: " +
+                              (tieneTVUSDisponible === "no" ? "Ecografía transvaginal (TVUS)" : "") +
+                              (tieneTVUSDisponible === "no" && tieneBetaHCGDisponible === "no" ? " y " : "") +
+                              (tieneBetaHCGDisponible === "no" ? "β-hCG en sangre" : ""),
+                          )
+                          setPantalla("completada")
+                          setMostrarResumen(false)
+                          setProtocoloFinalizado(true)
+                        } else {
+                          setErrorSeccion("")
+                          setSeccion(7)
+                          completarSeccion(6)
+                        }
+                      }}
+                      className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      Continuar
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                  <CMGFooter />
+                </div>
+              )}
+
+              {/* SECCION 7: TVUS Hallazgos */}
+              {seccionActual === 7 && (
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-violet-50 to-purple-50 p-6 rounded-xl border border-violet-100">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                        <FileText className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-slate-800">Ecografía Transvaginal (TVUS)</h2>
+                        <p className="text-sm text-slate-600">Hallazgos ecográficos</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-5">
+                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
+                      <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-violet-500 rounded-full"></div>
+                        <span>Hallazgos en TVUS</span>
+                      </Label>
+                      <div className="grid grid-cols-1 gap-3">
+                        {[
+                          { value: "masa", label: "Masa anexial" },
+                          { value: "libre", label: "Líquido libre" },
+                          { value: "masa_libre", label: "Masa anexial + Líquido libre" },
+                          { value: "normal", label: "Normal" },
+                        ].map((opcion) => (
+                          <label
+                            key={opcion.value}
+                            className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                              hallazgosTVUS === opcion.value
+                                ? "border-violet-500 bg-violet-50 shadow-md"
+                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="hallazgosTVUS"
+                              value={opcion.value}
+                              checked={hallazgosTVUS === opcion.value}
+                              onChange={(e) => setHallazgosTVUS(e.target.value)}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                hallazgosTVUS === opcion.value ? "border-violet-500 bg-violet-500" : "border-gray-300"
+                              }`}
+                            >
+                              {hallazgosTVUS === opcion.value && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
+                            </div>
+                            <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {errorSeccion && (
+                    <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center space-x-2">
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between pt-4">
+                    <Button
+                      onClick={() => setSeccion(6)}
+                      variant="outline"
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (!hallazgosTVUS) {
+                          setErrorSeccion("Por favor, seleccione un hallazgo.")
+                          return
+                        }
+                        setErrorSeccion("")
+                        setSeccion(8)
+                        completarSeccion(7)
+                      }}
+                      className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      Continuar
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                  <CMGFooter />
+                </div>
+              )}
+
+              {/* SECCION 8: β-hCG en Sangre */}
+              {seccionActual === 8 && (
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
+                        <Droplet className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-slate-800">β-hCG en Sangre</h2>
+                        <p className="text-sm text-slate-600">Nivel cuantitativo de β-hCG</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-5">
+                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-teal-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                      <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                        <span>Valor de β-hCG</span>
+                      </Label>
+                      <input
+                        type="number"
+                        placeholder="Ingrese el valor"
+                        value={nivelBetaHCG}
+                        onChange={(e) => setNivelBetaHCG(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all duration-200"
+                      />
+                      <span className="text-xs text-slate-500 mt-1 block">mUI/mL</span>
+                    </div>
+                  </div>
+
+                  {errorSeccion && (
+                    <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center space-x-2">
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between pt-4">
+                    <Button
+                      onClick={() => setSeccion(7)}
+                      variant="outline"
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (!nivelBetaHCG) {
+                          setErrorSeccion("Por favor, ingrese el valor de β-hCG.")
+                          return
+                        }
+                        await calcular()
+                      }}
+                      className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      Calcular Riesgo
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                  <CMGFooter />
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

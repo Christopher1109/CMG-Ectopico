@@ -709,36 +709,59 @@ export default function CalculadoraEctopico() {
             setConsultaCargada(consultaGuardada)
           }
         } else if (numeroConsultaActual > 1) {
-          console.log("🔍 Evaluando qué consulta actualizar...")
-          console.log("Consulta cargada:", consultaCargada)
+          console.log("[v0] 🔍 Evaluando qué consulta actualizar...")
+          console.log("[v0] Consulta cargada:", consultaCargada)
 
           const tieneC2 = existeConsulta(consultaCargada, 2)
           const tieneC3 = existeConsulta(consultaCargada, 3)
 
-          console.log("¿Tiene consulta 2?:", tieneC2)
-          console.log("¿Tiene consulta 3?:", tieneC3)
+          console.log("[v0] ¿Tiene consulta 2?:", tieneC2)
+          console.log("[v0] ¿Tiene consulta 3?:", tieneC3)
 
           const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
-          console.log(`📝 Guardando como consulta ${visitaNo}`)
+          console.log(`[v0] 📝 Guardando como consulta ${visitaNo}`)
 
-          actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos).then((updateResult) => {
-            if (updateResult.success) {
-              console.log("[v0] ✅ Datos guardados en backend exitosamente")
-            } else {
-              console.error("[v0] ❌ Error al guardar en backend")
+          const payloadParaBackend = {
+            sintomas_seleccionados: sintomasSeleccionados,
+            factores_seleccionados: factoresSeleccionados,
+            tvus: currentTvus,
+            hcg_valor: Number.parseFloat(currentBetaHcg),
+            variacion_hcg: respuesta.variacionHcg || null,
+            resultado: probPost,
+          }
+
+          console.log("[v0] 📦 Payload para backend:", payloadParaBackend)
+
+          const updateResult = await actualizarDatosEnBackend(idSeguimiento, visitaNo, payloadParaBackend)
+
+          if (updateResult.success) {
+            console.log("[v0] ✅ Datos guardados en backend exitosamente")
+
+            if (updateResult.data) {
+              setConsultaCargada(updateResult.data)
+              if (updateResult.data.folio) {
+                localStorage.setItem(`ectopico_folio_${updateResult.data.folio}`, JSON.stringify(updateResult.data))
+              }
             }
-          })
 
-          result.success = true
+            result.success = true
+          } else {
+            console.error("[v0] ❌ Error al guardar en backend")
+            alert("Error: No se pudieron guardar los datos en la base de datos. Por favor, intente nuevamente.")
+            return
+          }
         } else {
           result.success = true
         }
 
         if (!result.success) {
           alert("Advertencia: Falló la sincronización con la base de datos.")
+          return
         }
       } catch (e) {
-        console.error("Error al sincronizar con el backend:", e)
+        console.error("[v0] ❌ Error al sincronizar con el backend:", e)
+        alert("Error al guardar los datos. Por favor, intente nuevamente.")
+        return
       }
 
       console.log("[v0] 🎯 Cambiando pantalla:", {
@@ -756,7 +779,7 @@ export default function CalculadoraEctopico() {
         setPantalla("resultados")
       }
     } catch (error) {
-      console.error("Error en cálculo:", error)
+      console.error("[v0] ❌ Error en cálculo:", error)
       alert("Error al calcular el riesgo. Por favor, intente nuevamente.")
     }
   }

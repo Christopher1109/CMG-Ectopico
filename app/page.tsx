@@ -2348,42 +2348,111 @@ export default function CalculadoraEctopico() {
                           <span>Estado de Conciencia</span>
                         </Label>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                          {[
-                            { value: "alerta", label: "Alerta", color: "emerald" },
-                            { value: "somnolienta", label: "Somnolienta", color: "amber" },
-                            { value: "estuporosa", label: "Estuporosa", color: "orange" },
-                            { value: "comatosa", label: "Comatosa", color: "red" },
-                          ].map((opcion) => (
-                            <label
-                              key={opcion.value}
-                              className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                                estadoConciencia === opcion.value
-                                  ? `border-${opcion.color}-500 bg-${opcion.color}-50 shadow-md`
-                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                          <label
+                            className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                              estadoConciencia === "alerta"
+                                ? "border-emerald-500 bg-emerald-50 shadow-md"
+                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="estadoConciencia"
+                              value="alerta"
+                              checked={estadoConciencia === "alerta"}
+                              onChange={(e) => setEstadoConciencia(e.target.value)}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                estadoConciencia === "alerta" ? "border-emerald-500 bg-emerald-500" : "border-gray-300"
                               }`}
                             >
-                              <input
-                                type="radio"
-                                name="estadoConciencia"
-                                value={opcion.value}
-                                checked={estadoConciencia === opcion.value}
-                                onChange={(e) => setEstadoConciencia(e.target.value)}
-                                className="sr-only"
-                              />
-                              <div
-                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  estadoConciencia === opcion.value
-                                    ? `border-${opcion.color}-500 bg-${opcion.color}-500`
-                                    : "border-gray-300"
-                                }`}
-                              >
-                                {estadoConciencia === opcion.value && (
-                                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                                )}
-                              </div>
-                              <span className="text-sm font-medium text-slate-700">{opcion.label}</span>
-                            </label>
-                          ))}
+                              {estadoConciencia === "alerta" && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                            </div>
+                            <span className="text-sm font-medium text-slate-700">Alerta</span>
+                          </label>
+
+                          <label
+                            className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                              estadoConciencia === "somnolienta"
+                                ? "border-amber-500 bg-amber-50 shadow-md"
+                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="estadoConciencia"
+                              value="somnolienta"
+                              checked={estadoConciencia === "somnolienta"}
+                              onChange={(e) => setEstadoConciencia(e.target.value)}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                estadoConciencia === "somnolienta" ? "border-amber-500 bg-amber-500" : "border-gray-300"
+                              }`}
+                            >
+                              {estadoConciencia === "somnolienta" && (
+                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                              )}
+                            </div>
+                            <span className="text-sm font-medium text-slate-700">Somnolienta</span>
+                          </label>
+
+                          <label
+                            className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                              estadoConciencia === "estuporosa"
+                                ? "border-orange-500 bg-orange-50 shadow-md"
+                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="estadoConciencia"
+                              value="estuporosa"
+                              checked={estadoConciencia === "estuporosa"}
+                              onChange={(e) => setEstadoConciencia(e.target.value)}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                estadoConciencia === "estuporosa"
+                                  ? "border-orange-500 bg-orange-500"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              {estadoConciencia === "estuporosa" && (
+                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                              )}
+                            </div>
+                            <span className="text-sm font-medium text-slate-700">Estuporosa</span>
+                          </label>
+
+                          <label
+                            className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                              estadoConciencia === "comatosa"
+                                ? "border-red-500 bg-red-50 shadow-md"
+                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="estadoConciencia"
+                              value="comatosa"
+                              checked={estadoConciencia === "comatosa"}
+                              onChange={(e) => setEstadoConciencia(e.target.value)}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                estadoConciencia === "comatosa" ? "border-red-500 bg-red-500" : "border-gray-300"
+                              }`}
+                            >
+                              {estadoConciencia === "comatosa" && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                            </div>
+                            <span className="text-sm font-medium text-slate-700">Comatosa</span>
+                          </label>
                         </div>
                       </div>
                     </div>

@@ -35,7 +35,7 @@ const USUARIOS_TEMP = [
   },
   {
     usuario: "Dr.Mario",
-    contraseña: "Matio",
+    contraseña: "Mario",
     nombre: "Dr.Mario",
     rol: "medico",
   },

@@ -546,8 +546,8 @@ export default function CalculadoraEctopico() {
 
   const calcular = async () => {
     // Combine the new states with the old ones for calculation
-    const currentBetaHcg = betaHcg || nivelBetaHCG // Use new state if available, otherwise fallback to old
-    const currentTvus = tvus || hallazgosTVUS // Use new state if available, otherwise fallback to old
+    const currentBetaHcg = nivelBetaHCG || hcgValor // Use new state if available, otherwise fallback to old
+    const currentTvus = tvus // Use the specific tvus state for calculation
 
     if (!currentTvus || !currentBetaHcg) {
       alert("Por favor complete todos los campos requeridos: TVUS y β-hCG")
@@ -594,8 +594,8 @@ export default function CalculadoraEctopico() {
         presionSistolica: presionSistolica,
         presionDiastolica: presionDiastolica,
         estadoConciencia: estadoConciencia,
-        pruebaEmbarazoRealizada: pruebaEmbarazoRealizada,
-        resultadoPruebaEmbarazo: resultadoPruebaEmbarazo,
+        pruebaEmbarazoRealizada: tienePruebaEmbarazoDisponible, // Using the new state
+        resultadoPruebaEmbarazo: resultadoPIE, // Using the new state
         tieneEcoTransabdominal: tieneEcoTransabdominal,
         resultadoEcoTransabdominal: resultadoEcoTransabdominal,
       })
@@ -628,8 +628,8 @@ export default function CalculadoraEctopico() {
         presionSistolica: Number.parseInt(presionSistolica),
         presionDiastolica: Number.parseInt(presionDiastolica),
         estadoConciencia,
-        pruebaEmbarazoRealizada,
-        resultadoPruebaEmbarazo,
+        pruebaEmbarazoRealizada: tienePruebaEmbarazoDisponible, // Using new state
+        resultadoPruebaEmbarazo: resultadoPIE, // Using new state
         hallazgosExploracion,
         tieneEcoTransabdominal,
         resultadoEcoTransabdominal,
@@ -1908,115 +1908,6 @@ export default function CalculadoraEctopico() {
             </CardContent>
           </Card>
         </div>
-      ) : pantalla === "finalizado" ? (
-        <div className="max-w-4xl mx-auto p-6">
-          <Card className="shadow-lg">
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                <div className="flex items-center justify-center space-x-3 mb-6">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                  <h2 className="text-3xl font-bold text-slate-800">Evaluación Completada</h2>
-                </div>
-
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                  <p className="text-blue-900 font-medium">
-                    {mensajeFinal ||
-                      (resultado !== null ? (
-                        resultado < 0.01 ? (
-                          // Baja probabilidad
-                          <>
-                            <strong>Bajas probabilidades de embarazo ectópico.</strong>
-                            <br />
-                            <br />
-                            Se recomienda mantener un monitoreo constante con su ginecólogo de confianza y estar atenta
-                            a cualquier cambio en los síntomas.
-                          </>
-                        ) : resultado >= 0.95 ? (
-                          // Alta probabilidad
-                          <>
-                            <strong>Alta probabilidad de embarazo ectópico.</strong>
-                            <br />
-                            <br />
-                            Se recomienda referencia inmediata a un centro médico especializado para evaluación y manejo
-                            apropiado.
-                          </>
-                        ) : (
-                          // Probabilidad intermedia
-                          <>
-                            <strong>Probabilidad intermedia de embarazo ectópico.</strong>
-                            <br />
-                            <br />
-                            Guarde el código de consulta (disponible abajo para copiar) y regrese en 48 a 72 horas con
-                            nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento.
-                          </>
-                        )
-                      ) : (
-                        "Los datos de esta consulta han sido guardados exitosamente."
-                      ))}
-                  </p>
-                </div>
-
-                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <span className="font-semibold text-green-900">Información Guardada</span>
-                  </div>
-                  <div className="text-green-800 text-sm space-y-2">
-                    <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
-                    <div className="flex items-center space-x-2">
-                      <span>📋 ID de Consulta:</span>
-                      <span className="font-mono font-bold">{idSeguimiento}</span>
-                      <Button
-                        onClick={copiarId}
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 hover:bg-green-100"
-                        title="Copiar ID"
-                      >
-                        <Copy className="h-3 w-3 text-green-700" />
-                      </Button>
-                    </div>
-                    <p>
-                      👤 Paciente: {nombrePaciente}, {edadPaciente} años
-                    </p>
-                    <p>💾 Sección completada: {Math.max(...seccionesCompletadas, seccionActual - 1)} de 8</p>
-                    <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
-                  </div>
-                </div>
-
-                {resultado !== null && (
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 text-center">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-4">Estimación de Riesgo Sugerida</h3>
-                    <div className="text-4xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
-                    <p className="text-blue-800 text-sm">
-                      {resultado >= 0.95
-                        ? "Se sugiere considerar alta probabilidad - Evaluación médica recomendada"
-                        : resultado < 0.01
-                          ? "Se sugiere considerar baja probabilidad - Seguimiento médico recomendado"
-                          : "Probabilidad intermedia - Seguimiento médico requerido"}
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex space-x-4">
-                  <Button
-                    onClick={generarInformePDF}
-                    variant="outline"
-                    className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Generar Reporte
-                  </Button>
-                  <Button onClick={volverAInicio} className="bg-green-600 hover:bg-green-700 text-white">
-                    <User className="h-4 w-4 mr-2" />
-                    Nueva Evaluación
-                  </Button>
-                </div>
-                <CMGFooter />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       ) : pantalla === "completada" ? (
         <div className="max-w-4xl mx-auto p-6">
           <Card className="shadow-lg">
@@ -2028,7 +1919,7 @@ export default function CalculadoraEctopico() {
                 </div>
 
                 <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                  <div className="text-blue-900">
+                  <p className="text-blue-900 font-medium">
                     {typeof mensajeFinal === "string" ? (
                       <div className="space-y-4">
                         <p className="font-medium text-lg">
@@ -2066,7 +1957,7 @@ export default function CalculadoraEctopico() {
                     ) : (
                       <div className="font-medium">{mensajeFinal}</div>
                     )}
-                  </div>
+                  </p>
                 </div>
 
                 <div className="bg-green-50 p-6 rounded-lg border border-green-200">
@@ -2104,6 +1995,115 @@ export default function CalculadoraEctopico() {
                   >
                     <User className="h-4 w-4 mr-2" />
                     Regresar al Inicio
+                  </Button>
+                </div>
+
+                <CMGFooter />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : pantalla === "resultados" ? (
+        <div className="max-w-4xl mx-auto p-6">
+          <Card className="shadow-lg">
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="flex items-center justify-center space-x-3 mb-6">
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <Calculator className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-slate-800">Resultados de la Evaluación</h2>
+                </div>
+
+                {resultado !== null && (
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 text-center">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-4">Estimación de Riesgo</h3>
+                    <div className="text-5xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
+                    <p className="text-blue-800 text-sm">
+                      {resultado >= 0.95
+                        ? "Alta probabilidad de embarazo ectópico"
+                        : resultado < 0.01
+                          ? "Baja probabilidad de embarazo ectópico"
+                          : "Probabilidad intermedia de embarazo ectópico"}
+                    </p>
+                  </div>
+                )}
+
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                  <p className="text-blue-900 font-medium">
+                    {resultado !== null ? (
+                      resultado < 0.01 ? (
+                        <>
+                          <strong>Bajas probabilidades de embarazo ectópico.</strong>
+                          <br />
+                          <br />
+                          Se recomienda mantener un monitoreo constante con su ginecólogo de confianza y estar atenta a
+                          cualquier cambio en los síntomas.
+                        </>
+                      ) : resultado >= 0.95 ? (
+                        <>
+                          <strong>Alta probabilidad de embarazo ectópico.</strong>
+                          <br />
+                          <br />
+                          Se recomienda referencia inmediata a un centro médico especializado para evaluación y manejo
+                          apropiado.
+                        </>
+                      ) : (
+                        <>
+                          <strong>Probabilidad intermedia de embarazo ectópico.</strong>
+                          <br />
+                          <br />
+                          Guarde el código de consulta (disponible abajo para copiar) y regrese en 48 a 72 horas con
+                          nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento.
+                        </>
+                      )
+                    ) : (
+                      "Los datos de esta consulta han sido guardados exitosamente."
+                    )}
+                  </p>
+                </div>
+
+                {mostrarIdSeguimiento && idSeguimiento && (
+                  <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <span className="font-semibold text-green-900">Información Guardada</span>
+                    </div>
+                    <div className="text-green-800 text-sm space-y-2">
+                      <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
+                      <div className="flex items-center space-x-2">
+                        <span>📋 ID de Consulta:</span>
+                        <span className="font-mono font-bold">{idSeguimiento}</span>
+                        <Button
+                          onClick={copiarId}
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 hover:bg-green-100"
+                          title="Copiar ID"
+                        >
+                          <Copy className="h-3 w-3 text-green-700" />
+                        </Button>
+                      </div>
+                      <p>
+                        👤 Paciente: {nombrePaciente}, {edadPaciente} años
+                      </p>
+                      <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex space-x-4">
+                  <Button
+                    onClick={generarInformePDF}
+                    variant="outline"
+                    className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Generar Reporte
+                  </Button>
+                  <Button onClick={volverAInicio} className="bg-green-600 hover:bg-green-700 text-white">
+                    <User className="h-4 w-4 mr-2" />
+                    Nueva Evaluación
                   </Button>
                 </div>
 
@@ -3217,7 +3217,6 @@ export default function CalculadoraEctopico() {
                         <ChevronRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
-                    <CMGFooter />
                   </div>
                 )}
               </CardContent>

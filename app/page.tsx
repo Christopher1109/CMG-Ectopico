@@ -2016,100 +2016,6 @@ export default function CalculadoraEctopico() {
             </CardContent>
           </Card>
         </div>
-      ) : pantalla === "resultados" && resultado !== null ? (
-        <div className="max-w-4xl mx-auto p-6">
-          <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                {/* Header */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-lg">
-                      <CheckCircle className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-bold text-slate-800">Resultado de la Herramienta</h2>
-                      <p className="text-slate-600">Análisis de apoyo completado</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Resultado */}
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-blue-100">
-                  <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg mb-4">
-                      <span className="text-2xl font-bold text-white">%</span>
-                    </div>
-                    <h3 className="text-xl font-semibold text-slate-800 mb-2">Estimación de Riesgo Sugerida</h3>
-                    <div className="text-5xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
-                    <p className="text-slate-600 text-lg">
-                      {resultado >= 0.95
-                        ? "Se sugiere considerar alta probabilidad - Evaluación médica recomendada"
-                        : resultado < 0.01
-                          ? "Se sugiere considerar baja probabilidad - Seguimiento médico recomendado"
-                          : "Probabilidad intermedia - Seguimiento médico requerido"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* ID seguimiento */}
-                {mostrarIdSeguimiento && idSeguimiento && resultado < 0.95 && resultado > 0.01 && (
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-lg">
-                        <AlertTriangle className="h-6 w-6 text-white" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-slate-800">Seguimiento Sugerido</h3>
-                    </div>
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-slate-700 font-medium">⚪ Guarde este ID:</span>
-                        <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-lg border border-blue-200">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
-                            <span className="text-white text-xs font-bold">ID</span>
-                          </div>
-                          <span className="font-mono text-blue-700 font-bold text-lg">{idSeguimiento}</span>
-                          <Button
-                            onClick={copiarId}
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0 bg-white border-blue-300 hover:bg-blue-50"
-                          >
-                            <Copy className="h-3 w-3 text-blue-600" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                        <h4 className="font-semibold text-slate-800 mb-2">Recomendaciones de Seguimiento</h4>
-                        <ul className="text-slate-700 text-sm space-y-1">
-                          <li>• Se sugiere regresar en 48-72 horas para continuar con la evaluación</li>
-                          <li>• Mantener vigilancia de los síntomas durante este tiempo</li>
-                          <li>• Acudir de</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex space-x-4">
-                  <Button
-                    onClick={generarInformePDF}
-                    variant="outline"
-                    className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Generar Reporte
-                  </Button>
-                  <Button onClick={volverAInicio} className="bg-green-600 hover:bg-green-700 text-white">
-                    <User className="h-4 w-4 mr-2" />
-                    Nueva Evaluación
-                  </Button>
-                </div>
-                <CMGFooter />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       ) : pantalla === "completada" ? (
         <div className="max-w-4xl mx-auto p-6">
           <Card className="shadow-lg">
@@ -2659,7 +2565,7 @@ export default function CalculadoraEctopico() {
                       <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
                         <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
                           <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                          <span>¿Tiene la prueba de embarazo realizada?</span>
+                          <span>¿Se realizó la PIE (Prueba de Embarazo)?</span>
                         </Label>
                         <div className="grid grid-cols-2 gap-3">
                           {["si", "no"].map((opcion) => (

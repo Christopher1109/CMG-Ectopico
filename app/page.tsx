@@ -83,18 +83,33 @@ async function enviarDatosAlBackend(datos: any): Promise<{ success: boolean; dat
   }
 }
 
-async function actualizarDatosEnBackend(folioOrId: string, visitaNo: 2 | 3, datos: any): Promise<boolean> {
+async function actualizarDatosEnBackend(
+  folioOrId: string | number,
+  visitaNo: 2 | 3,
+  datosCompletos: any,
+): Promise<{ success: boolean; data?: any }> {
   try {
-    const patch = {
-      sintomas_seleccionados: Array.isArray(datos.sintomasSeleccionados) ? datos.sintomasSeleccionados : [],
-      factores_seleccionados: Array.isArray(datos.factoresSeleccionados) ? datos.factoresSeleccionados : [],
-      tvus: datos.tvus || null,
-      hcg_valor: datos.hcgValor != null ? Number(datos.hcgValor) : null,
-      variacion_hcg: datos.variacionHcg || null,
-      resultado: typeof datos.resultado === "number" ? datos.resultado : null,
+    const patch: any = {}
+
+    if (visitaNo === 2) {
+      patch.sintomas_seleccionados_2 = datosCompletos.sintomas || []
+      patch.factores_seleccionados_2 = datosCompletos.factores || []
+      patch.tvus_2 = datosCompletos.tvus || null
+      patch.hcg_valor_2 = datosCompletos.hcgValor || 0
+      patch.variacion_hcg_2 = datosCompletos.variacionHcg || null
+      patch.resultado_2 = datosCompletos.resultado || null
+    } else if (visitaNo === 3) {
+      patch.sintomas_seleccionados_3 = datosCompletos.sintomas || []
+      patch.factores_seleccionados_3 = datosCompletos.factores || []
+      patch.tvus_3 = datosCompletos.tvus || null
+      patch.hcg_valor_3 = datosCompletos.hcgValor || 0
+      patch.variacion_hcg_3 = datosCompletos.variacionHcg || null
+      patch.resultado_3 = datosCompletos.resultado || null
+    } else {
+      throw new Error(`Número de visita inválido: ${visitaNo} (debe ser 2 o 3)`)
     }
 
-    console.log(`[v0] 📤 Actualizando consulta ${visitaNo} para folio/ID:`, folioOrId)
+    console.log(`[v0] 📤 Actualizando consulta ${visitaNo} para ID:`, folioOrId)
     console.log(`[v0] 📦 Datos a enviar:`, JSON.stringify(patch, null, 2))
 
     const res = await actualizarConsulta(folioOrId, visitaNo, patch)
@@ -103,7 +118,7 @@ async function actualizarDatosEnBackend(folioOrId: string, visitaNo: 2 | 3, dato
 
     if (res?.error) {
       console.error("[v0] ❌ Error al actualizar:", res.error)
-      return false
+      return { success: false }
     }
 
     console.log(`[v0] ✅ Consulta ${visitaNo} actualizada exitosamente`)
@@ -115,7 +130,6 @@ async function actualizarDatosEnBackend(folioOrId: string, visitaNo: 2 | 3, dato
     const refreshed = await leerDatosDesdeBackend(folioNum.toString())
 
     if (refreshed) {
-      // Update localStorage cache
       localStorage.setItem(`ectopico_folio_${refreshed.folio}`, JSON.stringify(refreshed))
       console.log(`[v0] 💾 Cache actualizado en localStorage`)
       console.log(`[v0] 🔍 Datos actualizados:`, {
@@ -127,12 +141,13 @@ async function actualizarDatosEnBackend(folioOrId: string, visitaNo: 2 | 3, dato
         hCG_3: refreshed.hcg_valor_3,
         Pronostico_3: refreshed.resultado_3,
       })
+      return { success: true, data: refreshed }
     }
 
-    return true
+    return { success: true }
   } catch (e) {
     console.error("[v0] ❌ Error en actualizarDatosEnBackend:", e)
-    return false
+    return { success: false }
   }
 }
 
@@ -676,8 +691,13 @@ export default function CalculadoraEctopico() {
           const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
           console.log(`📝 Guardando como consulta ${visitaNo}`)
 
-          const ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
-          result.success = ok
+          const updateResult = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
+          result.success = updateResult.success
+
+          if (updateResult.success && updateResult.data) {
+            setConsultaCargada(updateResult.data)
+            console.log("[v0] ✅ consultaCargada actualizada con datos del backend")
+          }
         } else {
           result.success = true
         }
@@ -689,31 +709,28 @@ export default function CalculadoraEctopico() {
         alert("Advertencia: Falló la sincronización con la base de datos.")
       }
 
-      // </CHANGE> Usar setTimeout para asegurar que el cambio de pantalla ocurra después de todas las actualizaciones de estado
-      setTimeout(() => {
-        console.log("[v0] 🎯 Antes de cambiar pantalla:", {
-          tipoResultado: respuesta.tipoResultado,
-          resultado: probPost,
-          pantallaActual: pantalla,
-        })
+      console.log("[v0] 🎯 Antes de cambiar pantalla:", {
+        tipoResultado: respuesta.tipoResultado,
+        resultado: probPost,
+        pantallaActual: pantalla,
+      })
 
-        if (respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo") {
-          setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-          setProtocoloFinalizado(true)
-          console.log("[v0] 📺 Cambiando a pantalla: finalizado")
-          setPantalla("finalizado")
-        } else {
-          setMostrarResultados(true)
-          setMostrarIdSeguimiento(true)
-          console.log("[v0] 📺 Cambiando a pantalla: resultados")
-          setPantalla("resultados")
-        }
+      if (respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo") {
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+        setProtocoloFinalizado(true)
+        console.log("[v0] 📺 Cambiando a pantalla: finalizado")
+        setPantalla("finalizado")
+      } else {
+        setMostrarResultados(true)
+        setMostrarIdSeguimiento(true)
+        console.log("[v0] 📺 Cambiando a pantalla: resultados")
+        setPantalla("resultados")
+      }
 
-        console.log(
-          "[v0] 🎯 Después de cambiar pantalla, nueva pantalla debería ser:",
-          respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo" ? "finalizado" : "resultados",
-        )
-      }, 0)
+      console.log(
+        "[v0] 🎯 Después de cambiar pantalla, nueva pantalla debería ser:",
+        respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo" ? "finalizado" : "resultados",
+      )
     } catch (error) {
       console.error("Error en el cálculo:", error)
       alert("Error al realizar el cálculo. Por favor, inténtelo de nuevo.")

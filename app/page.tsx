@@ -753,6 +753,7 @@ export default function CalculadoraEctopico() {
         return
       }
 
+      // CHANGE START
       if (numeroConsultaActual > 1) {
         // Consulta 2 o 3: siempre mostrar resultados
         setMostrarResultados(true)
@@ -760,17 +761,12 @@ export default function CalculadoraEctopico() {
         setPantalla("resultados")
         console.log("[v0] ✅ Mostrando pantalla de resultados para Consulta", numeroConsultaActual)
       } else {
-        // Consulta 1: lógica original
-        if (respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo") {
-          setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-          setProtocoloFinalizado(true)
-          setPantalla("finalizado")
-        } else {
-          setMostrarResultados(true)
-          setMostrarIdSeguimiento(true)
-          setPantalla("resultados")
-        }
+        setMostrarResultados(true)
+        setMostrarIdSeguimiento(true)
+        setPantalla("resultados")
+        console.log("[v0] ✅ Mostrando pantalla de resultados para Consulta 1")
       }
+      // CHANGE END
     } catch (error) {
       console.error("[v0] ❌ Error en cálculo:", error)
       alert("Error al calcular el riesgo. Por favor, intente nuevamente.")

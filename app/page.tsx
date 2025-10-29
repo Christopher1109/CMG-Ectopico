@@ -650,6 +650,8 @@ export default function CalculadoraEctopico() {
             const folio = result.data.folio
             const idPublico = `ID-${String(folio).padStart(5, "0")}`
             setIdSeguimiento(idPublico)
+            setEsConsultaSeguimiento(true)
+            setNumeroConsultaActual(1)
             localStorage.setItem(
               `ectopico_folio_${folio}`,
               JSON.stringify({
@@ -1912,9 +1914,9 @@ export default function CalculadoraEctopico() {
           <Card className="shadow-lg">
             <CardContent className="p-8">
               <div className="space-y-6">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-center space-x-3 mb-6">
                   <CheckCircle className="h-6 w-6 text-green-600" />
-                  <h2 className="text-2xl font-bold text-slate-800">Evaluación Completada</h2>
+                  <h2 className="text-3xl font-bold text-slate-800">Evaluación Completada</h2>
                 </div>
 
                 <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">

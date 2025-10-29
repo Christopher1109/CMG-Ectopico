@@ -2613,10 +2613,7 @@ export default function CalculadoraEctopico() {
                                   }}
                                   className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
                                 />
-                                <span className="text-sm font-medium text-gray-700">
-                                  {s.label}
-                                  {s.informativo && <span className="ml-1 text-xs text-gray-500">(informativo)</span>}
-                                </span>
+                                <span className="text-sm font-medium text-gray-700">{s.label}</span>
                               </label>
                             )
                           })}

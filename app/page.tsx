@@ -2516,7 +2516,7 @@ export default function CalculadoraEctopico() {
                         <div>
                           <h2 className="text-2xl font-bold text-gray-900">
                             {numeroConsultaActual === 1
-                              ? "Síntomas y Factores de Riesgo"
+                              ? "¿Cuál es el motivo de consulta?"
                               : `Síntomas y Factores de Riesgo - Consulta ${numeroConsultaActual}`}
                           </h2>
                           <p className="text-sm text-gray-600 mt-1">

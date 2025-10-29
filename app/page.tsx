@@ -2107,38 +2107,6 @@ export default function CalculadoraEctopico() {
                   </div>
                 )}
 
-                {consultaCargada?.resultado_2 != null && (
-                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-lg border border-amber-200 text-center">
-                    <h3 className="text-lg font-semibold text-amber-900 mb-4">Estimación de Riesgo - Consulta 2</h3>
-                    <div className="text-5xl font-bold text-amber-700 mb-4">
-                      {(consultaCargada.resultado_2 * 100).toFixed(1)}%
-                    </div>
-                    <p className="text-amber-800 text-sm">
-                      {consultaCargada.resultado_2 >= 0.95
-                        ? "Alta probabilidad de embarazo ectópico"
-                        : consultaCargada.resultado_2 < 0.01
-                          ? "Baja probabilidad de embarazo ectópico"
-                          : "Probabilidad intermedia de embarazo ectópico"}
-                    </p>
-                  </div>
-                )}
-
-                {consultaCargada?.resultado_3 != null && (
-                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-lg border border-purple-200 text-center">
-                    <h3 className="text-lg font-semibold text-purple-900 mb-4">Estimación de Riesgo - Consulta 3</h3>
-                    <div className="text-5xl font-bold text-purple-700 mb-4">
-                      {(consultaCargada.resultado_3 * 100).toFixed(1)}%
-                    </div>
-                    <p className="text-purple-800 text-sm">
-                      {consultaCargada.resultado_3 >= 0.95
-                        ? "Alta probabilidad de embarazo ectópico"
-                        : consultaCargada.resultado_3 < 0.01
-                          ? "Baja probabilidad de embarazo ectópico"
-                          : "Probabilidad intermedia de embarazo ectópico"}
-                    </p>
-                  </div>
-                )}
-
                 <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
                   <p className="text-blue-900 font-medium">
                     {resultado !== null ? (

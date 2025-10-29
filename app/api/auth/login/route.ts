@@ -4,33 +4,39 @@ import jwt from "jsonwebtoken"
 // SOLUCIÓN TEMPORAL: Contraseñas en texto plano (SOLO PARA DESARROLLO)
 const USUARIOS_TEMP = [
   {
-    usuario: "dr.martinez",
-    contraseña: "CMG2024Med!",
-    nombre: "Dr. Martínez",
+    usuario: "Dr.Ponce",
+    contraseña: "Ponce",
+    nombre: "Dr.Ponce",
     rol: "medico",
   },
   {
-    usuario: "dra.rodriguez",
-    contraseña: "Ectopico2024#",
-    nombre: "Dra. Rodríguez",
+    usuario: "Dra.Fany",
+    contraseña: "Fany",
+    nombre: "Dra.Fany",
     rol: "medico",
   },
   {
-    usuario: "dr.garcia",
-    contraseña: "MedCMG2024$",
-    nombre: "Dr. García",
+    usuario: "Dra.Mirthala",
+    contraseña: "Mirthala",
+    nombre: "Dra.Mirthala",
     rol: "medico",
   },
   {
     usuario: "Dra.Alma",
-    contraseña: "Nuevoleon",
+    contraseña: "Alma",
     nombre: "Secretaria de Salud NL",
-    rol: "admin",
+    rol: "medico",
   },
   {
     usuario: "Dr.Francisco",
     contraseña: "Francisco",
     nombre: "Dr.Francisco",
+    rol: "medico",
+  },
+  {
+    usuario: "Dr.Mario",
+    contraseña: "Matio",
+    nombre: "Dr.Mario",
     rol: "medico",
   },
   {

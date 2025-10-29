@@ -29,18 +29,16 @@ import type React from "react"
 import { crearConsulta, actualizarConsulta, obtenerConsulta } from "@/lib/api/consultas"
 
 // ==================== SOLO CONFIGURACIÓN UI - SIN LÓGICA SENSIBLE ====================
+const sintomas = [
+  { id: "dolor", label: "Dolor pélvico" },
+  { id: "sangrado", label: "Sangrado vaginal" },
+  { id: "asintomatica", label: "Asintomática" },
+]
+
 const factoresRiesgo = [
   { id: "infertilidad", label: "Historia de infertilidad" },
   { id: "ectopico_previo", label: "Embarazo ectópico previo" },
   { id: "enfermedad_inflamatoria", label: "Enfermedad inflamatoria pélvica previa" }, // Corrected ID
-  { id: "cirugia_tubarica", label: "Cirugía tubárica previa" },
-  { id: "sin_factores", label: "Sin factores de riesgo" },
-]
-
-const sintomas = [
-  { id: "infertilidad", label: "Historia de infertilidad" },
-  { id: "ectopico_previo", label: "Embarazo ectópico previo" },
-  { id: "enfermedad_inflamatoria", label: "Enfermedad inflamatoria pélvica previa" },
   { id: "cirugia_tubarica", label: "Cirugía tubárica previa" },
   { id: "sin_factores", label: "Sin factores de riesgo" },
 ]

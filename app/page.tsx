@@ -680,6 +680,11 @@ export default function CalculadoraEctopico() {
         }
 
         setConsultaCargada(consultaActualizada)
+
+        if (consultaCargada.folio) {
+          localStorage.setItem(`ectopico_folio_${consultaCargada.folio}`, JSON.stringify(consultaActualizada))
+        }
+
         console.log("[v0] ✅ consultaCargada actualizada localmente con datos calculados")
       }
 
@@ -751,8 +756,8 @@ export default function CalculadoraEctopico() {
         setPantalla("resultados")
       }
     } catch (error) {
-      console.error("Error en el cálculo:", error)
-      alert("Error al realizar el cálculo. Por favor, inténtelo de nuevo.")
+      console.error("Error en cálculo:", error)
+      alert("Error al calcular el riesgo. Por favor, intente nuevamente.")
     }
   }
 

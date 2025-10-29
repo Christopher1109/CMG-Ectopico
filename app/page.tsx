@@ -89,24 +89,13 @@ async function actualizarDatosEnBackend(
   datosCompletos: any,
 ): Promise<{ success: boolean; data?: any }> {
   try {
-    const patch: any = {}
-
-    if (visitaNo === 2) {
-      patch.sintomas_seleccionados_2 = datosCompletos.sintomas || []
-      patch.factores_seleccionados_2 = datosCompletos.factores || []
-      patch.tvus_2 = datosCompletos.tvus || null
-      patch.hcg_valor_2 = datosCompletos.hcgValor || 0
-      patch.variacion_hcg_2 = datosCompletos.variacionHcg || null
-      patch.resultado_2 = datosCompletos.resultado || null
-    } else if (visitaNo === 3) {
-      patch.sintomas_seleccionados_3 = datosCompletos.sintomas || []
-      patch.factores_seleccionados_3 = datosCompletos.factores || []
-      patch.tvus_3 = datosCompletos.tvus || null
-      patch.hcg_valor_3 = datosCompletos.hcgValor || 0
-      patch.variacion_hcg_3 = datosCompletos.variacionHcg || null
-      patch.resultado_3 = datosCompletos.resultado || null
-    } else {
-      throw new Error(`Número de visita inválido: ${visitaNo} (debe ser 2 o 3)`)
+    const patch: any = {
+      sintomas_seleccionados: datosCompletos.sintomas || [],
+      factores_seleccionados: datosCompletos.factores || [],
+      tvus: datosCompletos.tvus || null,
+      hcg_valor: datosCompletos.hcgValor || 0,
+      variacion_hcg: datosCompletos.variacionHcg || null,
+      resultado: datosCompletos.resultado || null,
     }
 
     console.log(`[v0] 📤 Actualizando consulta ${visitaNo} para ID:`, folioOrId)

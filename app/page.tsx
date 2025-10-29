@@ -2072,12 +2072,46 @@ export default function CalculadoraEctopico() {
 
                 {resultado !== null && (
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 text-center">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-4">Estimación de Riesgo</h3>
+                    <h3 className="text-lg font-semibold text-blue-900 mb-4">
+                      Estimación de Riesgo - Consulta {numeroConsultaActual}
+                    </h3>
                     <div className="text-5xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
                     <p className="text-blue-800 text-sm">
                       {resultado >= 0.95
                         ? "Alta probabilidad de embarazo ectópico"
                         : resultado < 0.01
+                          ? "Baja probabilidad de embarazo ectópico"
+                          : "Probabilidad intermedia de embarazo ectópico"}
+                    </p>
+                  </div>
+                )}
+
+                {consultaCargada?.resultado_2 != null && (
+                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-lg border border-amber-200 text-center">
+                    <h3 className="text-lg font-semibold text-amber-900 mb-4">Estimación de Riesgo - Consulta 2</h3>
+                    <div className="text-5xl font-bold text-amber-700 mb-4">
+                      {(consultaCargada.resultado_2 * 100).toFixed(1)}%
+                    </div>
+                    <p className="text-amber-800 text-sm">
+                      {consultaCargada.resultado_2 >= 0.95
+                        ? "Alta probabilidad de embarazo ectópico"
+                        : consultaCargada.resultado_2 < 0.01
+                          ? "Baja probabilidad de embarazo ectópico"
+                          : "Probabilidad intermedia de embarazo ectópico"}
+                    </p>
+                  </div>
+                )}
+
+                {consultaCargada?.resultado_3 != null && (
+                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-lg border border-purple-200 text-center">
+                    <h3 className="text-lg font-semibold text-purple-900 mb-4">Estimación de Riesgo - Consulta 3</h3>
+                    <div className="text-5xl font-bold text-purple-700 mb-4">
+                      {(consultaCargada.resultado_3 * 100).toFixed(1)}%
+                    </div>
+                    <p className="text-purple-800 text-sm">
+                      {consultaCargada.resultado_3 >= 0.95
+                        ? "Alta probabilidad de embarazo ectópico"
+                        : consultaCargada.resultado_3 < 0.01
                           ? "Baja probabilidad de embarazo ectópico"
                           : "Probabilidad intermedia de embarazo ectópico"}
                     </p>
@@ -2559,6 +2593,7 @@ export default function CalculadoraEctopico() {
                             return
                           }
                           setSeccion(4)
+                          completarSeccion(3)
                         }}
                         className="gap-2 bg-teal-600 hover:bg-teal-700"
                       >
@@ -2722,8 +2757,8 @@ export default function CalculadoraEctopico() {
                             setProtocoloFinalizado(true)
                           } else {
                             setErrorSeccion("")
-                            completarSeccion(4)
                             setSeccion(5)
+                            completarSeccion(4)
                           }
                         }}
                         className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
@@ -2910,6 +2945,7 @@ export default function CalculadoraEctopico() {
                             setPantalla("completada")
                             setMostrarResumen(false)
                           } else {
+                            setErrorSeccion("")
                             setSeccion(6)
                             completarSeccion(5)
                           }
@@ -3068,8 +3104,8 @@ export default function CalculadoraEctopico() {
                           } else {
                             // All are "si", continue
                             setErrorSeccion("")
-                            completarSeccion(6)
                             setSeccion(7)
+                            completarSeccion(6)
                           }
                         }}
                         className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
@@ -3151,30 +3187,28 @@ export default function CalculadoraEctopico() {
                     )}
 
                     <div className="flex justify-between pt-4">
-                      <button
+                      <Button
                         onClick={() => setSeccion(6)}
-                        className="px-6 py-2.5 rounded-xl border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-all flex items-center gap-2"
+                        variant="outline"
+                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
+                        <ChevronLeft className="mr-2 h-4 w-4" />
                         Anterior
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => {
                           if (!tvus) {
                             setErrorSeccion("Por favor seleccione los hallazgos en TVUS.")
                             return
                           }
+                          setSeccion(8)
                           completarSeccion(7)
                         }}
-                        className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                       >
                         Continuar
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 )}

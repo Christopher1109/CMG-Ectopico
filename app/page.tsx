@@ -275,6 +275,7 @@ export default function CalculadoraEctopico() {
   const [frecuenciaCardiaca, setFrecuenciaCardiaca] = useState("")
   const [presionSistolica, setPresionSistolica] = useState("")
   const [presionDiastolica, setPresionDiastolica] = useState("")
+  const [pam, setPam] = useState("")
   const [estadoConciencia, setEstadoConciencia] = useState("")
   const [pruebaEmbarazoRealizada, setPruebaEmbarazoRealizada] = useState("") // Used for the result of the test
   const [resultadoPruebaEmbarazo, setResultadoPruebaEmbarazo] = useState("") // Used for the result of the test
@@ -453,12 +454,62 @@ export default function CalculadoraEctopico() {
     }
   }
 
+  const calcularPAM = (sistolica: string, diastolica: string) => {
+    if (sistolica && diastolica) {
+      const ps = Number.parseFloat(sistolica)
+      const pd = Number.parseFloat(diastolica)
+      if (!isNaN(ps) && !isNaN(pd)) {
+        const pamCalculada = pd + (ps - pd) / 3
+        setPam(pamCalculada.toFixed(1))
+      }
+    } else {
+      setPam("")
+    }
+  }
+
   const validarSignosVitales = async () => {
     setMostrarAlerta(false)
     setMensajeAlerta("")
 
     if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
       return true
+    }
+
+    const fc = Number.parseFloat(frecuenciaCardiaca)
+    const ps = Number.parseFloat(presionSistolica)
+    const pd = Number.parseFloat(presionDiastolica)
+    const pamValor = Number.parseFloat(pam)
+
+    // Normal ranges
+    const fcNormal = fc >= 60 && fc <= 100
+    const psNormal = ps >= 90 && ps <= 140
+    const pdNormal = pd >= 60 && pd <= 90
+    const pamNormal = pamValor >= 70 && pamValor <= 100
+
+    if (!fcNormal || !psNormal || !pdNormal || !pamNormal) {
+      let mensajeAnormal = "⚠️ SIGNOS VITALES FUERA DE RANGO NORMAL\n\n"
+
+      if (!fcNormal) {
+        mensajeAnormal += `• Frecuencia Cardíaca: ${fc} lpm (Normal: 60-100 lpm)\n`
+      }
+      if (!psNormal) {
+        mensajeAnormal += `• Presión Sistólica: ${ps} mmHg (Normal: 90-140 mmHg)\n`
+      }
+      if (!pdNormal) {
+        mensajeAnormal += `• Presión Diastólica: ${pd} mmHg (Normal: 60-90 mmHg)\n`
+      }
+      if (!pamNormal) {
+        mensajeAnormal += `• PAM: ${pamValor} mmHg (Normal: 70-100 mmHg)\n`
+      }
+
+      mensajeAnormal +=
+        "\n⚠️ La paciente requiere atención médica inmediata. Los signos vitales fuera de rango pueden indicar inestabilidad hemodinámica que requiere evaluación urgente."
+
+      await guardarDatosIncompletos("signos_vitales_anormales", 2)
+      setMensajeFinal(<div className="text-center whitespace-pre-line">{mensajeAnormal}</div>)
+      setProtocoloFinalizado(true)
+      setPantalla("completada")
+      return false
     }
 
     try {
@@ -794,6 +845,7 @@ export default function CalculadoraEctopico() {
     setFrecuenciaCardiaca("")
     setPresionSistolica("")
     setPresionDiastolica("")
+    setPam("") // Reset PAM state
     setEstadoConciencia("")
     setPruebaEmbarazoRealizada("")
     setResultadoPruebaEmbarazo("")
@@ -900,12 +952,14 @@ export default function CalculadoraEctopico() {
     const fc = Number.parseFloat(consultaCargada.frecuencia_cardiaca?.toString() || "0")
     const sistolica = Number.parseFloat(consultaCargada.presion_sistolica?.toString() || "0")
     const diastolica = Number.parseFloat(consultaCargada.presion_diastolica?.toString() || "0")
+    const pamValor = Number.parseFloat(consultaCargada.pam?.toString() || "0") // PAM from loaded data
     const conciencia = consultaCargada.estado_conciencia || ""
 
     // Check for critical vital signs or altered consciousness
     const tieneCriteriosEmergencia =
       sistolica >= 180 ||
       diastolica >= 110 ||
+      pamValor >= 120 || // Added PAM check
       fc > 120 ||
       fc < 50 ||
       (fc > 100 && (sistolica <= 90 || diastolica <= 60)) ||
@@ -981,6 +1035,7 @@ export default function CalculadoraEctopico() {
     setFrecuenciaCardiaca(consultaCargada.frecuencia_cardiaca?.toString() || "")
     setPresionSistolica(consultaCargada.presion_sistolica?.toString() || "")
     setPresionDiastolica(consultaCargada.presion_diastolica?.toString() || "")
+    setPam(consultaCargada.pam?.toString() || "") // Set PAM from loaded data
     setEstadoConciencia(consultaCargada.estado_conciencia || "")
     setPruebaEmbarazoRealizada(consultaCargada.prueba_embarazo_realizada || "")
     setResultadoPruebaEmbarazo(consultaCargada.resultado_prueba_embarazo || "")
@@ -1189,6 +1244,7 @@ export default function CalculadoraEctopico() {
       addTitle("SIGNOS VITALES", [33, 150, 243])
       addInfoBox("Frecuencia Cardíaca", `${frecuenciaCardiaca} lpm`, [227, 242, 253])
       addInfoBox("Presión Arterial", `${presionSistolica}/${presionDiastolica} mmHg`, [227, 242, 253])
+      addInfoBox("PAM", `${pam} mmHg`, [227, 242, 253]) // Added PAM to report
       addInfoBox("Estado de Conciencia", estadoConciencia, [227, 242, 253])
       y += 3
 
@@ -1738,7 +1794,7 @@ export default function CalculadoraEctopico() {
                         <div className="text-slate-600 text-sm">
                           FC: {consultaCargada.frecuencia_cardiaca || "N/A"} lpm | PA:{" "}
                           {consultaCargada.presion_sistolica || "N/A"}/{consultaCargada.presion_diastolica || "N/A"}{" "}
-                          mmHg
+                          mmHg | PAM: {consultaCargada.pam || "N/A"} mmHg
                         </div>
                       </div>
                     </div>
@@ -2299,7 +2355,7 @@ export default function CalculadoraEctopico() {
                     )}
 
                     <div className="space-y-5">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-emerald-200 transition-all duration-200 shadow-sm hover:shadow-md">
                           <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
                             <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
@@ -2323,7 +2379,10 @@ export default function CalculadoraEctopico() {
                             type="number"
                             placeholder="90-140"
                             value={presionSistolica}
-                            onChange={(e) => setPresionSistolica(e.target.value)}
+                            onChange={(e) => {
+                              setPresionSistolica(e.target.value)
+                              calcularPAM(e.target.value, presionDiastolica)
+                            }}
                             className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
                           />
                           <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
@@ -2337,10 +2396,23 @@ export default function CalculadoraEctopico() {
                             type="number"
                             placeholder="60-90"
                             value={presionDiastolica}
-                            onChange={(e) => setPresionDiastolica(e.target.value)}
+                            onChange={(e) => {
+                              setPresionDiastolica(e.target.value)
+                              calcularPAM(presionSistolica, e.target.value)
+                            }}
                             className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
                           />
                           <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
+                        </div>
+                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-200 shadow-sm">
+                          <Label className="text-sm font-semibold text-blue-800 mb-2 flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span>PAM</span>
+                          </Label>
+                          <div className="w-full px-4 py-3 bg-white border-2 border-blue-200 rounded-lg text-lg font-semibold text-blue-700">
+                            {pam || "--"}
+                          </div>
+                          <span className="text-xs text-blue-600 mt-1 block">mmHg (70-100)</span>
                         </div>
                       </div>
 

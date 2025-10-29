@@ -34,6 +34,7 @@ const sintomas = [
   { id: "sincope", label: "Síncope o mareo", informativo: true },
   { id: "sangrado", label: "Sangrado vaginal" },
   { id: "dolor", label: "Dolor abdominal" },
+  { id: "dolor_sangrado", label: "Dolor + Sangrado" },
   { id: "asintomatica", label: "Asintomática" },
 ]
 
@@ -2429,7 +2430,7 @@ export default function CalculadoraEctopico() {
                                       setSintomasSeleccionados(sintomasSeleccionados.filter((id) => id !== s.id))
                                     }
                                   }}
-                                  className="h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                                  className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
                                 />
                                 <span className="text-sm font-medium text-gray-700">
                                   {s.label}
@@ -3054,8 +3055,8 @@ export default function CalculadoraEctopico() {
                       </div>
 
                       <div className="space-y-4">
-                        <label className="flex items-center gap-2 text-sm font-semibold text-purple-900">
-                          <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-purple-900">
+                          <div className="h-2 w-2 rounded-full bg-purple-500"></div>
                           Hallazgos en TVUS
                         </label>
                         <div className="space-y-3">
@@ -3081,7 +3082,7 @@ export default function CalculadoraEctopico() {
                             >
                               <div
                                 className={`
-                                  w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0
+                                  w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
                                   ${tvus === opcion.value ? "border-purple-500 bg-purple-500" : "border-gray-300"}
                                 `}
                               >

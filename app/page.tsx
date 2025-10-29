@@ -323,6 +323,7 @@ export default function CalculadoraEctopico() {
 
   // New states for checklist in Section 3
   const [tienePruebaEmbarazoDisponible, setTienePruebaEmbarazoDisponible] = useState<string>("")
+  const [resultadoPIE, setResultadoPIE] = useState<string>("") // Added state for PIE result
   const [tieneEcoDisponible, setTieneEcoDisponible] = useState<string>("")
   const [tieneBetaDisponible, setTieneBetaDisponible] = useState<string>("")
 
@@ -760,6 +761,7 @@ export default function CalculadoraEctopico() {
 
     // Resetting states for updated designs
     setTienePruebaEmbarazoDisponible("")
+    setResultadoPIE("") // Resetting the new state
     setTieneEcoDisponible("")
     setTieneBetaDisponible("")
     setTienePruebaEmbarazo("")
@@ -2654,11 +2656,10 @@ export default function CalculadoraEctopico() {
                     </p>
 
                     <div className="space-y-4">
-                      {/* PIE - Prueba de Embarazo Cualitativa */}
                       <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
                         <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
                           <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                          <span>¿Tiene PIE positivo? (Prueba de Embarazo Cualitativa)</span>
+                          <span>¿Tiene la prueba de embarazo realizada?</span>
                         </Label>
                         <div className="grid grid-cols-2 gap-3">
                           {["si", "no"].map((opcion) => (
@@ -2675,7 +2676,10 @@ export default function CalculadoraEctopico() {
                                 name="tienePruebaEmbarazoDisponible"
                                 value={opcion}
                                 checked={tienePruebaEmbarazoDisponible === opcion}
-                                onChange={(e) => setTienePruebaEmbarazoDisponible(e.target.value)}
+                                onChange={(e) => {
+                                  setTienePruebaEmbarazoDisponible(e.target.value)
+                                  setResultadoPIE("")
+                                }}
                                 className="sr-only"
                               />
                               <div
@@ -2694,6 +2698,44 @@ export default function CalculadoraEctopico() {
                           ))}
                         </div>
                       </div>
+
+                      {tienePruebaEmbarazoDisponible === "si" && (
+                        <div className="bg-white p-5 rounded-xl border-2 border-purple-200 transition-all duration-200 shadow-sm">
+                          <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                            <span>¿Resultado de la prueba?</span>
+                          </Label>
+                          <div className="grid grid-cols-2 gap-3">
+                            {["positivo", "negativo"].map((resultado) => (
+                              <label
+                                key={resultado}
+                                className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                  resultadoPIE === resultado
+                                    ? "border-purple-500 bg-purple-50 shadow-md"
+                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="resultadoPIE"
+                                  value={resultado}
+                                  checked={resultadoPIE === resultado}
+                                  onChange={(e) => setResultadoPIE(e.target.value)}
+                                  className="sr-only"
+                                />
+                                <div
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                    resultadoPIE === resultado ? "border-purple-500 bg-purple-500" : "border-gray-300"
+                                  }`}
+                                >
+                                  {resultadoPIE === resultado && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                                </div>
+                                <span className="text-sm font-medium text-slate-700 capitalize">{resultado}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {errorSeccion && (
@@ -2717,7 +2759,23 @@ export default function CalculadoraEctopico() {
                       <Button
                         onClick={async () => {
                           if (!tienePruebaEmbarazoDisponible) {
-                            setErrorSeccion("Por favor seleccione una opción")
+                            setErrorSeccion("Por favor seleccione si tiene la prueba realizada")
+                            return
+                          }
+
+                          if (tienePruebaEmbarazoDisponible === "si" && !resultadoPIE) {
+                            setErrorSeccion("Por favor seleccione el resultado de la prueba")
+                            return
+                          }
+
+                          if (tienePruebaEmbarazoDisponible === "si" && resultadoPIE === "negativo") {
+                            setMensajeFinal(
+                              "Según los resultados de su prueba de embarazo, no puede ser considerado un embarazo ectópico. Por favor, contacte con su médico para determinar el motivo de sus síntomas.",
+                            )
+                            await guardarDatosIncompletos("prueba_negativa", 4)
+                            setPantalla("completada")
+                            setMostrarResumen(false)
+                            setProtocoloFinalizado(true)
                             return
                           }
 
@@ -2845,7 +2903,7 @@ export default function CalculadoraEctopico() {
                                   className="sr-only"
                                 />
                                 <div
-                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
                                     resultadoEcoTransabdominal === opcion.value
                                       ? "border-cyan-500 bg-cyan-500"
                                       : "border-gray-300"

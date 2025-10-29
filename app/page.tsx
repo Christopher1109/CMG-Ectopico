@@ -459,7 +459,7 @@ export default function CalculadoraEctopico() {
       const ps = Number.parseFloat(sistolica)
       const pd = Number.parseFloat(diastolica)
       if (!isNaN(ps) && !isNaN(pd)) {
-        const pamCalculada = pd + (ps - pd) / 3
+        const pamCalculada = (ps + 2 * pd) / 3
         setPam(pamCalculada.toFixed(1))
       }
     } else {

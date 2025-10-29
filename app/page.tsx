@@ -554,7 +554,7 @@ export default function CalculadoraEctopico() {
       return
     }
 
-    if (esConsultaSeguimiento && !consultaCargada) {
+    if (esConsultaSeguimiento && numeroConsultaActual > 1 && !consultaCargada) {
       alert("Error: No existe consulta previa para calcular pretest ajustada y delta de hCG.")
       return
     }
@@ -574,17 +574,17 @@ export default function CalculadoraEctopico() {
         resultadoV2c,
         pretestAjustado,
         hcgAnterior,
-        hcgValor: currentBetaHcg, // Use combined betaHcg here
-        tvus: currentTvus, // Use combined tvus here
+        hcgValor: currentBetaHcg,
+        tvus: currentTvus,
       })
 
       const respuesta = await clienteSeguro.calcularRiesgo({
         sintomasSeleccionados: sintomasSeleccionados,
         factoresSeleccionados: factoresSeleccionados,
-        tvus: currentTvus, // Use combined tvus here
-        hcgValor: currentBetaHcg, // Use combined betaHcg here
+        tvus: currentTvus,
+        hcgValor: currentBetaHcg,
         hcgAnterior: hcgAnterior,
-        esConsultaSeguimiento: esConsultaSeguimiento,
+        esConsultaSeguimiento: numeroConsultaActual > 1,
         numeroConsultaActual: numeroConsultaActual,
         resultadoV1b: resultadoV1b,
         resultadoV2c: resultadoV2c,
@@ -644,14 +644,13 @@ export default function CalculadoraEctopico() {
 
       try {
         let result = { success: false, data: null }
-        if (!esConsultaSeguimiento) {
+        if (numeroConsultaActual === 1) {
           result = await enviarDatosAlBackend(datosCompletos)
           if (result.success && result.data) {
             const folio = result.data.folio
             const idPublico = `ID-${String(folio).padStart(5, "0")}`
             setIdSeguimiento(idPublico)
-            setEsConsultaSeguimiento(true)
-            setNumeroConsultaActual(1)
+            // Estos se actualizarán cuando el usuario cargue la consulta para seguimiento
             localStorage.setItem(
               `ectopico_folio_${folio}`,
               JSON.stringify({

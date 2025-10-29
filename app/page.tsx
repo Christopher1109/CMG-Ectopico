@@ -663,12 +663,7 @@ export default function CalculadoraEctopico() {
 
             setConsultaCargada(consultaGuardada)
           }
-        } else if (numeroConsultaActual === 1 && idSeguimiento) {
-          console.log("🔄 Actualizando consulta 1 existente...")
-          const folioNum = Number.parseInt(idSeguimiento.replace(/^ID-0*/, ""), 10)
-          const ok = await actualizarDatosEnBackend(idSeguimiento, 1 as any, datosCompletos)
-          result.success = ok
-        } else {
+        } else if (numeroConsultaActual > 1) {
           console.log("🔍 Evaluando qué consulta actualizar...")
           console.log("Consulta cargada:", consultaCargada)
 
@@ -683,6 +678,8 @@ export default function CalculadoraEctopico() {
 
           const ok = await actualizarDatosEnBackend(idSeguimiento, visitaNo, datosCompletos)
           result.success = ok
+        } else {
+          result.success = true
         }
         if (!result.success) {
           alert("Advertencia: Falló la sincronización con la base de datos.")

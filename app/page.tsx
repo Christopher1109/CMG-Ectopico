@@ -704,7 +704,7 @@ export default function CalculadoraEctopico() {
   const iniciarNuevaEvaluacion = async () => {
     resetCalculadora()
     setPantalla("formulario")
-    setSeccion(1)
+    setSeccion(1) // Start from section 1 for new evaluations
     setEsConsultaSeguimiento(false)
     setNumeroConsultaActual(1)
   }
@@ -913,15 +913,14 @@ export default function CalculadoraEctopico() {
     setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
     setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
 
-    // Limpiar campos para nueva consulta
-    setSintomasSeleccionados([])
+    setSintomasSeleccionados(consultaCargada.sintomas_seleccionados || [])
     setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
     setTvus("") // Resetting original tvus state
     setHcgValor("") // Resetting original hcgValor state
     setEsConsultaSeguimiento(true)
 
     setPantalla("formulario")
-    setSeccion(4) // Start at section 4 (Symptoms and Risk Factors)
+    setSeccion(7)
     setMostrarResumenConsulta(false)
     setMostrarPantallaBienvenida(false)
     setModoCargarConsulta(false)

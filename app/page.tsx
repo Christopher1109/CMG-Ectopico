@@ -689,28 +689,31 @@ export default function CalculadoraEctopico() {
         alert("Advertencia: Falló la sincronización con la base de datos.")
       }
 
-      console.log("[v0] 🎯 Antes de cambiar pantalla:", {
-        tipoResultado: respuesta.tipoResultado,
-        resultado: probPost,
-        pantallaActual: pantalla,
-      })
+      // </CHANGE> Usar setTimeout para asegurar que el cambio de pantalla ocurra después de todas las actualizaciones de estado
+      setTimeout(() => {
+        console.log("[v0] 🎯 Antes de cambiar pantalla:", {
+          tipoResultado: respuesta.tipoResultado,
+          resultado: probPost,
+          pantallaActual: pantalla,
+        })
 
-      if (respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo") {
-        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
-        setProtocoloFinalizado(true)
-        console.log("[v0] 📺 Cambiando a pantalla: finalizado")
-        setPantalla("finalizado")
-      } else {
-        setMostrarResultados(true)
-        setMostrarIdSeguimiento(true)
-        console.log("[v0] 📺 Cambiando a pantalla: resultados")
-        setPantalla("resultados")
-      }
+        if (respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo") {
+          setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+          setProtocoloFinalizado(true)
+          console.log("[v0] 📺 Cambiando a pantalla: finalizado")
+          setPantalla("finalizado")
+        } else {
+          setMostrarResultados(true)
+          setMostrarIdSeguimiento(true)
+          console.log("[v0] 📺 Cambiando a pantalla: resultados")
+          setPantalla("resultados")
+        }
 
-      console.log(
-        "[v0] 🎯 Después de cambiar pantalla, nueva pantalla debería ser:",
-        respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo" ? "finalizado" : "resultados",
-      )
+        console.log(
+          "[v0] 🎯 Después de cambiar pantalla, nueva pantalla debería ser:",
+          respuesta.tipoResultado === "alto" || respuesta.tipoResultado === "bajo" ? "finalizado" : "resultados",
+        )
+      }, 0)
     } catch (error) {
       console.error("Error en el cálculo:", error)
       alert("Error al realizar el cálculo. Por favor, inténtelo de nuevo.")

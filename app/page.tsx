@@ -2447,10 +2447,54 @@ export default function CalculadoraEctopico() {
                           </svg>
                         </div>
                         <div>
-                          <h2 className="text-2xl font-bold text-gray-900">Síntomas y Factores de Riesgo</h2>
-                          <p className="text-sm text-gray-600 mt-1">Evaluación clínica de la paciente</p>
+                          <h2 className="text-2xl font-bold text-gray-900">
+                            {numeroConsultaActual === 1
+                              ? "Síntomas y Factores de Riesgo"
+                              : `Síntomas y Factores de Riesgo - Consulta ${numeroConsultaActual}`}
+                          </h2>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {numeroConsultaActual === 1
+                              ? "Evaluación clínica de la paciente"
+                              : "Reevaluación clínica de la paciente (según protocolo del paper)"}
+                          </p>
+                          {/* </CHANGE> */}
                         </div>
                       </div>
+
+                      {numeroConsultaActual > 1 && (
+                        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <svg
+                              className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            <div className="text-sm text-blue-800">
+                              <p className="font-semibold mb-1">
+                                Protocolo de seguimiento (Day {numeroConsultaActual}, Visit {numeroConsultaActual})
+                              </p>
+                              <p>
+                                Según el paper, debe identificar nuevamente los signos, síntomas y factores de riesgo
+                                presentes en esta consulta. El sistema calculará automáticamente la probabilidad pretest
+                                ajustada usando la fórmula:{" "}
+                                <span className="font-mono text-xs">
+                                  [(1-v{numeroConsultaActual - 1}b)(v{numeroConsultaActual}a)] + v
+                                  {numeroConsultaActual - 1}b
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {/* </CHANGE> */}
 
                       {/* Síntomas Presentes */}
                       <div className="space-y-4 mb-8">
@@ -2525,6 +2569,8 @@ export default function CalculadoraEctopico() {
                             const isChecked = factoresSeleccionados.includes(f.id)
                             const isSinFactores = f.id === "sin_factores"
                             const hayOtrosFactores = factoresSeleccionados.some((id) => id !== "sin_factores")
+
+                            // Si hay otros factores, deshabilitar "sin factores"
                             const isDisabled = isSinFactores && hayOtrosFactores
 
                             return (
@@ -2542,21 +2588,25 @@ export default function CalculadoraEctopico() {
                                   disabled={isDisabled}
                                   onChange={(e) => {
                                     if (isSinFactores && e.target.checked) {
+                                      // Si selecciona "sin factores", limpiar otros
                                       setFactoresSeleccionados(["sin_factores"])
                                     } else if (isSinFactores && !e.target.checked) {
+                                      // Si deselecciona "sin factores"
                                       setFactoresSeleccionados(
                                         factoresSeleccionados.filter((id) => id !== "sin_factores"),
                                       )
                                     } else if (e.target.checked) {
+                                      // Si selecciona otro factor, quitar "sin factores"
                                       setFactoresSeleccionados([
                                         ...factoresSeleccionados.filter((id) => id !== "sin_factores"),
                                         f.id,
                                       ])
                                     } else {
+                                      // Si deselecciona
                                       setFactoresSeleccionados(factoresSeleccionados.filter((id) => id !== f.id))
                                     }
                                   }}
-                                  className="h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                                  className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
                                 />
                                 <span className="text-sm font-medium text-gray-700">{f.label}</span>
                               </label>
@@ -2566,30 +2616,43 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    <div className="flex justify-between pt-4">
-                      <Button onClick={() => setSeccion(2)} variant="outline" className="gap-2">
-                        <ChevronLeft className="h-4 w-4" />
+                    {/* Botones de navegación */}
+                    <div className="flex justify-between">
+                      <button
+                        onClick={() => setSeccion(2)}
+                        className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                      >
+                        <ChevronLeft className="h-5 w-5" />
                         Anterior
-                      </Button>
-                      <Button
+                      </button>
+                      <button
                         onClick={() => {
+                          // Validar que se haya seleccionado al menos un síntoma
                           if (sintomasSeleccionados.length === 0) {
-                            alert("Por favor selecciona al menos un síntoma")
+                            setErrorSeccion("Por favor seleccione al menos un síntoma")
                             return
                           }
+                          // Validar que se haya seleccionado al menos un factor de riesgo
                           if (factoresSeleccionados.length === 0) {
-                            alert("Por favor selecciona al menos un factor de riesgo (o 'Sin factores de riesgo')")
+                            setErrorSeccion("Por favor seleccione al menos un factor de riesgo")
                             return
                           }
+                          setErrorSeccion("")
+                          setSeccionesCompletadas([...seccionesCompletadas, 3])
                           setSeccion(4)
-                          completarSeccion(3)
                         }}
-                        className="gap-2 bg-teal-600 hover:bg-teal-700"
+                        className="flex items-center gap-2 px-6 py-3 text-white bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg font-medium"
                       >
                         Siguiente
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
                     </div>
+
+                    {errorSeccion && (
+                      <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-800">{errorSeccion}</p>
+                      </div>
+                    )}
                   </div>
                 )}
 

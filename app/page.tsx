@@ -38,11 +38,11 @@ const factoresRiesgo = [
 ]
 
 const sintomas = [
-  { id: "dolor", label: "Dolor abdominal" },
-  { id: "sangrado", label: "Sangrado vaginal" },
-  { id: "dolor_sangrado", label: "Dolor abdominal + Sangrado vaginal" },
-  { id: "sincope", label: "Mareo/Síncope" },
-  { id: "asintomatica", label: "Sin síntomas" },
+  { id: "infertilidad", label: "Historia de infertilidad" },
+  { id: "ectopico_previo", label: "Embarazo ectópico previo" },
+  { id: "enfermedad_inflamatoria", label: "Enfermedad inflamatoria pélvica previa" },
+  { id: "cirugia_tubarica", label: "Cirugía tubárica previa" },
+  { id: "sin_factores", label: "Sin factores de riesgo" },
 ]
 
 // ==================== HELPERS API - SIN LÓGICA DE NEGOCIO ====================
@@ -644,23 +644,29 @@ export default function CalculadoraEctopico() {
 
       try {
         let result = { success: false, data: null }
-        if (numeroConsultaActual === 1) {
+        if (numeroConsultaActual === 1 && !idSeguimiento) {
           result = await enviarDatosAlBackend(datosCompletos)
           if (result.success && result.data) {
             const folio = result.data.folio
             const idPublico = `ID-${String(folio).padStart(5, "0")}`
             setIdSeguimiento(idPublico)
-            // Estos se actualizarán cuando el usuario cargue la consulta para seguimiento
-            localStorage.setItem(
-              `ectopico_folio_${folio}`,
-              JSON.stringify({
-                ...datosCompletos,
-                id: result.data.id,
-                folio: result.data.folio,
-                id_publico: idPublico,
-              }),
-            )
+
+            const consultaGuardada = {
+              ...datosCompletos,
+              id: result.data.id,
+              folio: result.data.folio,
+              id_publico: idPublico,
+            }
+
+            localStorage.setItem(`ectopico_folio_${folio}`, JSON.stringify(consultaGuardada))
+
+            setConsultaCargada(consultaGuardada)
           }
+        } else if (numeroConsultaActual === 1 && idSeguimiento) {
+          console.log("🔄 Actualizando consulta 1 existente...")
+          const folioNum = Number.parseInt(idSeguimiento.replace(/^ID-0*/, ""), 10)
+          const ok = await actualizarDatosEnBackend(idSeguimiento, 1 as any, datosCompletos)
+          result.success = ok
         } else {
           console.log("🔍 Evaluando qué consulta actualizar...")
           console.log("Consulta cargada:", consultaCargada)
@@ -920,7 +926,7 @@ export default function CalculadoraEctopico() {
     setEsConsultaSeguimiento(true)
 
     setPantalla("formulario")
-    setSeccion(7)
+    setSeccion(7) // Changed from 7 to 4 for section 7 (TVUS)
     setMostrarResumenConsulta(false)
     setMostrarPantallaBienvenida(false)
     setModoCargarConsulta(false)

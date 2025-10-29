@@ -1254,7 +1254,7 @@ export default function CalculadoraEctopico() {
           ? resultado >= 0.95
             ? "Se recomienda referencia inmediata a centro especializado para evaluación y manejo quirúrgico si es necesario."
             : resultado < 0.01
-              ? "Se recomienda seguimiento con ginecólogo de confianza y monitoreo constante del embarazo."
+              ? "Se recomienda seguimiento con ginecólogo de confianza y monitoreo continuo del embarazo."
               : "Se recomienda guardar el código de consulta y regresar en 48-72 horas con nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento."
           : "Evaluación en proceso"
 
@@ -2457,7 +2457,6 @@ export default function CalculadoraEctopico() {
                               ? "Evaluación clínica de la paciente"
                               : "Reevaluación clínica de la paciente (según protocolo del paper)"}
                           </p>
-                          {/* </CHANGE> */}
                         </div>
                       </div>
 
@@ -2494,7 +2493,6 @@ export default function CalculadoraEctopico() {
                           </div>
                         </div>
                       )}
-                      {/* </CHANGE> */}
 
                       {/* Síntomas Presentes */}
                       <div className="space-y-4 mb-8">
@@ -2650,7 +2648,7 @@ export default function CalculadoraEctopico() {
 
                     {errorSeccion && (
                       <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-sm text-red-800">{errorSeccion}</p>
+                        <p className="text-sm text-red-700">{errorSeccion}</p>
                       </div>
                     )}
                   </div>

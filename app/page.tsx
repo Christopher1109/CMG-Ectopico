@@ -3078,11 +3078,18 @@ export default function CalculadoraEctopico() {
                           </Label>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {[
-                              { value: "saco_embrionario_fc", label: "Saco embrionario con FC" },
-                              { value: "saco_vitelino_embrion", label: "Saco vitelino con embrión" },
-                              { value: "saco_vitelino_sin_embrion", label: "Saco vitelino sin embrión" },
-                              { value: "saco_sin_embrion", label: "Saco sin embrión" },
-                              { value: "ausencia_saco", label: "Ausencia de saco" },
+                              { value: "saco_gestacional", label: "Saco gestacional" },
+                              { value: "saco_gestacional_vitelino", label: "Saco gestacional con saco vitelino" },
+                              {
+                                value: "saco_gestacional_vitelino_embrion_sin_fc",
+                                label: "Saco gestacional con saco vitelino con embrión sin frecuencia cardíaca",
+                              },
+                              {
+                                value: "saco_gestacional_vitelino_embrion_con_fc",
+                                label: "Saco gestacional con saco vitelino y embrión con frecuencia cardíaca",
+                              },
+                              { value: "ausencia_saco_gestacional", label: "Ausencia de saco gestacional" },
+                              { value: "son_en_orden", label: "Son en orden" },
                             ].map((opcion) => (
                               <label
                                 key={opcion.value}
@@ -3150,10 +3157,8 @@ export default function CalculadoraEctopico() {
                           }
 
                           const opcionesQueBloquean = [
-                            "saco_embrionario_fc",
-                            "saco_vitelino_embrion",
-                            "saco_vitelino_sin_embrion",
-                            "saco_sin_embrion",
+                            "saco_gestacional_vitelino_embrion_sin_fc",
+                            "saco_gestacional_vitelino_embrion_con_fc",
                           ]
 
                           if (
@@ -3375,10 +3380,18 @@ export default function CalculadoraEctopico() {
                         </label>
                         <div className="space-y-3">
                           {[
-                            { value: "masa", label: "Masa anexial" },
-                            { value: "libre", label: "Líquido libre" },
-                            { value: "masa_libre", label: "Masa anexial + Líquido libre" },
-                            { value: "normal", label: "Normal (Sin evidencia de embarazo intrauterino)" },
+                            { value: "saco_gestacional", label: "Saco gestacional" },
+                            { value: "saco_gestacional_vitelino", label: "Saco gestacional con saco vitelino" },
+                            {
+                              value: "saco_gestacional_vitelino_embrion_sin_fc",
+                              label: "Saco gestacional con saco vitelino con embrión sin frecuencia cardíaca",
+                            },
+                            {
+                              value: "saco_gestacional_vitelino_embrion_con_fc",
+                              label: "Saco gestacional con saco vitelino y embrión con frecuencia cardíaca",
+                            },
+                            { value: "ausencia_saco_gestacional", label: "Ausencia de saco gestacional" },
+                            { value: "son_en_orden", label: "Son en orden" },
                           ].map((opcion) => (
                             <button
                               key={opcion.value}

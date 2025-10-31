@@ -484,7 +484,7 @@ export default function CalculadoraEctopico() {
     const fcNormal = fc >= 60 && fc <= 100
     const psNormal = ps >= 90 && ps <= 140
     const pdNormal = pd >= 60 && pd <= 90
-    const pamNormal = pamValor >= 70 && pamValor <= 100
+    const pamNormal = pamValor >= 65 && pamValor <= 100
 
     if (!fcNormal || !psNormal || !pdNormal || !pamNormal) {
       let mensajeAnormal = "⚠️ SIGNOS VITALES FUERA DE RANGO NORMAL\n\n"
@@ -499,7 +499,7 @@ export default function CalculadoraEctopico() {
         mensajeAnormal += `• Presión Diastólica: ${pd} mmHg (Normal: 60-90 mmHg)\n`
       }
       if (!pamNormal) {
-        mensajeAnormal += `• PAM: ${pamValor} mmHg (Normal: 70-100 mmHg)\n`
+        mensajeAnormal += `• PAM: ${pamValor} mmHg (Normal: 65-100 mmHg)\n`
       }
 
       mensajeAnormal +=
@@ -2412,7 +2412,7 @@ export default function CalculadoraEctopico() {
                           <div className="w-full px-4 py-3 bg-white border-2 border-blue-200 rounded-lg text-lg font-semibold text-blue-700">
                             {pam || "--"}
                           </div>
-                          <span className="text-xs text-blue-600 mt-1 block">mmHg (70-100)</span>
+                          <span className="text-xs text-blue-600 mt-1 block">mmHg (65-100)</span>
                         </div>
                       </div>
 

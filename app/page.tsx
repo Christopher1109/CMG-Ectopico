@@ -1188,10 +1188,10 @@ export default function CalculadoraEctopico() {
         doc.roundedRect(margin, y - 4, pageWidth - 2 * margin, 10, 2, 2, "F")
         doc.setFontSize(11)
         doc.setFont("helvetica", "bold")
-        doc.text(label + ":", margin + 3, y + 2)
+        doc.text(label + ":", margin + 3, y + 2, { align: "left" })
         doc.setFont("helvetica", "normal")
         const fixedLabelWidth = 60
-        doc.text(value, margin + 3 + fixedLabelWidth, y + 2)
+        doc.text(value, margin + 3 + fixedLabelWidth, y + 2, { align: "left" })
         y += 13
       }
 
@@ -1210,18 +1210,18 @@ export default function CalculadoraEctopico() {
         doc.roundedRect(margin, y - 4, columnWidth, 10, 2, 2, "F")
         doc.setFontSize(11)
         doc.setFont("helvetica", "bold")
-        doc.text(label1 + ":", margin + 3, y + 2)
+        doc.text(label1 + ":", margin + 3, y + 2, { align: "left" })
         doc.setFont("helvetica", "normal")
-        doc.text(value1, margin + 3 + 45, y + 2)
+        doc.text(value1, margin + 3 + 45, y + 2, { align: "left" })
 
         // Right column
         doc.setFillColor(...color)
         doc.roundedRect(margin + columnWidth + 5, y - 4, columnWidth, 10, 2, 2, "F")
         doc.setFontSize(11)
         doc.setFont("helvetica", "bold")
-        doc.text(label2 + ":", margin + columnWidth + 5 + 3, y + 2)
+        doc.text(label2 + ":", margin + columnWidth + 5 + 3, y + 2, { align: "left" })
         doc.setFont("helvetica", "normal")
-        doc.text(value2, margin + columnWidth + 5 + 3 + 45, y + 2)
+        doc.text(value2, margin + columnWidth + 5 + 3 + 45, y + 2, { align: "left" })
 
         y += 13
       }
@@ -1332,7 +1332,7 @@ export default function CalculadoraEctopico() {
         doc.setFontSize(12)
         doc.setFont("helvetica", "bold")
         doc.setTextColor(...riesgoTextColor)
-        doc.text(`Estimación de riesgo: ${(resultado * 100).toFixed(1)}%`, margin + 5, y + 8)
+        doc.text(`Estimación de riesgo: ${(resultado * 100).toFixed(1)}%`, margin + 5, y + 8, { align: "left" })
         const clasificacion =
           resultado >= 0.95
             ? "Alta probabilidad de embarazo ectópico"
@@ -1341,7 +1341,7 @@ export default function CalculadoraEctopico() {
               : "Probabilidad intermedia de embarazo ectópico"
         doc.setFontSize(11)
         doc.setFont("helvetica", "normal")
-        doc.text(`Clasificación: ${clasificacion}`, margin + 5, y + 15)
+        doc.text(`Clasificación: ${clasificacion}`, margin + 5, y + 15, { align: "left" })
         doc.setTextColor(0, 0, 0)
         y += 28
       }
@@ -1364,7 +1364,7 @@ export default function CalculadoraEctopico() {
       doc.setFontSize(11)
       let tempY = y + 6
       recLines.forEach((line: string) => {
-        doc.text(line, margin + 5, tempY)
+        doc.text(line, margin + 5, tempY, { align: "left" })
         tempY += 6.9 // 1.15 line height
       })
       y += recHeight + 5
@@ -1381,7 +1381,7 @@ export default function CalculadoraEctopico() {
       doc.setFont("helvetica", "normal")
       doc.setFontSize(7)
       doc.text(
-        "Esta herramienta es únicamente de apoyo clínico y no reemplaza el juicio médico profesional.",
+        "Esta herramienta es únicamente de apoyo y no reemplaza el juicio médico profesional.",
         margin + 5,
         y + 12,
       )

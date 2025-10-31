@@ -840,6 +840,7 @@ export default function CalculadoraEctopico() {
     setSeccion(1)
     setSeccionesCompletadas([])
     setGuardandoConsulta(false)
+    setIdSeguimiento("")
     setNombrePaciente("")
     setEdadPaciente("")
     setFrecuenciaCardiaca("")

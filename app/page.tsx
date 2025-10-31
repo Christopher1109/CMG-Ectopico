@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { clienteSeguro } from "@/lib/api/clienteSeguro"
-import { calcularRiesgo, validarEmbarazo, validarEcografia } from "@/lib/api/calculos"
+import { calcularRiesgo, validarEmbarazo } from "@/lib/api/calculos"
 import {
   Heart,
   FileText,
@@ -340,9 +340,9 @@ export default function CalculadoraEctopico() {
 
   const [guardandoConsulta, setGuardandoConsulta] = useState(false)
 
-  const [tieneBetaSangre, setTieneBetaSangre] = useState<string>("")
-  const [tienePruebaEmbarazoChecklist, setTienePruebaEmbarazoChecklist] = useState<string>("")
-  const [tieneEcoTVUSChecklist, setTieneEcoTVUSChecklist] = useState<string>("")
+  const [tieneBetaSangre, setTieneBetaSangre] = useState("")
+  const [tienePruebaEmbarazoChecklist, setTienePruebaEmbarazoChecklist] = useState("")
+  const [tieneEcoTVUSChecklist, setTieneEcoTVUSChecklist] = useState("")
 
   // ✅ Verificar autenticación al cargar
   useEffect(() => {
@@ -574,7 +574,7 @@ export default function CalculadoraEctopico() {
     }
   }
 
-  const validarEcoTransabdominal = async () => {
+  const validarEcografia = async () => {
     if (!tieneEcoTransabdominal || !resultadoEcoTransabdominal) return true
 
     try {
@@ -3089,7 +3089,6 @@ export default function CalculadoraEctopico() {
                                 label: "Saco gestacional con saco vitelino y embrión con frecuencia cardíaca",
                               },
                               { value: "ausencia_saco_gestacional", label: "Ausencia de saco gestacional" },
-                              { value: "son_en_orden", label: "Son en orden" },
                             ].map((opcion) => (
                               <label
                                 key={opcion.value}
@@ -3391,7 +3390,6 @@ export default function CalculadoraEctopico() {
                               label: "Saco gestacional con saco vitelino y embrión con frecuencia cardíaca",
                             },
                             { value: "ausencia_saco_gestacional", label: "Ausencia de saco gestacional" },
-                            { value: "son_en_orden", label: "Son en orden" },
                           ].map((opcion) => (
                             <button
                               key={opcion.value}

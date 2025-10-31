@@ -1070,7 +1070,8 @@ export default function CalculadoraEctopico() {
     if (!tvusId) return "No especificado"
     switch (tvusId) {
       case "normal":
-        return "Normal"
+        return "Normal (Sin evidencia de embarazo intrauterino)"
+      // </CHANGE>
       case "libre":
         return "Líquido libre"
       case "masa":
@@ -3333,7 +3334,7 @@ export default function CalculadoraEctopico() {
                             { value: "masa", label: "Masa anexial" },
                             { value: "libre", label: "Líquido libre" },
                             { value: "masa_libre", label: "Masa anexial + Líquido libre" },
-                            { value: "normal", label: "Normal" },
+                            { value: "normal", label: "Normal (Sin evidencia de embarazo intrauterino)" },
                           ].map((opcion) => (
                             <button
                               key={opcion.value}

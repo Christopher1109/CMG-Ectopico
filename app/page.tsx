@@ -3037,7 +3037,6 @@ export default function CalculadoraEctopico() {
                               { value: "saco_vitelino_embrion", label: "Saco vitelino con embrión" },
                               { value: "saco_vitelino_sin_embrion", label: "Saco vitelino sin embrión" },
                               { value: "saco_sin_embrion", label: "Saco sin embrión" },
-                              { value: "saco_10mm_anillo_2mm", label: "Saco ≥10mm con anillo decidual ≥2mm" },
                               { value: "ausencia_saco", label: "Ausencia de saco" },
                             ].map((opcion) => (
                               <label
@@ -3110,7 +3109,6 @@ export default function CalculadoraEctopico() {
                             "saco_vitelino_embrion",
                             "saco_vitelino_sin_embrion",
                             "saco_sin_embrion",
-                            "saco_10mm_anillo_2mm",
                           ]
 
                           if (

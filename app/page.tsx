@@ -1353,7 +1353,7 @@ export default function CalculadoraEctopico() {
             ? "Se recomienda referencia inmediata a centro especializado para evaluación y manejo quirúrgico si es necesario."
             : resultado < 0.01
               ? "Se recomienda seguimiento con ginecólogo de confianza y monitoreo continuo del embarazo."
-              : "Se recomienda guardar el código de consulta y regresar en 48-72 horas con nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento."
+              : "Se recomienda guardar el código de consulta y regresar en 48-72 horas con nueva ecografía transvaginal y nueva prueba de beta-hCG para seguimiento."
           : "Evaluación en proceso"
 
       doc.setFillColor(224, 247, 250)

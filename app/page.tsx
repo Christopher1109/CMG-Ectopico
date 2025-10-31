@@ -1117,7 +1117,11 @@ export default function CalculadoraEctopico() {
       }
 
       const { jsPDF } = (window as any).jspdf
-      const doc = new jsPDF()
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      })
 
       let y = 20
       const pageWidth = doc.internal.pageSize.width
@@ -1133,15 +1137,14 @@ export default function CalculadoraEctopico() {
         return false
       }
 
-      const addTitle = (text: string, color: [number, number, number] = [41, 98, 255]) => {
+      const addTitle = (text: string) => {
         checkPageBreak(15)
-        doc.setFillColor(...color)
+        doc.setFillColor(245, 245, 245) // Gray #f5f5f5
         doc.rect(margin, y - 5, pageWidth - 2 * margin, 12, "F")
-        doc.setTextColor(255, 255, 255)
-        doc.setFontSize(14)
+        doc.setTextColor(0, 0, 0)
+        doc.setFontSize(14) // 14px as specified
         doc.setFont("helvetica", "bold")
         doc.text(text, margin + 5, y + 2)
-        doc.setTextColor(0, 0, 0)
         y += 15
       }
 
@@ -1155,7 +1158,7 @@ export default function CalculadoraEctopico() {
         doc.setTextColor(0, 0, 0)
       }
 
-      const addText = (text: string, indent = 0, fontSize = 10) => {
+      const addText = (text: string, indent = 0, fontSize = 11) => {
         checkPageBreak()
         doc.setFontSize(fontSize)
         doc.setFont("helvetica", "normal")
@@ -1169,7 +1172,7 @@ export default function CalculadoraEctopico() {
 
       const addBullet = (text: string) => {
         checkPageBreak()
-        doc.setFontSize(10)
+        doc.setFontSize(11)
         doc.circle(margin + 2, y - 1.5, 1, "F")
         const lines = doc.splitTextToSize(text, pageWidth - 2 * margin - 10)
         lines.forEach((line: string, index: number) => {
@@ -1183,12 +1186,43 @@ export default function CalculadoraEctopico() {
         checkPageBreak(12)
         doc.setFillColor(...color)
         doc.roundedRect(margin, y - 4, pageWidth - 2 * margin, 10, 2, 2, "F")
-        doc.setFontSize(10)
+        doc.setFontSize(11)
         doc.setFont("helvetica", "bold")
         doc.text(label + ":", margin + 3, y + 2)
         doc.setFont("helvetica", "normal")
-        const fixedLabelWidth = 60 // Fixed width for all labels
+        const fixedLabelWidth = 60
         doc.text(value, margin + 3 + fixedLabelWidth, y + 2)
+        y += 13
+      }
+
+      const addInfoBoxTwoColumns = (
+        label1: string,
+        value1: string,
+        label2: string,
+        value2: string,
+        color: [number, number, number] = [245, 247, 250],
+      ) => {
+        checkPageBreak(12)
+        const columnWidth = (pageWidth - 2 * margin - 5) / 2
+
+        // Left column
+        doc.setFillColor(...color)
+        doc.roundedRect(margin, y - 4, columnWidth, 10, 2, 2, "F")
+        doc.setFontSize(11)
+        doc.setFont("helvetica", "bold")
+        doc.text(label1 + ":", margin + 3, y + 2)
+        doc.setFont("helvetica", "normal")
+        doc.text(value1, margin + 3 + 45, y + 2)
+
+        // Right column
+        doc.setFillColor(...color)
+        doc.roundedRect(margin + columnWidth + 5, y - 4, columnWidth, 10, 2, 2, "F")
+        doc.setFontSize(11)
+        doc.setFont("helvetica", "bold")
+        doc.text(label2 + ":", margin + columnWidth + 5 + 3, y + 2)
+        doc.setFont("helvetica", "normal")
+        doc.text(value2, margin + columnWidth + 5 + 3 + 45, y + 2)
+
         y += 13
       }
 
@@ -1203,12 +1237,17 @@ export default function CalculadoraEctopico() {
       doc.setFillColor(41, 98, 255)
       doc.rect(0, 0, pageWidth, 35, "F")
       doc.setTextColor(255, 255, 255)
-      doc.setFontSize(20)
+      doc.setFontSize(16) // 16px as specified
       doc.setFont("helvetica", "bold")
       doc.text("REPORTE DE APOYO CLÍNICO", pageWidth / 2, 15, { align: "center" })
       doc.setFontSize(12)
       doc.setFont("helvetica", "normal")
-      doc.text("Herramienta de Evaluación - Embarazo Ectópico", pageWidth / 2, 25, { align: "center" })
+      doc.text("Herramienta de Evaluación – Embarazo Ectópico", pageWidth / 2, 25, { align: "center" })
+
+      doc.setDrawColor(255, 255, 255)
+      doc.setLineWidth(0.3)
+      doc.line(margin, 30, pageWidth - margin, 30)
+
       doc.setTextColor(0, 0, 0)
       y = 45
 
@@ -1216,7 +1255,7 @@ export default function CalculadoraEctopico() {
       doc.roundedRect(margin, y, (pageWidth - 2 * margin - 5) / 2, 25, 2, 2, "F")
       doc.setFontSize(9)
       doc.setTextColor(100, 100, 100)
-      doc.text("ID de Consulta", margin + 5, y + 6)
+      doc.text("ID de consulta:", margin + 5, y + 6)
       doc.setFontSize(12)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(0, 0, 0)
@@ -1224,12 +1263,12 @@ export default function CalculadoraEctopico() {
       doc.setFontSize(9)
       doc.setFont("helvetica", "normal")
       doc.setTextColor(100, 100, 100)
-      doc.text("Fecha:  " + new Date().toLocaleDateString(), margin + 5, y + 19)
+      doc.text("Fecha: " + new Date().toLocaleDateString(), margin + 5, y + 19)
 
       doc.setFillColor(227, 242, 253)
       doc.roundedRect(margin + (pageWidth - 2 * margin + 5) / 2, y, (pageWidth - 2 * margin - 5) / 2, 25, 2, 2, "F")
       doc.setFontSize(9)
-      doc.text("Médico Responsable", margin + (pageWidth - 2 * margin + 5) / 2 + 5, y + 6)
+      doc.text("Médico responsable:", margin + (pageWidth - 2 * margin + 5) / 2 + 5, y + 6)
       doc.setFontSize(12)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(0, 0, 0)
@@ -1237,19 +1276,23 @@ export default function CalculadoraEctopico() {
       doc.setTextColor(0, 0, 0)
       y += 33
 
-      addTitle("DATOS DEL PACIENTE", [76, 175, 80])
+      addTitle("DATOS DEL PACIENTE")
       addInfoBox("Nombre", nombrePaciente, [232, 245, 233])
       addInfoBox("Edad", `${edadPaciente} años`, [232, 245, 233])
       y += 3
 
-      addTitle("SIGNOS VITALES", [33, 150, 243])
-      addInfoBox("Frecuencia Cardíaca", `${frecuenciaCardiaca} lpm`, [227, 242, 253])
-      addInfoBox("Presión Arterial", `${presionSistolica}/${presionDiastolica} mmHg`, [227, 242, 253])
-      addInfoBox("PAM", `${pam} mmHg`, [227, 242, 253]) // Added PAM to report
-      addInfoBox("Estado de Conciencia", estadoConciencia, [227, 242, 253])
+      addTitle("SIGNOS VITALES")
+      addInfoBoxTwoColumns(
+        "Frecuencia Cardíaca",
+        `${frecuenciaCardiaca} lpm`,
+        "Presión Arterial",
+        `${presionSistolica}/${presionDiastolica} mmHg`,
+        [227, 242, 253],
+      )
+      addInfoBoxTwoColumns("PAM", `${pam} mmHg`, "Estado de Conciencia", estadoConciencia, [227, 242, 253])
       y += 3
 
-      addTitle("ESTUDIOS COMPLEMENTARIOS", [156, 39, 176])
+      addTitle("ESTUDIOS COMPLEMENTARIOS")
       addInfoBox("Ecografía Transvaginal", obtenerNombreTVUS(tvus), [243, 229, 245])
       addInfoBox("β-hCG en sangre", nivelBetaHCG ? `${nivelBetaHCG} mUI/mL` : "No disponible", [243, 229, 245])
       if (hcgAnterior) {
@@ -1257,7 +1300,7 @@ export default function CalculadoraEctopico() {
       }
       y += 3
 
-      addTitle("SÍNTOMAS PRESENTES", [255, 152, 0])
+      addTitle("SÍNTOMAS PRESENTES")
       if (sintomasSeleccionados.length > 0) {
         sintomasSeleccionados.forEach((s) => {
           addBullet(obtenerNombreSintoma(s))
@@ -1267,17 +1310,17 @@ export default function CalculadoraEctopico() {
       }
       y += 3
 
-      addTitle("FACTORES DE RIESGO", [244, 67, 54])
+      addTitle("FACTORES DE RIESGO")
       if (factoresSeleccionados.length > 0) {
         factoresSeleccionados.forEach((f) => {
           addBullet(obtenerNombreFactorRiesgo(f))
         })
       } else {
-        addBullet("Sin factores de riesgo identificados")
+        addBullet("Sin factores de riesgo reportados")
       }
       y += 3
 
-      addTitle("RESULTADO DE LA EVALUACIÓN", [103, 58, 183])
+      addTitle("RESULTADO DE LA EVALUACIÓN")
       if (resultado != null) {
         const riesgoColor: [number, number, number] =
           resultado >= 0.95 ? [255, 235, 238] : resultado < 0.01 ? [232, 245, 233] : [255, 243, 224]
@@ -1286,24 +1329,24 @@ export default function CalculadoraEctopico() {
 
         doc.setFillColor(...riesgoColor)
         doc.roundedRect(margin, y, pageWidth - 2 * margin, 20, 3, 3, "F")
-        doc.setFontSize(11)
+        doc.setFontSize(12)
         doc.setFont("helvetica", "bold")
         doc.setTextColor(...riesgoTextColor)
-        doc.text(`Estimación de Riesgo: ${(resultado * 100).toFixed(1)}%`, margin + 5, y + 8)
+        doc.text(`Estimación de riesgo: ${(resultado * 100).toFixed(1)}%`, margin + 5, y + 8)
         const clasificacion =
           resultado >= 0.95
             ? "Alta probabilidad de embarazo ectópico"
             : resultado < 0.01
               ? "Baja probabilidad de embarazo ectópico"
               : "Probabilidad intermedia de embarazo ectópico"
-        doc.setFontSize(10)
+        doc.setFontSize(11)
         doc.setFont("helvetica", "normal")
         doc.text(`Clasificación: ${clasificacion}`, margin + 5, y + 15)
         doc.setTextColor(0, 0, 0)
         y += 28
       }
 
-      addTitle("RECOMENDACIONES CLÍNICAS", [0, 150, 136])
+      addTitle("RECOMENDACIONES CLÍNICAS")
       const recomendacion =
         resultado != null
           ? resultado >= 0.95
@@ -1315,14 +1358,14 @@ export default function CalculadoraEctopico() {
 
       doc.setFillColor(224, 247, 250)
       const recLines = doc.splitTextToSize(recomendacion, pageWidth - 2 * margin - 10)
-      const recHeight = recLines.length * 6 + 8
+      const recHeight = recLines.length * 6.9 + 8
       checkPageBreak(recHeight)
       doc.roundedRect(margin, y, pageWidth - 2 * margin, recHeight, 2, 2, "F")
-      doc.setFontSize(10)
+      doc.setFontSize(11)
       let tempY = y + 6
       recLines.forEach((line: string) => {
         doc.text(line, margin + 5, tempY)
-        tempY += 6
+        tempY += 6.9 // 1.15 line height
       })
       y += recHeight + 5
 
@@ -1354,13 +1397,13 @@ export default function CalculadoraEctopico() {
 
       doc.setFillColor(41, 98, 255)
       doc.rect(0, pageHeight - 15, pageWidth, 15, "F")
-      doc.setTextColor(255, 255, 255)
+      doc.setTextColor(200, 200, 200) // Light gray text
       doc.setFontSize(9)
       doc.setFont("helvetica", "normal")
-      doc.text("Desarrollado por CMG Health Solutions - Herramienta de Apoyo Clínico", pageWidth / 2, pageHeight - 7, {
+      doc.text("Desarrollado por CMG Health Solutions – Herramienta de Apoyo Clínico", pageWidth / 2, pageHeight - 7, {
         align: "center",
       })
-      doc.setFontSize(7)
+      doc.setFontSize(9)
       doc.text(`Generado el ${new Date().toLocaleString()}`, pageWidth / 2, pageHeight - 3, { align: "center" })
 
       // Save PDF

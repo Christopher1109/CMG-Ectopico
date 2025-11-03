@@ -1070,9 +1070,9 @@ export default function CalculadoraEctopico() {
   const obtenerNombreTVUS = (tvusId: string) => {
     if (!tvusId) return "No especificado"
     switch (tvusId) {
+      // </CHANGE>
       case "normal":
         return "Normal (Sin evidencia de embarazo intrauterino)"
-      // </CHANGE>
       case "libre":
         return "Líquido libre"
       case "masa":
@@ -3379,17 +3379,10 @@ export default function CalculadoraEctopico() {
                         </label>
                         <div className="space-y-3">
                           {[
-                            { value: "saco_gestacional", label: "Saco gestacional" },
-                            { value: "saco_gestacional_vitelino", label: "Saco gestacional con saco vitelino" },
-                            {
-                              value: "saco_gestacional_vitelino_embrion_sin_fc",
-                              label: "Saco gestacional con saco vitelino con embrión sin frecuencia cardíaca",
-                            },
-                            {
-                              value: "saco_gestacional_vitelino_embrion_con_fc",
-                              label: "Saco gestacional con saco vitelino y embrión con frecuencia cardíaca",
-                            },
-                            { value: "ausencia_saco_gestacional", label: "Ausencia de saco gestacional" },
+                            { value: "normal", label: "Normal (Sin evidencia de embarazo intrauterino)" },
+                            { value: "libre", label: "Líquido libre" },
+                            { value: "masa", label: "Masa anexial" },
+                            { value: "masa_libre", label: "Masa anexial + Líquido libre" },
                           ].map((opcion) => (
                             <button
                               key={opcion.value}

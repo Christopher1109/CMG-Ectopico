@@ -511,10 +511,11 @@ export default function CalculadoraEctopico() {
     const psNormal = ps >= 90 && ps <= 140
     const pdNormal = pd >= 60 && pd <= 90
     const pamNormal = pamValor >= 65 && pamValor <= 100
-    const concienciaNormal = estadoConciencia === "alerta" // Only "alerta" is considered normal for now
+    // CHANGE: Corrected state value to match radio button value
+    const concienciaNormal = estadoConciencia === "alerta"
 
     if (!fcNormal || !psNormal || !pdNormal || !pamNormal || !concienciaNormal) {
-      let mensajeAnormal = "⚠️ SIGNOS VITALES FUERA DE RANGO NORMAL\n\n"
+      let mensajeAnormal = "Se detectaron los siguientes valores que requieren atención:\n\n"
 
       if (!fcNormal) {
         mensajeAnormal += `• Frecuencia Cardíaca: ${fc} lpm (Normal: 60-100 lpm)\n`
@@ -531,9 +532,6 @@ export default function CalculadoraEctopico() {
       if (!concienciaNormal) {
         mensajeAnormal += `• Estado de Conciencia: ${estadoConciencia}\n`
       }
-
-      mensajeAnormal +=
-        "\n⚠️ La paciente requiere atención médica inmediata. Los signos vitales fuera de rango pueden indicar inestabilidad hemodinámica que requiere evaluación urgente."
 
       setMensajeAlertaSignosVitales(mensajeAnormal)
       setAlertaSignosVitalesPendiente(true) // Set flag to show alert block
@@ -2633,85 +2631,73 @@ export default function CalculadoraEctopico() {
             <div className="space-y-6">
               {alertaSignosVitalesPendiente ? (
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-200 shadow-xl">
-                    <div className="flex items-start gap-4 mb-6">
-                      <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                          />
-                        </svg>
+                  <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
+                    <div className="flex items-start space-x-4 mb-6">
+                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                        <AlertTriangle className="h-7 w-7 text-white" />
                       </div>
-                      <div className="flex-1">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">Advertencia de Signos Vitales</h2>
-                        <p className="text-sm text-gray-700 leading-relaxed">Se detectaron valores fuera de rango</p>
+                      <div>
+                        <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Signos Vitales</h2>
+                        <p className="text-blue-700 font-medium">Se detectaron valores fuera de rango</p>
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 mb-6 border border-blue-100">
-                      <div className="prose prose-sm max-w-none">
-                        <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                          {mensajeAlertaSignosVitales}
+                    <div className="bg-white rounded-xl p-6 shadow-md border border-blue-100 mb-6">
+                      <div className="flex items-start space-x-3 mb-4">
+                        <AlertTriangle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
+                        <div>
+                          <h3 className="font-semibold text-slate-800 text-lg mb-3">Valores Anormales</h3>
+                          <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+                            {mensajeAlertaSignosVitales}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 pt-6 border-t border-blue-100">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span className="text-blue-600 text-sm font-bold">!</span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-slate-800 mb-2">Recomendación Médica</h4>
+                            <p className="text-slate-700 leading-relaxed">
+                              La paciente requiere atención médica inmediata. Los signos vitales fuera de rango pueden
+                              indicar inestabilidad hemodinámica que requiere evaluación urgente.
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6 rounded-r-lg">
-                      <div className="flex items-start gap-3">
-                        <svg
-                          className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                          />
-                        </svg>
-                        <p className="text-sm text-amber-800 leading-relaxed">
-                          Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
-                          emergencia.
-                        </p>
-                      </div>
+                    <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
+                      <p className="text-slate-700 leading-relaxed">
+                        Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
+                        emergencia.
+                      </p>
                     </div>
+                  </div>
 
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between">
-                      <Button
-                        onClick={() => {
-                          resetCalculadora()
-                          setPantalla("bienvenida")
-                        }}
-                        variant="outline"
-                        className="flex items-center justify-center gap-2 px-6 py-3 text-red-700 bg-white border-2 border-red-300 rounded-xl hover:bg-red-50 transition-colors font-medium"
-                      >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                          />
-                        </svg>
-                        Regresar al Inicio
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setAlertaSignosVitalesPendiente(false)
-                        }}
-                        className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl shadow-lg font-medium"
-                      >
-                        Continuar con la Evaluación
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </Button>
-                    </div>
+                  <div className="flex justify-between pt-4">
+                    <Button
+                      onClick={() => {
+                        resetCalculadora()
+                        setPantalla("bienvenida")
+                      }}
+                      variant="outline"
+                      className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                    >
+                      <Home className="h-5 w-5" />
+                      Regresar al Inicio
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setAlertaSignosVitalesPendiente(false)
+                      }}
+                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium"
+                    >
+                      Continuar con la Evaluación
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
                   </div>
                 </div>
               ) : (

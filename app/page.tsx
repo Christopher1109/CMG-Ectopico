@@ -2270,99 +2270,142 @@ export default function CalculadoraEctopico() {
                 </div>
 
                 {resultado !== null && (
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 text-center">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-4">
-                      Estimación de Riesgo - Consulta {numeroConsultaActual}
-                    </h3>
-                    <div className="text-5xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
-                    <p className="text-blue-800 text-sm">
-                      {resultado >= 0.95
-                        ? "Alta probabilidad de embarazo ectópico"
-                        : resultado < 0.01
-                          ? "Baja probabilidad de embarazo ectópico"
-                          : "Probabilidad intermedia de embarazo ectópico"}
-                    </p>
-                  </div>
-                )}
+                  <>
+                    {(() => {
+                      const nivelRiesgo = resultado < 0.01 ? "bajo" : resultado >= 0.95 ? "alto" : "intermedio"
+                      const colores = {
+                        bajo: {
+                          bgGradient: "bg-gradient-to-r from-green-50 to-emerald-50",
+                          border: "border-green-200",
+                          textPrimary: "text-green-900",
+                          textSecondary: "text-green-800",
+                          textBold: "text-green-700",
+                          bg: "bg-green-50",
+                          iconBg: "bg-green-100",
+                          iconText: "text-green-600",
+                        },
+                        intermedio: {
+                          bgGradient: "bg-gradient-to-r from-amber-50 to-yellow-50",
+                          border: "border-amber-200",
+                          textPrimary: "text-amber-900",
+                          textSecondary: "text-amber-800",
+                          textBold: "text-amber-700",
+                          bg: "bg-amber-50",
+                          iconBg: "bg-amber-100",
+                          iconText: "text-amber-600",
+                        },
+                        alto: {
+                          bgGradient: "bg-gradient-to-r from-red-50 to-rose-50",
+                          border: "border-red-200",
+                          textPrimary: "text-red-900",
+                          textSecondary: "text-red-800",
+                          textBold: "text-red-700",
+                          bg: "bg-red-50",
+                          iconBg: "bg-red-100",
+                          iconText: "text-red-600",
+                        },
+                      }
+                      const color = colores[nivelRiesgo]
 
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                  <p className="text-blue-900 font-medium">
-                    {resultado !== null ? (
-                      resultado < 0.01 ? (
+                      return (
                         <>
-                          <strong>Bajas probabilidades de embarazo ectópico.</strong>
-                          <br />
-                          <br />
-                          Se recomienda mantener un monitoreo constante con su ginecólogo de confianza y estar atenta a
-                          cualquier cambio en los síntomas.
-                        </>
-                      ) : resultado >= 0.95 ? (
-                        <>
-                          <strong>Alta probabilidad de embarazo ectópico.</strong>
-                          <br />
-                          <br />
-                          Se recomienda referencia inmediata a un centro médico especializado para evaluación y manejo
-                          apropiado.
-                        </>
-                      ) : (
-                        <>
-                          <strong>Probabilidad intermedia de embarazo ectópico.</strong>
-                          <br />
-                          <br />
-                          Guarde el código de consulta (disponible abajo para copiar) y regrese en 48 a 72 horas con
-                          nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento.
+                          <div className={`${color.bgGradient} p-6 rounded-lg border ${color.border} text-center`}>
+                            <h3 className={`text-lg font-semibold ${color.textPrimary} mb-4`}>
+                              Estimación de Riesgo - Consulta {numeroConsultaActual}
+                            </h3>
+                            <div className={`text-5xl font-bold ${color.textBold} mb-4`}>
+                              {(resultado * 100).toFixed(1)}%
+                            </div>
+                            <p className={`${color.textSecondary} text-sm`}>
+                              {resultado >= 0.95
+                                ? "Alta probabilidad de embarazo ectópico"
+                                : resultado < 0.01
+                                  ? "Baja probabilidad de embarazo ectópico"
+                                  : "Probabilidad intermedia de embarazo ectópico"}
+                            </p>
+                          </div>
+
+                          <div className={`${color.bg} p-6 rounded-lg border ${color.border}`}>
+                            <p className={`${color.textPrimary} font-medium`}>
+                              {resultado < 0.01 ? (
+                                <>
+                                  <strong>Bajas probabilidades de embarazo ectópico.</strong>
+                                  <br />
+                                  <br />
+                                  Se recomienda mantener un monitoreo constante con su ginecólogo de confianza y estar
+                                  atenta a cualquier cambio en los síntomas.
+                                </>
+                              ) : resultado >= 0.95 ? (
+                                <>
+                                  <strong>Alta probabilidad de embarazo ectópico.</strong>
+                                  <br />
+                                  <br />
+                                  Se recomienda referencia inmediata a un centro médico especializado para evaluación y
+                                  manejo apropiado.
+                                </>
+                              ) : (
+                                <>
+                                  <strong>Probabilidad intermedia de embarazo ectópico.</strong>
+                                  <br />
+                                  <br />
+                                  Guarde el código de consulta (disponible abajo para copiar) y regrese en 48 a 72 horas
+                                  con nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento.
+                                </>
+                              )}
+                            </p>
+                          </div>
+
+                          {recomendaciones && recomendaciones.length > 0 && (
+                            <div className={`${color.bg} p-6 rounded-lg border ${color.border}`}>
+                              <div className="flex items-center space-x-2 mb-3">
+                                <AlertTriangle className={`h-5 w-5 ${color.iconText}`} />
+                                <span className={`font-semibold ${color.textPrimary}`}>
+                                  Alertas Detectadas Durante la Consulta
+                                </span>
+                              </div>
+                              <ul className={`${color.textSecondary} text-sm space-y-2`}>
+                                {recomendaciones.map((rec, idx) => (
+                                  <li key={idx} className="flex items-start">
+                                    <span className={`${color.iconText} mr-2`}>•</span>
+                                    <span>{rec}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {mostrarIdSeguimiento && idSeguimiento && (
+                            <div className={`${color.bg} p-6 rounded-lg border ${color.border}`}>
+                              <div className="flex items-center space-x-2 mb-3">
+                                <CheckCircle className={`h-5 w-5 ${color.iconText}`} />
+                                <span className={`font-semibold ${color.textPrimary}`}>Información Guardada</span>
+                              </div>
+                              <div className={`${color.textSecondary} text-sm space-y-2`}>
+                                <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
+                                <div className="flex items-center space-x-2">
+                                  <span>📋 ID de Consulta:</span>
+                                  <span className="font-mono font-bold">{idSeguimiento}</span>
+                                  <Button
+                                    onClick={copiarId}
+                                    variant="ghost"
+                                    size="sm"
+                                    className={`h-6 w-6 p-0 hover:${color.iconBg}`}
+                                    title="Copiar ID"
+                                  >
+                                    <Copy className={`h-3 w-3 ${color.textBold}`} />
+                                  </Button>
+                                </div>
+                                <p>
+                                  👤 Paciente: {nombrePaciente}, {edadPaciente} años
+                                </p>
+                                <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
+                              </div>
+                            </div>
+                          )}
                         </>
                       )
-                    ) : (
-                      "Los datos de esta consulta han sido guardados exitosamente."
-                    )}
-                  </p>
-                </div>
-
-                {recomendaciones && recomendaciones.length > 0 && (
-                  <div className="bg-amber-50 p-6 rounded-lg border border-amber-200">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <AlertTriangle className="h-5 w-5 text-amber-600" />
-                      <span className="font-semibold text-amber-900">Alertas Detectadas Durante la Consulta</span>
-                    </div>
-                    <ul className="text-amber-800 text-sm space-y-2">
-                      {recomendaciones.map((rec, idx) => (
-                        <li key={idx} className="flex items-start">
-                          <span className="text-amber-600 mr-2">•</span>
-                          <span>{rec}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {mostrarIdSeguimiento && idSeguimiento && (
-                  <div className="bg-red-50 p-6 rounded-lg border border-red-200">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <CheckCircle className="h-5 w-5 text-red-600" />
-                      <span className="font-semibold text-red-900">Información Guardada</span>
-                    </div>
-                    <div className="text-red-800 text-sm space-y-2">
-                      <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
-                      <div className="flex items-center space-x-2">
-                        <span>📋 ID de Consulta:</span>
-                        <span className="font-mono font-bold">{idSeguimiento}</span>
-                        <Button
-                          onClick={copiarId}
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 hover:bg-green-100"
-                          title="Copiar ID"
-                        >
-                          <Copy className="h-3 w-3 text-green-700" />
-                        </Button>
-                      </div>
-                      <p>
-                        👤 Paciente: {nombrePaciente}, {edadPaciente} años
-                      </p>
-                      <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
-                    </div>
-                  </div>
+                    })()}
+                  </>
                 )}
 
                 <div className="flex space-x-4">

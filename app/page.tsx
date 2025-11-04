@@ -25,7 +25,6 @@ import {
   Stethoscope,
   Droplet,
   Home,
-  Check,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type React from "react"
@@ -1112,9 +1111,7 @@ export default function CalculadoraEctopico() {
     setEsConsultaSeguimiento(true)
 
     setPantalla("formulario")
-    setSeccion(6)
-    // Mark sections 1-5 as completed since they're loaded from previous consultation
-    setSeccionesCompletadas([1, 2, 3, 4, 5])
+    setSeccion(2) // Changed from 7 to 2 for section 2 (Vital Signs)
     setMostrarResumenConsulta(false)
     setMostrarPantallaBienvenida(false)
     setModoCargarConsulta(false)
@@ -2768,7 +2765,7 @@ export default function CalculadoraEctopico() {
               ) : (
                 <div className="space-y-6">
                   <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
-                    <div className="flex items-start gap-4 mb-6">
+                    <div className="flex items-center gap-4 mb-6">
                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
                         <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path
@@ -3523,7 +3520,7 @@ export default function CalculadoraEctopico() {
                   <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
                     <div className="flex items-center space-x-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
-                        <Stethoscope className="h-6 w-6 text-white" />
+                        <Droplet className="h-6 w-6 text-white" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-slate-800">Estudios Complementarios</h2>
@@ -3626,16 +3623,14 @@ export default function CalculadoraEctopico() {
                   )}
 
                   <div className="flex justify-between pt-4">
-                    {!esConsultaSeguimiento && (
-                      <Button
-                        onClick={() => setSeccion(5)}
-                        variant="outline"
-                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                      >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Anterior
-                      </Button>
-                    )}
+                    <Button
+                      onClick={() => setSeccion(5)}
+                      variant="outline"
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Anterior
+                    </Button>
                     <Button
                       onClick={async () => {
                         if (!tieneEcoDisponible || !tieneBetaDisponible) {
@@ -3681,7 +3676,7 @@ export default function CalculadoraEctopico() {
             </div>
           )}
 
-          {/* SECCION 7: β-hCG */}
+          {/* SECCION 7: TVUS */}
           {seccionActual === 7 && (
             <div className="space-y-6">
               {alertaEcografiaPendiente ? (
@@ -3762,26 +3757,49 @@ export default function CalculadoraEctopico() {
                         <Droplet className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <h2 className="text-2xl font-bold text-slate-800">β-hCG en Sangre</h2>
-                        <p className="text-sm text-slate-600">Nivel cuantitativo de β-hCG</p>
+                        <h2 className="text-2xl font-bold text-slate-800">Ecografía Transvaginal (TVUS)</h2>
+                        <p className="text-sm text-slate-600">Hallazgos ecográficos</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-5">
-                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-teal-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                      <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                        <span>Valor de β-hCG</span>
-                      </Label>
-                      <input
-                        type="number"
-                        placeholder="Ingrese el valor"
-                        value={nivelBetaHCG}
-                        onChange={(e) => setNivelBetaHCG(e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all duration-200"
-                      />
-                      <span className="text-xs text-slate-500 mt-1 block">mUI/mL</span>
+                  <div className="space-y-4">
+                    <label className="flex items-center gap-2 text-sm font-medium text-purple-900">
+                      <div className="h-2 w-2 rounded-full bg-purple-500"></div>
+                      Hallazgos en TVUS
+                    </label>
+                    <div className="space-y-3">
+                      {[
+                        { value: "normal", label: "Normal (Sin evidencia de embarazo intrauterino)" },
+                        { value: "libre", label: "Líquido libre" },
+                        { value: "masa", label: "Masa anexial" },
+                        { value: "masa_libre", label: "Masa anexial + Líquido libre" },
+                      ].map((opcion) => (
+                        <button
+                          key={opcion.value}
+                          type="button"
+                          onClick={() => setTvus(opcion.value)}
+                          className={`
+                            w-full px-4 py-3.5 rounded-xl border-2 transition-all duration-200
+                            flex items-center gap-3 text-left
+                            ${
+                              tvus === opcion.value
+                                ? "border-purple-500 bg-purple-50 shadow-md"
+                                : "border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50"
+                            }
+                          `}
+                        >
+                          <div
+                            className={`
+                              w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
+                              ${tvus === opcion.value ? "border-purple-500 bg-purple-500" : "border-gray-300"}
+                            `}
+                          >
+                            {tvus === opcion.value && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
+                          </div>
+                          <span className="text-sm font-medium text-gray-700">{opcion.label}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -3794,16 +3812,84 @@ export default function CalculadoraEctopico() {
               )}
 
               <div className="flex justify-between pt-4">
-                {!esConsultaSeguimiento && (
-                  <Button
-                    onClick={() => setSeccion(6)}
-                    variant="outline"
-                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                  >
-                    <ChevronLeft className="mr-2 h-4 w-4" />
-                    Anterior
-                  </Button>
-                )}
+                <Button
+                  onClick={() => setSeccion(6)}
+                  variant="outline"
+                  className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Anterior
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (!tvus) {
+                      setErrorSeccion("Por favor seleccione los hallazgos en TVUS.")
+                      return
+                    }
+                    setSeccion(8)
+                    completarSeccion(7)
+                  }}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  Continuar
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+
+              <CMGFooter />
+            </div>
+          )}
+
+          {/* SECCION 8: β-hCG */}
+          {seccionActual === 8 && (
+            <div className="space-y-6">
+              <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
+                    <Droplet className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-800">β-hCG en Sangre</h2>
+                    <p className="text-sm text-slate-600">Nivel cuantitativo de β-hCG</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-teal-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                    <span>Valor de β-hCG</span>
+                  </Label>
+                  <input
+                    type="number"
+                    placeholder="Ingrese el valor"
+                    value={nivelBetaHCG}
+                    onChange={(e) => setNivelBetaHCG(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all duration-200"
+                  />
+                  <span className="text-xs text-slate-500 mt-1 block">mUI/mL</span>
+                </div>
+              </div>
+
+              {errorSeccion && (
+                <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                    <p className="text-red-700 font-medium">{errorSeccion}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between pt-4">
+                <Button
+                  onClick={() => setSeccion(7)}
+                  variant="outline"
+                  className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Anterior
+                </Button>
                 <Button
                   onClick={async () => {
                     if (!nivelBetaHCG) {
@@ -3812,12 +3898,13 @@ export default function CalculadoraEctopico() {
                     }
                     await calcular()
                   }}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                 >
-                  Finalizar Evaluación
-                  <Check className="ml-2 h-4 w-4" />
+                  Calcular Riesgo
+                  <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
+
               <CMGFooter />
             </div>
           )}

@@ -366,6 +366,10 @@ export default function CalculadoraEctopico() {
     verificarAuth()
   }, [])
 
+  useEffect(() => {
+    calcularPAM(presionSistolica, presionDiastolica)
+  }, [presionSistolica, presionDiastolica])
+
   // ==================== GUARDAR DATOS INCOMPLETOS ====================
   async function guardarDatosIncompletos(motivoFinalizacion: string, seccionCompletada: number): Promise<boolean> {
     if (guardandoConsulta) {
@@ -2454,8 +2458,9 @@ export default function CalculadoraEctopico() {
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                           <span>PAM</span>
                         </Label>
-                        <div className="w-full text-lg font-medium text-gray-400 border border-gray-200 rounded-lg mb-2 px-3 py-2 bg-white">
-                          --
+                        {/* CHANGE: Show calculated PAM value instead of -- */}
+                        <div className="w-full text-lg font-medium text-gray-900 border border-gray-200 rounded-lg mb-2 px-3 py-2 bg-white">
+                          {pam || "--"}
                         </div>
                         <p className="text-xs text-blue-600 font-medium">mmHg (65-100)</p>
                       </div>
@@ -2470,16 +2475,17 @@ export default function CalculadoraEctopico() {
                         <label
                           className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
                             estadoConciencia === "alerta"
-                              ? "border-gray-400 bg-gray-50"
+                              ? "border-green-400 bg-green-50"
                               : "border-gray-200 hover:border-gray-300"
                           }`}
                         >
                           <div
                             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                              estadoConciencia === "alerta" ? "border-gray-400" : "border-gray-300"
+                              estadoConciencia === "alerta" ? "border-green-500" : "border-gray-300"
                             }`}
                           >
-                            {estadoConciencia === "alerta" && <div className="w-3 h-3 bg-gray-400 rounded-full"></div>}
+                            {/* CHANGE: Changed radio button fill color to green */}
+                            {estadoConciencia === "alerta" && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}
                           </div>
                           <input
                             type="radio"
@@ -2495,17 +2501,18 @@ export default function CalculadoraEctopico() {
                         <label
                           className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
                             estadoConciencia === "no_alerta"
-                              ? "border-gray-400 bg-gray-50"
+                              ? "border-red-400 bg-red-50"
                               : "border-gray-200 hover:border-gray-300"
                           }`}
                         >
                           <div
                             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                              estadoConciencia === "no_alerta" ? "border-gray-400" : "border-gray-300"
+                              estadoConciencia === "no_alerta" ? "border-red-500" : "border-gray-300"
                             }`}
                           >
+                            {/* CHANGE: Changed radio button fill color to red */}
                             {estadoConciencia === "no_alerta" && (
-                              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                             )}
                           </div>
                           <input
@@ -2646,7 +2653,7 @@ export default function CalculadoraEctopico() {
                       </div>
                     ) : (
                       <div className="space-y-6">
-                        <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
+                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
                           <div className="flex items-center gap-4 mb-6">
                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
                               <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

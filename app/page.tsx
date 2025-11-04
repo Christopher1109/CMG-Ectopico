@@ -2386,7 +2386,7 @@ export default function CalculadoraEctopico() {
           </Card>
         </div>
       ) : (
-        <div>
+        <div className="max-w-4xl mx-auto p-6">
           {/* SECCION 1: Datos del Paciente */}
           {seccionActual === 1 && (
             <div className="space-y-6">

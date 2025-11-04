@@ -2382,23 +2382,23 @@ export default function CalculadoraEctopico() {
                     {alertaSignosVitalesPendiente ? (
                       <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl p-8 border border-red-200 shadow-lg">
                         <div className="flex items-center gap-4 mb-6">
-                          <div className="bg-red-100 p-4 rounded-xl">
-                            <AlertCircle className="h-8 w-8 text-red-600" />
+                          <div className="bg-red-100 p-3 rounded-xl">
+                            <AlertCircle className="h-7 w-7 text-red-600" />
                           </div>
                           <div>
-                            <h2 className="text-2xl font-bold text-red-900">Advertencia de Signos Vitales</h2>
-                            <p className="text-red-700">Se detectaron valores fuera de rango</p>
+                            <h2 className="text-xl font-semibold text-red-900">Advertencia de Signos Vitales</h2>
+                            <p className="text-sm text-red-700 mt-0.5">Se detectaron valores fuera de rango</p>
                           </div>
                         </div>
 
-                        <div className="bg-white rounded-xl p-6 mb-6 border border-red-200">
-                          <pre className="whitespace-pre-wrap text-sm text-gray-800 font-medium">
+                        <div className="bg-white rounded-xl p-5 mb-5 border border-red-200">
+                          <pre className="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed font-sans">
                             {mensajeAlertaSignosVitales}
                           </pre>
                         </div>
 
                         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
-                          <p className="text-yellow-900 font-medium">
+                          <p className="text-sm text-yellow-900 leading-relaxed">
                             ⚠️ Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender
                             la emergencia.
                           </p>
@@ -2407,10 +2407,11 @@ export default function CalculadoraEctopico() {
                         <div className="flex gap-4 justify-between">
                           <Button
                             onClick={() => {
-                              iniciarNuevaEvaluacion()
+                              resetCalculadora()
+                              setPantalla("bienvenida")
                             }}
                             variant="outline"
-                            className="border-red-300 text-red-700 hover:bg-red-50 font-semibold py-3 px-8 rounded-xl"
+                            className="border-red-300 text-red-700 hover:bg-red-50 font-medium py-3 px-6 rounded-xl"
                           >
                             <Home className="mr-2 h-4 w-4" />
                             Regresar al Inicio
@@ -2419,7 +2420,7 @@ export default function CalculadoraEctopico() {
                             onClick={() => {
                               setAlertaSignosVitalesPendiente(false)
                             }}
-                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                           >
                             Continuar con la Evaluación
                             <ChevronRight className="ml-2 h-4 w-4" />
@@ -2686,23 +2687,23 @@ export default function CalculadoraEctopico() {
                     {alertaSignosVitalesPendiente ? (
                       <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl p-8 border border-red-200 shadow-lg">
                         <div className="flex items-center gap-4 mb-6">
-                          <div className="bg-red-100 p-4 rounded-xl">
-                            <AlertCircle className="h-8 w-8 text-red-600" />
+                          <div className="bg-red-100 p-3 rounded-xl">
+                            <AlertCircle className="h-7 w-7 text-red-600" />
                           </div>
                           <div>
-                            <h2 className="text-2xl font-bold text-red-900">Advertencia de Signos Vitales</h2>
-                            <p className="text-red-700">Se detectaron valores fuera de rango</p>
+                            <h2 className="text-xl font-semibold text-red-900">Advertencia de Signos Vitales</h2>
+                            <p className="text-sm text-red-700 mt-0.5">Se detectaron valores fuera de rango</p>
                           </div>
                         </div>
 
-                        <div className="bg-white rounded-xl p-6 mb-6 border border-red-200">
-                          <pre className="whitespace-pre-wrap text-sm text-gray-800 font-medium">
+                        <div className="bg-white rounded-xl p-5 mb-5 border border-red-200">
+                          <pre className="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed font-sans">
                             {mensajeAlertaSignosVitales}
                           </pre>
                         </div>
 
                         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
-                          <p className="text-yellow-900 font-medium">
+                          <p className="text-sm text-yellow-900 leading-relaxed">
                             ⚠️ Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender
                             la emergencia.
                           </p>
@@ -2711,10 +2712,11 @@ export default function CalculadoraEctopico() {
                         <div className="flex gap-4 justify-between">
                           <Button
                             onClick={() => {
-                              iniciarNuevaEvaluacion()
+                              resetCalculadora()
+                              setPantalla("bienvenida")
                             }}
                             variant="outline"
-                            className="border-red-300 text-red-700 hover:bg-red-50 font-semibold py-3 px-8 rounded-xl"
+                            className="border-red-300 text-red-700 hover:bg-red-50 font-medium py-3 px-6 rounded-xl"
                           >
                             <Home className="mr-2 h-4 w-4" />
                             Regresar al Inicio
@@ -2723,7 +2725,7 @@ export default function CalculadoraEctopico() {
                             onClick={() => {
                               setAlertaSignosVitalesPendiente(false)
                             }}
-                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                           >
                             Continuar con la Evaluación
                             <ChevronRight className="ml-2 h-4 w-4" />

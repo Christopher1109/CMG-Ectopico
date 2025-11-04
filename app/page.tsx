@@ -1539,7 +1539,7 @@ export default function CalculadoraEctopico() {
 
   // IMPROVED PROGRESS BAR COMPONENT
   const ProgressBar = () => {
-    const totalSecciones = 8 // Updated to 8 sections
+    const totalSecciones = 7
     const progreso = (seccionesCompletadas.length / totalSecciones) * 100
 
     return (

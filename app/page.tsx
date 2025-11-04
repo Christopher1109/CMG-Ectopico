@@ -3,7 +3,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { clienteSeguro } from "@/lib/api/clienteSeguro"
 import { calcularRiesgo, validarEmbarazo } from "@/lib/api/calculos"
 import {
@@ -476,8 +475,6 @@ export default function CalculadoraEctopico() {
     setMensajeAlerta("")
 
     if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
-      // If any required field is empty, consider it valid for now, but show an error if next step requires it.
-      // This allows the user to proceed without immediately filling everything.
       return true
     }
 
@@ -509,40 +506,37 @@ export default function CalculadoraEctopico() {
         mensajeAnormal += `• PAM: ${pamValor} mmHg (Normal: 65-100 mmHg)\n`
       }
       if (!concienciaNormal) {
-        mensajeAnormal += `• Estado de Conciencia: ${estadoConciencia}\n`
+        mensajeAnormal += `• Estado de Conciencia: No alerta (estuporosa, comatosa, somnolienta)\n`
       }
 
       mensajeAnormal +=
         "\n⚠️ La paciente requiere atención médica inmediata. Los signos vitales fuera de rango pueden indicar inestabilidad hemodinámica que requiere evaluación urgente."
 
       setMensajeAlertaSignosVitales(mensajeAnormal)
-      setAlertaSignosVitalesPendiente(true) // Set flag to show alert block
-      return true // Return true to allow the flow to continue to the next section, but the alert will be shown.
+      setAlertaSignosVitalesPendiente(true)
+      return true
     }
 
     try {
-      // Call backend validation only if signs are normal (or user decides to continue)
-      // This part is kept for potential future backend integration for vital signs.
-      // For now, the frontend check is the primary mechanism.
-      // const respuesta = await clienteSeguro.validarSignosVitales({
-      //   frecuenciaCardiaca: frecuenciaCardiaca,
-      //   presionSistolica: presionSistolica,
-      //   presionDiastolica: presionDiastolica,
-      //   estadoConciencia: estadoConciencia,
-      // });
+      const respuesta = await clienteSeguro.validarSignosVitales({
+        frecuenciaCardiaca: frecuenciaCardiaca,
+        presionSistolica: presionSistolica,
+        presionDiastolica: presionDiastolica,
+        estadoConciencia: estadoConciencia,
+      })
 
-      // if (respuesta.esEmergencia) {
-      //   await guardarDatosIncompletos("signos_vitales_criticos", 2);
-      //   setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>);
-      //   setProtocoloFinalizado(true);
-      //   setPantalla("completada");
-      //   return false;
-      // }
+      if (respuesta.esEmergencia) {
+        await guardarDatosIncompletos("signos_vitales_criticos", 2)
+        setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
+        setProtocoloFinalizado(true)
+        setPantalla("completada")
+        return false
+      }
 
-      // if (respuesta.hayAlerta) {
-      //   setMostrarAlerta(true);
-      //   setMensajeAlerta(respuesta.mensajeAlerta);
-      // }
+      if (respuesta.hayAlerta) {
+        setMostrarAlerta(true)
+        setMensajeAlerta(respuesta.mensajeAlerta)
+      }
 
       return true
     } catch (error) {
@@ -2388,7 +2382,7 @@ export default function CalculadoraEctopico() {
                 {seccionActual === 2 && (
                   <div className="space-y-6">
                     <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl p-8 border border-red-100 shadow-sm">
-                      <div className="flex items-start gap-4 mb-6">
+                      <div className="flex items-center gap-4 mb-6">
                         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center shadow-lg">
                           <Activity className="w-7 h-7 text-white" />
                         </div>
@@ -2399,129 +2393,6 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    <div className="space-y-6">
-                      {/* Frecuencia Cardíaca */}
-                      <div className="bg-white p-6 rounded-xl border-2 border-gray-100 hover:border-red-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                          <span>Frecuencia Cardíaca (lpm)</span>
-                        </Label>
-                        <Input
-                          type="number"
-                          value={frecuenciaCardiaca}
-                          onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
-                          placeholder="Ingrese la frecuencia cardíaca"
-                          className="w-full text-base border-2 border-gray-200 focus:border-red-400 focus:ring-red-400 rounded-lg p-3"
-                        />
-                        <p className="text-xs text-gray-500 mt-2">Rango normal: 60-100 lpm</p>
-                      </div>
-
-                      {/* Presión Arterial Sistólica */}
-                      <div className="bg-white p-6 rounded-xl border-2 border-gray-100 hover:border-red-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                          <span>Presión Arterial Sistólica (mmHg)</span>
-                        </Label>
-                        <Input
-                          type="number"
-                          value={presionSistolica}
-                          onChange={(e) => setPresionSistolica(e.target.value)}
-                          placeholder="Ingrese la presión sistólica"
-                          className="w-full text-base border-2 border-gray-200 focus:border-red-400 focus:ring-red-400 rounded-lg p-3"
-                        />
-                        <p className="text-xs text-gray-500 mt-2">Rango normal: 90-140 mmHg</p>
-                      </div>
-
-                      {/* Presión Arterial Diastólica */}
-                      <div className="bg-white p-6 rounded-xl border-2 border-gray-100 hover:border-red-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                          <span>Presión Arterial Diastólica (mmHg)</span>
-                        </Label>
-                        <Input
-                          type="number"
-                          value={presionDiastolica}
-                          onChange={(e) => setPresionDiastolica(e.target.value)}
-                          placeholder="Ingrese la presión diastólica"
-                          className="w-full text-base border-2 border-gray-200 focus:border-red-400 focus:ring-red-400 rounded-lg p-3"
-                        />
-                        <p className="text-xs text-gray-500 mt-2">Rango normal: 60-90 mmHg</p>
-                      </div>
-
-                      {/* Estado de Conciencia */}
-                      <div className="bg-white p-6 rounded-xl border-2 border-gray-100 hover:border-red-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                          <span>Estado de Conciencia</span>
-                        </Label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {[
-                            { value: "alerta", label: "Alerta" },
-                            { value: "somnolienta", label: "Somnolienta" },
-                            { value: "estuporosa", label: "Estuporosa" },
-                            { value: "comatosa", label: "Comatosa" },
-                          ].map((opcion) => (
-                            <label
-                              key={opcion.value}
-                              className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                                estadoConciencia === opcion.value
-                                  ? "border-red-500 bg-red-50 shadow-md"
-                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="estadoConciencia"
-                                value={opcion.value}
-                                checked={estadoConciencia === opcion.value}
-                                onChange={(e) => setEstadoConciencia(e.target.value)}
-                                className="sr-only"
-                              />
-                              <div
-                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  estadoConciencia === opcion.value ? "border-red-500 bg-red-500" : "border-gray-300"
-                                }`}
-                              >
-                                {estadoConciencia === opcion.value && (
-                                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                                )}
-                              </div>
-                              <span className="text-sm font-medium text-gray-700">{opcion.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Botones de navegación */}
-                    <div className="flex justify-between">
-                      <Button
-                        onClick={() => setSeccion(1)}
-                        variant="outline"
-                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                      >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Anterior
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          if (validarSignosVitales()) {
-                            setSeccionesCompletadas([...seccionesCompletadas, 2])
-                            setSeccion(3)
-                          }
-                        }}
-                        className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 transition-all shadow-lg font-medium"
-                      >
-                        Continuar
-                        <ChevronRight className="h-5 w-5" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* SECCION 3: Síntomas y Factores de Riesgo */}
-                {seccionActual === 3 && (
-                  <div className="space-y-6">
                     {alertaSignosVitalesPendiente ? (
                       <div className="space-y-6">
                         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-200 shadow-lg">

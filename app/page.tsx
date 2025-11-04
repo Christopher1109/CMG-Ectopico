@@ -2388,7 +2388,7 @@ export default function CalculadoraEctopico() {
                 {seccionActual === 2 && (
                   <div className="space-y-6">
                     <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl p-8 border border-red-100 shadow-sm">
-                      <div className="flex items-center gap-4 mb-6">
+                      <div className="flex items-start gap-4 mb-6">
                         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center shadow-lg">
                           <Activity className="w-7 h-7 text-white" />
                         </div>
@@ -2457,7 +2457,9 @@ export default function CalculadoraEctopico() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {[
                             { value: "alerta", label: "Alerta" },
-                            { value: "no_alerta", label: "No alerta (estuporosa, comatosa, somnolienta)" },
+                            { value: "somnolienta", label: "Somnolienta" },
+                            { value: "estuporosa", label: "Estuporosa" },
+                            { value: "comatosa", label: "Comatosa" },
                           ].map((opcion) => (
                             <label
                               key={opcion.value}
@@ -2489,30 +2491,30 @@ export default function CalculadoraEctopico() {
                           ))}
                         </div>
                       </div>
+                    </div>
 
-                      {/* Botones de navegación */}
-                      <div className="flex justify-between">
-                        <Button
-                          onClick={() => setSeccion(1)}
-                          variant="outline"
-                          className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                        >
-                          <ChevronLeft className="mr-2 h-4 w-4" />
-                          Anterior
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            if (validarSignosVitales()) {
-                              setSeccionesCompletadas([...seccionesCompletadas, 2])
-                              setSeccion(3)
-                            }
-                          }}
-                          className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 transition-all shadow-lg font-medium"
-                        >
-                          Continuar
-                          <ChevronRight className="h-5 w-5" />
-                        </Button>
-                      </div>
+                    {/* Botones de navegación */}
+                    <div className="flex justify-between">
+                      <Button
+                        onClick={() => setSeccion(1)}
+                        variant="outline"
+                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                      >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        Anterior
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (validarSignosVitales()) {
+                            setSeccionesCompletadas([...seccionesCompletadas, 2])
+                            setSeccion(3)
+                          }
+                        }}
+                        className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 transition-all shadow-lg font-medium"
+                      >
+                        Continuar
+                        <ChevronRight className="h-5 w-5" />
+                      </Button>
                     </div>
                   </div>
                 )}

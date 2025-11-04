@@ -1680,6 +1680,8 @@ export default function CalculadoraEctopico() {
                   Clínico
                 </p>
               </div>
+
+              <CMGFooter />
             </div>
           </CardContent>
         </Card>
@@ -2934,6 +2936,8 @@ export default function CalculadoraEctopico() {
                       <p className="text-sm text-red-700">{errorSeccion}</p>
                     </div>
                   )}
+
+                  <CMGFooter />
                 </div>
               )}
             </div>
@@ -3112,7 +3116,6 @@ export default function CalculadoraEctopico() {
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
-              <CMGFooter />
             </div>
           )}
 
@@ -3628,65 +3631,132 @@ export default function CalculadoraEctopico() {
 
           {/* SECCION 7: TVUS */}
           {seccionActual === 7 && (
-            <div className="space-y-8">
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 border border-purple-100 shadow-sm">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
-                    <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Ecografía Transvaginal (TVUS)</h2>
-                    <p className="text-sm text-gray-600 mt-1">Hallazgos ecográficos</p>
-                  </div>
-                </div>
+            <div className="space-y-6">
+              {alertaEcografiaPendiente ? (
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
+                    <div className="flex items-start space-x-4 mb-6">
+                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                        <AlertTriangle className="h-7 w-7 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Ecografía</h2>
+                        <p className="text-blue-700 font-medium">Se detectaron hallazgos que requieren atención</p>
+                      </div>
+                    </div>
 
-                <div className="space-y-4">
-                  <label className="flex items-center gap-2 text-sm font-medium text-purple-900">
-                    <div className="h-2 w-2 rounded-full bg-purple-500"></div>
-                    Hallazgos en TVUS
-                  </label>
-                  <div className="space-y-3">
-                    {[
-                      { value: "normal", label: "Normal (Sin evidencia de embarazo intrauterino)" },
-                      { value: "libre", label: "Líquido libre" },
-                      { value: "masa", label: "Masa anexial" },
-                      { value: "masa_libre", label: "Masa anexial + Líquido libre" },
-                    ].map((opcion) => (
-                      <button
-                        key={opcion.value}
-                        type="button"
-                        onClick={() => setTvus(opcion.value)}
-                        className={`
-                          w-full px-4 py-3.5 rounded-xl border-2 transition-all duration-200
-                          flex items-center gap-3 text-left
-                          ${
-                            tvus === opcion.value
-                              ? "border-purple-500 bg-purple-50 shadow-md"
-                              : "border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50"
-                          }
-                        `}
-                      >
-                        <div
+                    <div className="bg-white rounded-xl p-6 shadow-md border border-blue-100 mb-6">
+                      <div className="flex items-start space-x-3 mb-4">
+                        <AlertTriangle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
+                        <div>
+                          <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
+                          <p className="text-slate-700 leading-relaxed">{mensajeAlertaEcografia}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 pt-6 border-t border-blue-100">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span className="text-blue-600 text-sm font-bold">!</span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-slate-800 mb-2">Recomendación Médica</h4>
+                            <p className="text-slate-700 leading-relaxed">
+                              Se recomienda seguir monitoreando continuamente el estado de la paciente y realizar los
+                              estudios complementarios necesarios para una evaluación completa.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
+                      <p className="text-slate-700 leading-relaxed">
+                        Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
+                        emergencia.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between pt-4">
+                    <Button
+                      onClick={() => {
+                        setSeccion(1)
+                        setAlertaEcografiaPendiente(false)
+                      }}
+                      variant="outline"
+                      className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                    >
+                      <Home className="h-5 w-5" />
+                      Regresar al Inicio
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setAlertaEcografiaPendiente(false)
+                      }}
+                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium"
+                    >
+                      Continuar con la Evaluación
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </div>
+                  <CMGFooter />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
+                        <Droplet className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-slate-800">Ecografía Transvaginal (TVUS)</h2>
+                        <p className="text-sm text-slate-600">Hallazgos ecográficos</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="flex items-center gap-2 text-sm font-medium text-purple-900">
+                      <div className="h-2 w-2 rounded-full bg-purple-500"></div>
+                      Hallazgos en TVUS
+                    </label>
+                    <div className="space-y-3">
+                      {[
+                        { value: "normal", label: "Normal (Sin evidencia de embarazo intrauterino)" },
+                        { value: "libre", label: "Líquido libre" },
+                        { value: "masa", label: "Masa anexial" },
+                        { value: "masa_libre", label: "Masa anexial + Líquido libre" },
+                      ].map((opcion) => (
+                        <button
+                          key={opcion.value}
+                          type="button"
+                          onClick={() => setTvus(opcion.value)}
                           className={`
-                            w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
-                            ${tvus === opcion.value ? "border-purple-500 bg-purple-500" : "border-gray-300"}
+                            w-full px-4 py-3.5 rounded-xl border-2 transition-all duration-200
+                            flex items-center gap-3 text-left
+                            ${
+                              tvus === opcion.value
+                                ? "border-purple-500 bg-purple-50 shadow-md"
+                                : "border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50"
+                            }
                           `}
                         >
-                          {tvus === opcion.value && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">{opcion.label}</span>
-                      </button>
-                    ))}
+                          <div
+                            className={`
+                              w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
+                              ${tvus === opcion.value ? "border-purple-500 bg-purple-500" : "border-gray-300"}
+                            `}
+                          >
+                            {tvus === opcion.value && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
+                          </div>
+                          <span className="text-sm font-medium text-gray-700">{opcion.label}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {errorSeccion && (
                 <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
@@ -3718,6 +3788,8 @@ export default function CalculadoraEctopico() {
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
+
+              <CMGFooter />
             </div>
           )}
 
@@ -3785,6 +3857,8 @@ export default function CalculadoraEctopico() {
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
+
+              <CMGFooter />
             </div>
           )}
         </div>

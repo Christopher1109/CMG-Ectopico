@@ -23,6 +23,8 @@ import {
   ChevronLeft,
   Stethoscope,
   Droplet,
+  AlertCircle,
+  Home,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type React from "react"
@@ -344,6 +346,9 @@ export default function CalculadoraEctopico() {
   const [tienePruebaEmbarazoChecklist, setTienePruebaEmbarazoChecklist] = useState("")
   const [tieneEcoTVUSChecklist, setTieneEcoTVUSChecklist] = useState("")
 
+  const [alertaSignosVitalesPendiente, setAlertaSignosVitalesPendiente] = useState(false)
+  const [mensajeAlertaSignosVitales, setMensajeAlertaSignosVitales] = useState("")
+
   // ✅ Verificar autenticación al cargar
   useEffect(() => {
     const verificarAuth = async () => {
@@ -505,8 +510,8 @@ export default function CalculadoraEctopico() {
       mensajeAnormal +=
         "\n⚠️ La paciente requiere atención médica inmediata. Los signos vitales fuera de rango pueden indicar inestabilidad hemodinámica que requiere evaluación urgente."
 
-      setMostrarAlerta(true)
-      setMensajeAlerta(mensajeAnormal)
+      setMensajeAlertaSignosVitales(mensajeAnormal)
+      setAlertaSignosVitalesPendiente(true)
       return true
     }
 
@@ -894,6 +899,10 @@ export default function CalculadoraEctopico() {
     setTienePruebaEmbarazo("")
     setHallazgosTVUS("")
     setNivelBetaHCG("")
+
+    // Resetting vital signs alert states
+    setAlertaSignosVitalesPendiente(false)
+    setMensajeAlertaSignosVitales("")
   }
 
   const buscarConsulta = async () => {
@@ -2370,465 +2379,574 @@ export default function CalculadoraEctopico() {
                 {/* SECCION 2: Signos Vitales */}
                 {seccionActual === 2 && (
                   <div className="space-y-6">
-                    {/* Applied modern card design to vital signs section */}
-                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-6 rounded-xl border border-emerald-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
-                          <Activity className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-bold text-slate-800">Signos Vitales</h2>
-                          <p className="text-sm text-slate-600">Mediciones clínicas actuales</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {mostrarAlerta && (
-                      <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-5 rounded-xl border border-amber-200 shadow-sm">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <AlertTriangle className="h-5 w-5 text-amber-600" />
+                    {alertaSignosVitalesPendiente ? (
+                      <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl p-8 border border-red-200 shadow-lg">
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="bg-red-100 p-4 rounded-xl">
+                            <AlertCircle className="h-8 w-8 text-red-600" />
                           </div>
                           <div>
-                            <span className="font-semibold text-amber-900 block mb-1">Sugerencia Clínica</span>
-                            <p className="text-amber-800 text-sm leading-relaxed">{mensajeAlerta}</p>
+                            <h2 className="text-2xl font-bold text-red-900">Advertencia de Signos Vitales</h2>
+                            <p className="text-red-700">Se detectaron valores fuera de rango</p>
                           </div>
                         </div>
-                      </div>
-                    )}
 
-                    <div className="space-y-5">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-emerald-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                          <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                            <span>Frecuencia Cardíaca</span>
-                          </Label>
-                          <input
-                            type="number"
-                            placeholder="60-100"
-                            value={frecuenciaCardiaca}
-                            onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
-                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
-                          />
-                          <span className="text-xs text-slate-500 mt-1 block">lpm</span>
+                        <div className="bg-white rounded-xl p-6 mb-6 border border-red-200">
+                          <pre className="whitespace-pre-wrap text-sm text-gray-800 font-medium">
+                            {mensajeAlertaSignosVitales}
+                          </pre>
                         </div>
-                        <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-emerald-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                          <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                            <span>Presión Sistólica</span>
-                          </Label>
-                          <input
-                            type="number"
-                            placeholder="90-140"
-                            value={presionSistolica}
-                            onChange={(e) => {
-                              setPresionSistolica(e.target.value)
-                              calcularPAM(e.target.value, presionDiastolica)
+
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+                          <p className="text-yellow-900 font-medium">
+                            ⚠️ Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender
+                            la emergencia.
+                          </p>
+                        </div>
+
+                        <div className="flex gap-4 justify-between">
+                          <Button
+                            onClick={() => {
+                              iniciarNuevaEvaluacion()
                             }}
-                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
-                          />
-                          <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
-                        </div>
-                        <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-emerald-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                          <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                            <span>Presión Diastólica</span>
-                          </Label>
-                          <input
-                            type="number"
-                            placeholder="60-90"
-                            value={presionDiastolica}
-                            onChange={(e) => {
-                              setPresionDiastolica(e.target.value)
-                              calcularPAM(presionSistolica, e.target.value)
+                            variant="outline"
+                            className="border-red-300 text-red-700 hover:bg-red-50 font-semibold py-3 px-8 rounded-xl"
+                          >
+                            <Home className="mr-2 h-4 w-4" />
+                            Regresar al Inicio
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setAlertaSignosVitalesPendiente(false)
                             }}
-                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
-                          />
-                          <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
+                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                          >
+                            Continuar con la Evaluación
+                            <ChevronRight className="ml-2 h-4 w-4" />
+                          </Button>
                         </div>
-                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-200 shadow-sm">
-                          <Label className="text-sm font-semibold text-blue-800 mb-2 flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <span>PAM</span>
-                          </Label>
-                          <div className="w-full px-4 py-3 bg-white border-2 border-blue-200 rounded-lg text-lg font-semibold text-blue-700">
-                            {pam || "--"}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-6 rounded-xl border border-emerald-100">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
+                              <Activity className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <h2 className="text-2xl font-bold text-slate-800">Signos Vitales</h2>
+                              <p className="text-sm text-slate-600">Mediciones clínicas actuales</p>
+                            </div>
                           </div>
-                          <span className="text-xs text-blue-600 mt-1 block">mmHg (65-100)</span>
                         </div>
-                      </div>
 
-                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
-                        <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                          <span>Estado de Conciencia</span>
-                        </Label>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                          <label
-                            className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                              estadoConciencia === "alerta"
-                                ? "border-emerald-500 bg-emerald-50 shadow-md"
-                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name="estadoConciencia"
-                              value="alerta"
-                              checked={estadoConciencia === "alerta"}
-                              onChange={(e) => setEstadoConciencia(e.target.value)}
-                              className="sr-only"
-                            />
-                            <div
-                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                estadoConciencia === "alerta" ? "border-emerald-500 bg-emerald-500" : "border-gray-300"
-                              }`}
-                            >
-                              {estadoConciencia === "alerta" && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                        {mostrarAlerta && (
+                          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-5 rounded-xl border border-amber-200 shadow-sm">
+                            <div className="flex items-start space-x-3">
+                              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                              </div>
+                              <div>
+                                <span className="font-semibold text-amber-900 block mb-1">Sugerencia Clínica</span>
+                                <p className="text-amber-800 text-sm leading-relaxed">{mensajeAlerta}</p>
+                              </div>
                             </div>
-                            <span className="text-sm font-medium text-slate-700">Alerta</span>
-                          </label>
+                          </div>
+                        )}
 
-                          <label
-                            className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                              estadoConciencia === "somnolienta"
-                                ? "border-amber-500 bg-amber-50 shadow-md"
-                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name="estadoConciencia"
-                              value="somnolienta"
-                              checked={estadoConciencia === "somnolienta"}
-                              onChange={(e) => setEstadoConciencia(e.target.value)}
-                              className="sr-only"
-                            />
-                            <div
-                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                estadoConciencia === "somnolienta" ? "border-amber-500 bg-amber-500" : "border-gray-300"
-                              }`}
-                            >
-                              {estadoConciencia === "somnolienta" && (
-                                <div className="w-2 h-2 bg-white rounded-full"></div>
-                              )}
+                        <div className="space-y-5">
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-emerald-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                              <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                                <span>Frecuencia Cardíaca</span>
+                              </Label>
+                              <input
+                                type="number"
+                                placeholder="60-100"
+                                value={frecuenciaCardiaca}
+                                onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
+                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
+                              />
+                              <span className="text-xs text-slate-500 mt-1 block">lpm</span>
                             </div>
-                            <span className="text-sm font-medium text-slate-700">Somnolienta</span>
-                          </label>
+                            <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-emerald-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                              <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                                <span>Presión Sistólica</span>
+                              </Label>
+                              <input
+                                type="number"
+                                placeholder="90-140"
+                                value={presionSistolica}
+                                onChange={(e) => {
+                                  setPresionSistolica(e.target.value)
+                                  calcularPAM(e.target.value, presionDiastolica)
+                                }}
+                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
+                              />
+                              <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
+                            </div>
+                            <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-emerald-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                              <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                                <span>Presión Diastólica</span>
+                              </Label>
+                              <input
+                                type="number"
+                                placeholder="60-90"
+                                value={presionDiastolica}
+                                onChange={(e) => {
+                                  setPresionDiastolica(e.target.value)
+                                  calcularPAM(presionSistolica, e.target.value)
+                                }}
+                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
+                              />
+                              <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
+                            </div>
+                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-200 shadow-sm">
+                              <Label className="text-sm font-semibold text-blue-800 mb-2 flex items-center space-x-2">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <span>PAM</span>
+                              </Label>
+                              <div className="w-full px-4 py-3 bg-white border-2 border-blue-200 rounded-lg text-lg font-semibold text-blue-700">
+                                {pam || "--"}
+                              </div>
+                              <span className="text-xs text-blue-600 mt-1 block">mmHg (65-100)</span>
+                            </div>
+                          </div>
 
-                          <label
-                            className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                              estadoConciencia === "estuporosa"
-                                ? "border-orange-500 bg-orange-50 shadow-md"
-                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name="estadoConciencia"
-                              value="estuporosa"
-                              checked={estadoConciencia === "estuporosa"}
-                              onChange={(e) => setEstadoConciencia(e.target.value)}
-                              className="sr-only"
-                            />
-                            <div
-                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                estadoConciencia === "estuporosa"
-                                  ? "border-orange-500 bg-orange-500"
-                                  : "border-gray-300"
-                              }`}
-                            >
-                              {estadoConciencia === "estuporosa" && (
-                                <div className="w-2 h-2 bg-white rounded-full"></div>
-                              )}
-                            </div>
-                            <span className="text-sm font-medium text-slate-700">Estuporosa</span>
-                          </label>
+                          <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
+                            <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                              <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                              <span>Estado de Conciencia</span>
+                            </Label>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                              <label
+                                className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                  estadoConciencia === "alerta"
+                                    ? "border-emerald-500 bg-emerald-50 shadow-md"
+                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="estadoConciencia"
+                                  value="alerta"
+                                  checked={estadoConciencia === "alerta"}
+                                  onChange={(e) => setEstadoConciencia(e.target.value)}
+                                  className="sr-only"
+                                />
+                                <div
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                    estadoConciencia === "alerta"
+                                      ? "border-emerald-500 bg-emerald-500"
+                                      : "border-gray-300"
+                                  }`}
+                                >
+                                  {estadoConciencia === "alerta" && (
+                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                  )}
+                                </div>
+                                <span className="text-sm font-medium text-slate-700">Alerta</span>
+                              </label>
 
-                          <label
-                            className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                              estadoConciencia === "comatosa"
-                                ? "border-red-500 bg-red-50 shadow-md"
-                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name="estadoConciencia"
-                              value="comatosa"
-                              checked={estadoConciencia === "comatosa"}
-                              onChange={(e) => setEstadoConciencia(e.target.value)}
-                              className="sr-only"
-                            />
-                            <div
-                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                estadoConciencia === "comatosa" ? "border-red-500 bg-red-500" : "border-gray-300"
-                              }`}
-                            >
-                              {estadoConciencia === "comatosa" && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                              <label
+                                className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                  estadoConciencia === "somnolienta"
+                                    ? "border-amber-500 bg-amber-50 shadow-md"
+                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="estadoConciencia"
+                                  value="somnolienta"
+                                  checked={estadoConciencia === "somnolienta"}
+                                  onChange={(e) => setEstadoConciencia(e.target.value)}
+                                  className="sr-only"
+                                />
+                                <div
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                    estadoConciencia === "somnolienta"
+                                      ? "border-amber-500 bg-amber-500"
+                                      : "border-gray-300"
+                                  }`}
+                                >
+                                  {estadoConciencia === "somnolienta" && (
+                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                  )}
+                                </div>
+                                <span className="text-sm font-medium text-slate-700">Somnolienta</span>
+                              </label>
+
+                              <label
+                                className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                  estadoConciencia === "estuporosa"
+                                    ? "border-orange-500 bg-orange-50 shadow-md"
+                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="estadoConciencia"
+                                  value="estuporosa"
+                                  checked={estadoConciencia === "estuporosa"}
+                                  onChange={(e) => setEstadoConciencia(e.target.value)}
+                                  className="sr-only"
+                                />
+                                <div
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                    estadoConciencia === "estuporosa"
+                                      ? "border-orange-500 bg-orange-500"
+                                      : "border-gray-300"
+                                  }`}
+                                >
+                                  {estadoConciencia === "estuporosa" && (
+                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                  )}
+                                </div>
+                                <span className="text-sm font-medium text-slate-700">Estuporosa</span>
+                              </label>
+
+                              <label
+                                className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                  estadoConciencia === "comatosa"
+                                    ? "border-red-500 bg-red-50 shadow-md"
+                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="estadoConciencia"
+                                  value="comatosa"
+                                  checked={estadoConciencia === "comatosa"}
+                                  onChange={(e) => setEstadoConciencia(e.target.value)}
+                                  className="sr-only"
+                                />
+                                <div
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                    estadoConciencia === "comatosa" ? "border-red-500 bg-red-500" : "border-gray-300"
+                                  }`}
+                                >
+                                  {estadoConciencia === "comatosa" && (
+                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                  )}
+                                </div>
+                                <span className="text-sm font-medium text-slate-700">Comatosa</span>
+                              </label>
                             </div>
-                            <span className="text-sm font-medium text-slate-700">Comatosa</span>
-                          </label>
+                          </div>
                         </div>
-                      </div>
-                    </div>
 
-                    {errorSeccion && (
-                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center space-x-2">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <p className="text-red-700 font-medium">{errorSeccion}</p>
+                        {errorSeccion && (
+                          <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                            <div className="flex items-center space-x-2">
+                              <AlertTriangle className="h-5 w-5 text-red-600" />
+                              <p className="text-red-700 font-medium">{errorSeccion}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex justify-between pt-4">
+                          <Button
+                            onClick={() => setSeccion(1)}
+                            variant="outline"
+                            className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                          >
+                            <ChevronLeft className="mr-2 h-4 w-4" />
+                            Anterior
+                          </Button>
+                          <Button
+                            onClick={async () => {
+                              if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
+                                setErrorSeccion("Por favor, complete todos los campos de signos vitales.")
+                                return
+                              }
+                              if (await validarSignosVitales()) {
+                                setSeccion(3)
+                                completarSeccion(2)
+                              }
+                            }}
+                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                          >
+                            Continuar
+                            <ChevronRight className="ml-2 h-4 w-4" />
+                          </Button>
                         </div>
-                      </div>
+                        <CMGFooter />
+                      </>
                     )}
-
-                    <div className="flex justify-between pt-4">
-                      <Button
-                        onClick={() => setSeccion(1)}
-                        variant="outline"
-                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                      >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Anterior
-                      </Button>
-                      <Button
-                        onClick={async () => {
-                          if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
-                            setErrorSeccion("Por favor, complete todos los campos de signos vitales.")
-                            return
-                          }
-                          if (await validarSignosVitales()) {
-                            setSeccion(3)
-                            completarSeccion(2)
-                          }
-                        }}
-                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                      >
-                        Continuar
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                    <CMGFooter />
                   </div>
                 )}
 
                 {/* SECCION 3: Síntomas y Factores de Riesgo */}
                 {seccionActual === 3 && (
                   <div className="space-y-8">
-                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
-                      <div className="flex items-center gap-4 mb-6">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
-                          <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
+                    {alertaSignosVitalesPendiente ? (
+                      <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl p-8 border border-red-200 shadow-lg">
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="bg-red-100 p-4 rounded-xl">
+                            <AlertCircle className="h-8 w-8 text-red-600" />
+                          </div>
+                          <div>
+                            <h2 className="text-2xl font-bold text-red-900">Advertencia de Signos Vitales</h2>
+                            <p className="text-red-700">Se detectaron valores fuera de rango</p>
+                          </div>
                         </div>
-                        <div>
-                          <h2 className="text-2xl font-bold text-gray-900">
-                            {numeroConsultaActual === 1
-                              ? "¿Cuál es el motivo de consulta?"
-                              : `Síntomas y Factores de Riesgo - Consulta ${numeroConsultaActual}`}
-                          </h2>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {numeroConsultaActual === 1
-                              ? "Evaluación clínica de la paciente"
-                              : "Reevaluación clínica de la paciente (según protocolo del paper)"}
+
+                        <div className="bg-white rounded-xl p-6 mb-6 border border-red-200">
+                          <pre className="whitespace-pre-wrap text-sm text-gray-800 font-medium">
+                            {mensajeAlertaSignosVitales}
+                          </pre>
+                        </div>
+
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+                          <p className="text-yellow-900 font-medium">
+                            ⚠️ Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender
+                            la emergencia.
                           </p>
                         </div>
-                      </div>
 
-                      {numeroConsultaActual > 1 && (
-                        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div className="flex items-start gap-3">
-                            <svg
-                              className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                            <div className="text-sm text-blue-800">
-                              <p className="font-semibold mb-1">
-                                Protocolo de seguimiento (Day {numeroConsultaActual}, Visit {numeroConsultaActual})
-                              </p>
-                              <p>
-                                Según el paper, debe identificar nuevamente los signos, síntomas y factores de riesgo
-                                presentes en esta consulta. El sistema calculará automáticamente la probabilidad pretest
-                                ajustada usando la fórmula:{" "}
-                                <span className="font-mono text-xs">
-                                  [(1-v{numeroConsultaActual - 1}b)(v{numeroConsultaActual}a)] + v
-                                  {numeroConsultaActual - 1}b
-                                </span>
+                        <div className="flex gap-4 justify-between">
+                          <Button
+                            onClick={() => {
+                              iniciarNuevaEvaluacion()
+                            }}
+                            variant="outline"
+                            className="border-red-300 text-red-700 hover:bg-red-50 font-semibold py-3 px-8 rounded-xl"
+                          >
+                            <Home className="mr-2 h-4 w-4" />
+                            Regresar al Inicio
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setAlertaSignosVitalesPendiente(false)
+                            }}
+                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                          >
+                            Continuar con la Evaluación
+                            <ChevronRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
+                          <div className="flex items-center gap-4 mb-6">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
+                              <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                            </div>
+                            <div>
+                              <h2 className="text-2xl font-bold text-gray-900">
+                                {numeroConsultaActual === 1
+                                  ? "¿Cuál es el motivo de consulta?"
+                                  : `Síntomas y Factores de Riesgo - Consulta ${numeroConsultaActual}`}
+                              </h2>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {numeroConsultaActual === 1
+                                  ? "Evaluación clínica de la paciente"
+                                  : "Reevaluación clínica de la paciente (según protocolo del paper)"}
                               </p>
                             </div>
                           </div>
+
+                          {numeroConsultaActual > 1 && (
+                            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                              <div className="flex items-start gap-3">
+                                <svg
+                                  className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
+                                </svg>
+                                <div className="text-sm text-blue-800">
+                                  <p className="font-semibold mb-1">
+                                    Protocolo de seguimiento (Day {numeroConsultaActual}, Visit {numeroConsultaActual})
+                                  </p>
+                                  <p>
+                                    Según el paper, debe identificar nuevamente los signos, síntomas y factores de
+                                    riesgo presentes en esta consulta. El sistema calculará automáticamente la
+                                    probabilidad pretest ajustada usando la fórmula:{" "}
+                                    <span className="font-mono text-xs">
+                                      [(1-v{numeroConsultaActual - 1}b)(v{numeroConsultaActual}a)] + v
+                                      {numeroConsultaActual - 1}b
+                                    </span>
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Síntomas Presentes */}
+                          <div className="space-y-4 mb-8">
+                            <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
+                              <div className="h-2 w-2 rounded-full bg-orange-500"></div>
+                              Síntomas Presentes
+                            </label>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              {sintomas.map((s) => {
+                                const isChecked = sintomasSeleccionados.includes(s.id)
+                                const isAsintomatica = s.id === "asintomatica"
+                                const hayOtrosSintomas = sintomasSeleccionados.some(
+                                  (id) => id !== "asintomatica" && id !== "sincope",
+                                )
+
+                                // Si hay otros síntomas (sangrado/dolor), deshabilitar asintomática
+                                const isDisabled = isAsintomatica && hayOtrosSintomas
+
+                                return (
+                                  <label
+                                    key={s.id}
+                                    className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
+                                      isChecked
+                                        ? "border-orange-500 bg-orange-50"
+                                        : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
+                                    } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      disabled={isDisabled}
+                                      onChange={(e) => {
+                                        if (isAsintomatica && e.target.checked) {
+                                          // Si selecciona asintomática, limpiar otros síntomas (excepto síncope)
+                                          setSintomasSeleccionados(["asintomatica"])
+                                        } else if (isAsintomatica && !e.target.checked) {
+                                          // Si deselecciona asintomática
+                                          setSintomasSeleccionados(
+                                            sintomasSeleccionados.filter((id) => id !== "asintomatica"),
+                                          )
+                                        } else if (e.target.checked) {
+                                          // Si selecciona otro síntoma, quitar asintomática
+                                          setSintomasSeleccionados([
+                                            ...sintomasSeleccionados.filter((id) => id !== "asintomatica"),
+                                            s.id,
+                                          ])
+                                        } else {
+                                          // Si deselecciona
+                                          setSintomasSeleccionados(sintomasSeleccionados.filter((id) => id !== s.id))
+                                        }
+                                      }}
+                                      className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
+                                    />
+                                    <span className="text-sm font-medium text-gray-700">{s.label}</span>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Factores de Riesgo */}
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
+                              <div className="h-2 w-2 rounded-full bg-orange-500"></div>
+                              Factores de Riesgo
+                            </label>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              {factoresRiesgo.map((f) => {
+                                const isChecked = factoresSeleccionados.includes(f.id)
+                                const isSinFactores = f.id === "sin_factores"
+                                const hayOtrosFactores = factoresSeleccionados.some((id) => id !== "sin_factores")
+
+                                // Si hay otros factores, deshabilitar "sin factores"
+                                const isDisabled = isSinFactores && hayOtrosFactores
+
+                                return (
+                                  <label
+                                    key={f.id}
+                                    className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
+                                      isChecked
+                                        ? "border-orange-500 bg-orange-50"
+                                        : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
+                                    } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      disabled={isDisabled}
+                                      onChange={(e) => {
+                                        if (isSinFactores && e.target.checked) {
+                                          // Si selecciona "sin factores", limpiar otros
+                                          setFactoresSeleccionados(["sin_factores"])
+                                        } else if (isSinFactores && !e.target.checked) {
+                                          // Si deselecciona "sin factores"
+                                          setFactoresSeleccionados(
+                                            factoresSeleccionados.filter((id) => id !== "sin_factores"),
+                                          )
+                                        } else if (e.target.checked) {
+                                          // Si selecciona otro factor, quitar "sin factores"
+                                          setFactoresSeleccionados([
+                                            ...factoresSeleccionados.filter((id) => id !== "sin_factores"),
+                                            f.id,
+                                          ])
+                                        } else {
+                                          // Si deselecciona
+                                          setFactoresSeleccionados(factoresSeleccionados.filter((id) => id !== f.id))
+                                        }
+                                      }}
+                                      className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
+                                    />
+                                    <span className="text-sm font-medium text-gray-700">{f.label}</span>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          </div>
                         </div>
-                      )}
 
-                      {/* Síntomas Presentes */}
-                      <div className="space-y-4 mb-8">
-                        <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
-                          <div className="h-2 w-2 rounded-full bg-orange-500"></div>
-                          Síntomas Presentes
-                        </label>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          {sintomas.map((s) => {
-                            const isChecked = sintomasSeleccionados.includes(s.id)
-                            const isAsintomatica = s.id === "asintomatica"
-                            const hayOtrosSintomas = sintomasSeleccionados.some(
-                              (id) => id !== "asintomatica" && id !== "sincope",
-                            )
-
-                            // Si hay otros síntomas (sangrado/dolor), deshabilitar asintomática
-                            const isDisabled = isAsintomatica && hayOtrosSintomas
-
-                            return (
-                              <label
-                                key={s.id}
-                                className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                                  isChecked
-                                    ? "border-orange-500 bg-orange-50"
-                                    : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
-                                } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  disabled={isDisabled}
-                                  onChange={(e) => {
-                                    if (isAsintomatica && e.target.checked) {
-                                      // Si selecciona asintomática, limpiar otros síntomas (excepto síncope)
-                                      setSintomasSeleccionados(["asintomatica"])
-                                    } else if (isAsintomatica && !e.target.checked) {
-                                      // Si deselecciona asintomática
-                                      setSintomasSeleccionados(
-                                        sintomasSeleccionados.filter((id) => id !== "asintomatica"),
-                                      )
-                                    } else if (e.target.checked) {
-                                      // Si selecciona otro síntoma, quitar asintomática
-                                      setSintomasSeleccionados([
-                                        ...sintomasSeleccionados.filter((id) => id !== "asintomatica"),
-                                        s.id,
-                                      ])
-                                    } else {
-                                      // Si deselecciona
-                                      setSintomasSeleccionados(sintomasSeleccionados.filter((id) => id !== s.id))
-                                    }
-                                  }}
-                                  className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
-                                />
-                                <span className="text-sm font-medium text-gray-700">{s.label}</span>
-                              </label>
-                            )
-                          })}
+                        {/* Botones de navegación */}
+                        <div className="flex justify-between">
+                          <button
+                            onClick={() => setSeccion(2)}
+                            className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                          >
+                            <ChevronLeft className="h-5 w-5" />
+                            Anterior
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Validar que se haya seleccionado al menos un síntoma
+                              if (sintomasSeleccionados.length === 0) {
+                                setErrorSeccion("Por favor seleccione al menos un síntoma")
+                                return
+                              }
+                              // Validar que se haya seleccionado al menos un factor de riesgo
+                              if (factoresSeleccionados.length === 0) {
+                                setErrorSeccion("Por favor seleccione al menos un factor de riesgo")
+                                return
+                              }
+                              setErrorSeccion("")
+                              setSeccionesCompletadas([...seccionesCompletadas, 3])
+                              setSeccion(4)
+                            }}
+                            className="flex items-center gap-2 px-6 py-3 text-white bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg font-medium"
+                          >
+                            Siguiente
+                            <ChevronRight className="h-5 w-5" />
+                          </button>
                         </div>
-                      </div>
 
-                      {/* Factores de Riesgo */}
-                      <div className="space-y-4">
-                        <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
-                          <div className="h-2 w-2 rounded-full bg-orange-500"></div>
-                          Factores de Riesgo
-                        </label>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          {factoresRiesgo.map((f) => {
-                            const isChecked = factoresSeleccionados.includes(f.id)
-                            const isSinFactores = f.id === "sin_factores"
-                            const hayOtrosFactores = factoresSeleccionados.some((id) => id !== "sin_factores")
-
-                            // Si hay otros factores, deshabilitar "sin factores"
-                            const isDisabled = isSinFactores && hayOtrosFactores
-
-                            return (
-                              <label
-                                key={f.id}
-                                className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                                  isChecked
-                                    ? "border-orange-500 bg-orange-50"
-                                    : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
-                                } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  disabled={isDisabled}
-                                  onChange={(e) => {
-                                    if (isSinFactores && e.target.checked) {
-                                      // Si selecciona "sin factores", limpiar otros
-                                      setFactoresSeleccionados(["sin_factores"])
-                                    } else if (isSinFactores && !e.target.checked) {
-                                      // Si deselecciona "sin factores"
-                                      setFactoresSeleccionados(
-                                        factoresSeleccionados.filter((id) => id !== "sin_factores"),
-                                      )
-                                    } else if (e.target.checked) {
-                                      // Si selecciona otro factor, quitar "sin factores"
-                                      setFactoresSeleccionados([
-                                        ...factoresSeleccionados.filter((id) => id !== "sin_factores"),
-                                        f.id,
-                                      ])
-                                    } else {
-                                      // Si deselecciona
-                                      setFactoresSeleccionados(factoresSeleccionados.filter((id) => id !== f.id))
-                                    }
-                                  }}
-                                  className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
-                                />
-                                <span className="text-sm font-medium text-gray-700">{f.label}</span>
-                              </label>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Botones de navegación */}
-                    <div className="flex justify-between">
-                      <button
-                        onClick={() => setSeccion(2)}
-                        className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                        Anterior
-                      </button>
-                      <button
-                        onClick={() => {
-                          // Validar que se haya seleccionado al menos un síntoma
-                          if (sintomasSeleccionados.length === 0) {
-                            setErrorSeccion("Por favor seleccione al menos un síntoma")
-                            return
-                          }
-                          // Validar que se haya seleccionado al menos un factor de riesgo
-                          if (factoresSeleccionados.length === 0) {
-                            setErrorSeccion("Por favor seleccione al menos un factor de riesgo")
-                            return
-                          }
-                          setErrorSeccion("")
-                          setSeccionesCompletadas([...seccionesCompletadas, 3])
-                          setSeccion(4)
-                        }}
-                        className="flex items-center gap-2 px-6 py-3 text-white bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg font-medium"
-                      >
-                        Siguiente
-                        <ChevronRight className="h-5 w-5" />
-                      </button>
-                    </div>
-
-                    {errorSeccion && (
-                      <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-sm text-red-700">{errorSeccion}</p>
-                      </div>
+                        {errorSeccion && (
+                          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-sm text-red-700">{errorSeccion}</p>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}

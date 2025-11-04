@@ -494,12 +494,11 @@ export default function CalculadoraEctopico() {
     setMostrarAlerta(false)
     setMensajeAlerta("")
 
-    // CHANGE START: Modified logic to always return true and just set alert/recommendations
-    // if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
-    //   // If any required field is empty, consider it valid for now, but show an error if next step requires it.
-    //   // This allows the user to proceed without immediately filling everything.
-    //   return true
-    // }
+    // CHANGE START: Only validate if all required fields are filled
+    if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
+      // If any required field is empty, just return true to allow continuing
+      return true
+    }
 
     const fc = Number.parseFloat(frecuenciaCardiaca)
     const ps = Number.parseFloat(presionSistolica)
@@ -511,8 +510,9 @@ export default function CalculadoraEctopico() {
     const psNormal = ps >= 90 && ps <= 140
     const pdNormal = pd >= 60 && pd <= 90
     const pamNormal = pamValor >= 65 && pamValor <= 100
-    const concienciaNormal = estadoConciencia === "alerta" // Only "alerta" is considered normal for now
+    const concienciaNormal = estadoConciencia === "alerta"
 
+    // CHANGE START: Only set alert and add recommendation if values are abnormal
     if (!fcNormal || !psNormal || !pdNormal || !pamNormal || !concienciaNormal) {
       let mensajeAnormal = "⚠️ SIGNOS VITALES FUERA DE RANGO NORMAL\n\n"
 
@@ -541,8 +541,17 @@ export default function CalculadoraEctopico() {
         ...prev,
         `Signos Vitales Anormales: ${mensajeAnormal.split("\n").filter(Boolean).slice(1).join(", ")}`,
       ])
-      return true // Return true to allow the flow to continue to the next section, but the alert will be shown.
+      // CHANGE END: Return true to allow the flow to continue to the next section, but the alert will be shown.
     }
+    // CHANGE END: If all values are normal, don't set alert or add recommendation
+
+    // CHANGE START: Modified logic to always return true and just set alert/recommendations
+    // if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
+    //   // If any required field is empty, consider it valid for now, but show an error if next step requires it.
+    //   // This allows the user to proceed without immediately filling everything.
+    //   // return true
+    // }
+    // CHANGE END
 
     try {
       // Call backend validation only if signs are normal (or user decides to continue)
@@ -2139,212 +2148,6 @@ export default function CalculadoraEctopico() {
                     </div>
                   ) : null
                 })()}
-
-                <CMGFooter />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      ) : pantalla === "completada" ? (
-        <div className="max-w-4xl mx-auto p-6">
-          <Card className="shadow-lg">
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                <div className="flex items-center justify-center space-x-3 mb-6">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                  <h2 className="text-3xl font-bold text-slate-800">Evaluación Incompleta</h2>
-                </div>
-
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                  <p className="text-blue-900 font-medium">
-                    {typeof mensajeFinal === "string" ? (
-                      <div className="space-y-4">
-                        <p className="font-medium text-lg">
-                          {mensajeFinal.includes("tres estudios")
-                            ? "Se necesitan realizar los tres estudios (prueba de embarazo cuantitativa, ecografía transvaginal y β-hCG en sangre) para poder continuar con la evaluación."
-                            : mensajeFinal.includes("siguientes estudios")
-                              ? "Se necesitan realizar los siguientes estudios para poder continuar con la evaluación:"
-                              : mensajeFinal}
-                        </p>
-                        {(mensajeFinal.includes("prueba de embarazo") ||
-                          mensajeFinal.includes("ecografía transvaginal") ||
-                          mensajeFinal.includes("β-hCG")) && (
-                          <ul className="list-none space-y-2 ml-4">
-                            {mensajeFinal.includes("prueba de embarazo") && (
-                              <li className="flex items-start">
-                                <span className="text-blue-600 mr-2">•</span>
-                                <span>Prueba de embarazo cualitativa (PIE)</span>
-                              </li>
-                            )}
-                            {mensajeFinal.includes("ecografía transvaginal") && (
-                              <li className="flex items-start">
-                                <span className="text-blue-600 mr-2">•</span>
-                                <span>Ecografía transvaginal (TVUS)</span>
-                              </li>
-                            )}
-                            {mensajeFinal.includes("β-hCG") && (
-                              <li className="flex items-start">
-                                <span className="text-blue-600 mr-2">•</span>
-                                <span>β-hCG en sangre</span>
-                              </li>
-                            )}
-                          </ul>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="font-medium">{mensajeFinal}</div>
-                    )}
-                  </p>
-                </div>
-
-                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <span className="font-semibold text-green-900">Información Guardada</span>
-                  </div>
-                  <div className="text-green-800 text-sm space-y-2">
-                    <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
-                    <div className="flex items-center space-x-2">
-                      <span>📋 ID de Consulta:</span>
-                      <span className="font-mono font-bold">{idSeguimiento}</span>
-                      <Button
-                        onClick={copiarId}
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 hover:bg-green-100"
-                        title="Copiar ID"
-                      >
-                        <Copy className="h-3 w-3 text-green-700" />
-                      </Button>
-                    </div>
-                    <p>
-                      👤 Paciente: {nombrePaciente}, {edadPaciente} años
-                    </p>
-                    <p>💾 Sección completada: {Math.max(...seccionesCompletadas, seccionActual - 1)} de 8</p>
-                    <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <Button
-                    onClick={volverAInicio}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 text-lg"
-                  >
-                    <User className="h-4 w-4 mr-2" />
-                    Regresar al Inicio
-                  </Button>
-                </div>
-
-                <CMGFooter />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      ) : pantalla === "resultados" ? (
-        <div className="max-w-4xl mx-auto p-6">
-          <Card className="shadow-lg">
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                <div className="flex items-center justify-center space-x-3 mb-6">
-                  <div className="p-3 bg-blue-100 rounded-full">
-                    <Calculator className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <h2 className="text-3xl font-bold text-slate-800">Resultados de la Evaluación</h2>
-                </div>
-
-                {resultado !== null && (
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 text-center">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-4">
-                      Estimación de Riesgo - Consulta {numeroConsultaActual}
-                    </h3>
-                    <div className="text-5xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
-                    <p className="text-blue-800 text-sm">
-                      {resultado >= 0.95
-                        ? "Alta probabilidad de embarazo ectópico"
-                        : resultado < 0.01
-                          ? "Baja probabilidad de embarazo ectópico"
-                          : "Probabilidad intermedia de embarazo ectópico"}
-                    </p>
-                  </div>
-                )}
-
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                  <p className="text-blue-900 font-medium">
-                    {resultado !== null ? (
-                      resultado < 0.01 ? (
-                        <>
-                          <strong>Bajas probabilidades de embarazo ectópico.</strong>
-                          <br />
-                          <br />
-                          Se recomienda mantener un monitoreo constante con su ginecólogo de confianza y estar atenta a
-                          cualquier cambio en los síntomas.
-                        </>
-                      ) : resultado >= 0.95 ? (
-                        <>
-                          <strong>Alta probabilidad de embarazo ectópico.</strong>
-                          <br />
-                          <br />
-                          Se recomienda referencia inmediata a un centro médico especializado para evaluación y manejo
-                          apropiado.
-                        </>
-                      ) : (
-                        <>
-                          <strong>Probabilidad intermedia de embarazo ectópico.</strong>
-                          <br />
-                          <br />
-                          Guarde el código de consulta (disponible abajo para copiar) y regrese en 48 a 72 horas con
-                          nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento.
-                        </>
-                      )
-                    ) : (
-                      "Los datos de esta consulta han sido guardados exitosamente."
-                    )}
-                  </p>
-                </div>
-
-                {mostrarIdSeguimiento && idSeguimiento && (
-                  <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                      <span className="font-semibold text-green-900">Información Guardada</span>
-                    </div>
-                    <div className="text-green-800 text-sm space-y-2">
-                      <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
-                      <div className="flex items-center space-x-2">
-                        <span>📋 ID de Consulta:</span>
-                        <span className="font-mono font-bold">{idSeguimiento}</span>
-                        <Button
-                          onClick={copiarId}
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 hover:bg-green-100"
-                          title="Copiar ID"
-                        >
-                          <Copy className="h-3 w-3 text-green-700" />
-                        </Button>
-                      </div>
-                      <p>
-                        👤 Paciente: {nombrePaciente}, {edadPaciente} años
-                      </p>
-                      <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex space-x-4">
-                  <Button
-                    onClick={generarInformePDF}
-                    variant="outline"
-                    className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Generar Reporte
-                  </Button>
-                  <Button onClick={volverAInicio} className="bg-green-600 hover:bg-green-700 text-white">
-                    <User className="h-4 w-4 mr-2" />
-                    Nueva Evaluación
-                  </Button>
-                </div>
 
                 <CMGFooter />
               </div>

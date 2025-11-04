@@ -2647,20 +2647,20 @@ export default function CalculadoraEctopico() {
             <div className="space-y-6">
               {alertaSignosVitalesPendiente ? (
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-br from-ambar-50 via-ambar-50 to-ambar-50 p-8 rounded-2xl border-2 border-ambar-200 shadow-xl">
+                  <div className="bg-gradient-to-br from-blue-50 via-blue-50 to-blue-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
-                      <div className="w-14 h-14 bg-gradient-to-br from-ambar-500 to-ambar-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
                         <AlertTriangle className="h-7 w-7 text-white" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Signos Vitales</h2>
-                        <p className="text-ambar-700 font-medium">Se detectaron valores fuera de rango</p>
+                        <p className="text-blue-700 font-medium">Se detectaron valores fuera de rango</p>
                       </div>
                     </div>
 
                     <div className="bg-white rounded-xl p-6 shadow-md border border-ambar-100 mb-6">
                       <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-ambar-600 flex-shrink-0 mt-1" />
+                        <AlertTriangle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Valores Anormales</h3>
                           <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
@@ -2671,8 +2671,8 @@ export default function CalculadoraEctopico() {
 
                       <div className="mt-6 pt-6 border-t border-blue-100">
                         <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-ambar-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-ambar-600 text-sm font-bold">!</span>
+                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span className="text-blue-600 text-sm font-bold">!</span>
                           </div>
                           <div>
                             <h4 className="font-semibold text-slate-800 mb-2">Recomendación Médica</h4>

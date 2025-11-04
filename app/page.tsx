@@ -505,11 +505,9 @@ export default function CalculadoraEctopico() {
       mensajeAnormal +=
         "\n⚠️ La paciente requiere atención médica inmediata. Los signos vitales fuera de rango pueden indicar inestabilidad hemodinámica que requiere evaluación urgente."
 
-      await guardarDatosIncompletos("signos_vitales_anormales", 2)
-      setMensajeFinal(<div className="text-center whitespace-pre-line">{mensajeAnormal}</div>)
-      setProtocoloFinalizado(true)
-      setPantalla("completada")
-      return false
+      setMostrarAlerta(true)
+      setMensajeAlerta(mensajeAnormal)
+      return true
     }
 
     try {

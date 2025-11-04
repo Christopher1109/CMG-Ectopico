@@ -3124,34 +3124,36 @@ export default function CalculadoraEctopico() {
                         "Según los resultados de su prueba de embarazo, no puede ser considerado un embarazo ectópico. Por favor, contacte con su médico para determinar el motivo de sus síntomas.",
                       )
                       setAlertaPruebaEmbarazoPendiente(true)
-                      setRecomendaciones((prev) => [
-                        ...prev,
-                        "Prueba de Embarazo Negativa: Se recomienda contactar con su médico para determinar el motivo de los síntomas.",
-                      ])
-                      setErrorSeccion("")
-                      setSeccion(5)
-                      completarSeccion(4)
-                      return
-                    }
-
-                    if (tienePruebaEmbarazoDisponible === "no") {
+                      if (
+                        !recomendaciones.includes(
+                          "Prueba de Embarazo Negativa: Se recomienda contactar con su médico para determinar el motivo de los síntomas.",
+                        )
+                      ) {
+                        setRecomendaciones([
+                          ...recomendaciones,
+                          "Prueba de Embarazo Negativa: Se recomienda contactar con su médico para determinar el motivo de los síntomas.",
+                        ])
+                      }
+                    } else if (tienePruebaEmbarazoDisponible === "no") {
                       setMensajeAlertaPruebaEmbarazo(
                         "Se necesita realizar una prueba de embarazo cualitativa (PIE) para poder continuar con la evaluación. Por favor, acuda a un laboratorio clínico y regrese cuando tenga el resultado.",
                       )
                       setAlertaPruebaEmbarazoPendiente(true)
-                      setRecomendaciones((prev) => [
-                        ...prev,
-                        "Prueba de Embarazo No Realizada: Se recomienda realizar una prueba de embarazo cualitativa (PIE).",
-                      ])
-                      setErrorSeccion("")
-                      setSeccion(5)
-                      completarSeccion(4)
-                    } else {
-                      setErrorSeccion("")
-                      setSeccion(5)
-                      completarSeccion(4)
+                      if (
+                        !recomendaciones.includes(
+                          "Prueba de Embarazo No Realizada: Se recomienda realizar una prueba de embarazo cualitativa (PIE).",
+                        )
+                      ) {
+                        setRecomendaciones([
+                          ...recomendaciones,
+                          "Prueba de Embarazo No Realizada: Se recomienda realizar una prueba de embarazo cualitativa (PIE).",
+                        ])
+                      }
                     }
-                    // CHANGE END
+
+                    setErrorSeccion("")
+                    setSeccion(5)
+                    completarSeccion(4)
                   }}
                   className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                 >
@@ -3159,6 +3161,8 @@ export default function CalculadoraEctopico() {
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
+
+              <CMGFooter />
             </div>
           )}
 

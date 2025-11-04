@@ -494,11 +494,12 @@ export default function CalculadoraEctopico() {
     setMostrarAlerta(false)
     setMensajeAlerta("")
 
-    // CHANGE START: Only validate if all required fields are filled
-    if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
-      // If any required field is empty, just return true to allow continuing
-      return true
-    }
+    // CHANGE START: Modified logic to always return true and just set alert/recommendations
+    // if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
+    //   // If any required field is empty, consider it valid for now, but show an error if next step requires it.
+    //   // This allows the user to proceed without immediately filling everything.
+    //   return true
+    // }
 
     const fc = Number.parseFloat(frecuenciaCardiaca)
     const ps = Number.parseFloat(presionSistolica)
@@ -510,9 +511,8 @@ export default function CalculadoraEctopico() {
     const psNormal = ps >= 90 && ps <= 140
     const pdNormal = pd >= 60 && pd <= 90
     const pamNormal = pamValor >= 65 && pamValor <= 100
-    const concienciaNormal = estadoConciencia === "alerta"
+    const concienciaNormal = estadoConciencia === "alerta" // Only "alerta" is considered normal for now
 
-    // CHANGE START: Only set alert and add recommendation if values are abnormal
     if (!fcNormal || !psNormal || !pdNormal || !pamNormal || !concienciaNormal) {
       let mensajeAnormal = "⚠️ SIGNOS VITALES FUERA DE RANGO NORMAL\n\n"
 
@@ -541,17 +541,8 @@ export default function CalculadoraEctopico() {
         ...prev,
         `Signos Vitales Anormales: ${mensajeAnormal.split("\n").filter(Boolean).slice(1).join(", ")}`,
       ])
-      // CHANGE END: Return true to allow the flow to continue to the next section, but the alert will be shown.
+      return true // Return true to allow the flow to continue to the next section, but the alert will be shown.
     }
-    // CHANGE END: If all values are normal, don't set alert or add recommendation
-
-    // CHANGE START: Modified logic to always return true and just set alert/recommendations
-    // if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
-    //   // If any required field is empty, consider it valid for now, but show an error if next step requires it.
-    //   // This allows the user to proceed without immediately filling everything.
-    //   // return true
-    // }
-    // CHANGE END
 
     try {
       // Call backend validation only if signs are normal (or user decides to continue)
@@ -2160,12 +2151,12 @@ export default function CalculadoraEctopico() {
             <CardContent className="p-8">
               <div className="space-y-6">
                 <div className="flex items-center justify-center space-x-3 mb-6">
-                  <CheckCircle className="h-6 w-6 text-red-600" />
+                  <CheckCircle className="h-6 w-6 text-green-600" />
                   <h2 className="text-3xl font-bold text-slate-800">Evaluación Incompleta</h2>
                 </div>
 
-                <div className="bg-red-50 p-6 rounded-lg border border-red-200">
-                  <p className="text-red-900 font-medium">
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                  <p className="text-blue-900 font-medium">
                     {typeof mensajeFinal === "string" ? (
                       <div className="space-y-4">
                         <p className="font-medium text-lg">
@@ -2181,19 +2172,19 @@ export default function CalculadoraEctopico() {
                           <ul className="list-none space-y-2 ml-4">
                             {mensajeFinal.includes("prueba de embarazo") && (
                               <li className="flex items-start">
-                                <span className="text-red-600 mr-2">•</span>
+                                <span className="text-blue-600 mr-2">•</span>
                                 <span>Prueba de embarazo cualitativa (PIE)</span>
                               </li>
                             )}
                             {mensajeFinal.includes("ecografía transvaginal") && (
                               <li className="flex items-start">
-                                <span className="text-red-600 mr-2">•</span>
+                                <span className="text-blue-600 mr-2">•</span>
                                 <span>Ecografía transvaginal (TVUS)</span>
                               </li>
                             )}
                             {mensajeFinal.includes("β-hCG") && (
                               <li className="flex items-start">
-                                <span className="text-red-600 mr-2">•</span>
+                                <span className="text-blue-600 mr-2">•</span>
                                 <span>β-hCG en sangre</span>
                               </li>
                             )}
@@ -2206,12 +2197,12 @@ export default function CalculadoraEctopico() {
                   </p>
                 </div>
 
-                <div className="bg-red-50 p-6 rounded-lg border border-red-200">
+                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
                   <div className="flex items-center space-x-2 mb-3">
-                    <CheckCircle className="h-5 w-5 text-red-600" />
-                    <span className="font-semibold text-red-900">Información Guardada</span>
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <span className="font-semibold text-green-900">Información Guardada</span>
                   </div>
-                  <div className="text-red-800 text-sm space-y-2">
+                  <div className="text-green-800 text-sm space-y-2">
                     <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
                     <div className="flex items-center space-x-2">
                       <span>📋 ID de Consulta:</span>
@@ -2220,10 +2211,10 @@ export default function CalculadoraEctopico() {
                         onClick={copiarId}
                         variant="ghost"
                         size="sm"
-                        className="h-6 w-6 p-0 hover:bg-red-100"
+                        className="h-6 w-6 p-0 hover:bg-green-100"
                         title="Copiar ID"
                       >
-                        <Copy className="h-3 w-3 text-red-700" />
+                        <Copy className="h-3 w-3 text-green-700" />
                       </Button>
                     </div>
                     <p>
@@ -2237,7 +2228,7 @@ export default function CalculadoraEctopico() {
                 <div className="text-center">
                   <Button
                     onClick={volverAInicio}
-                    className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 text-lg"
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 text-lg"
                   >
                     <User className="h-4 w-4 mr-2" />
                     Regresar al Inicio
@@ -2366,12 +2357,12 @@ export default function CalculadoraEctopico() {
             <CardContent className="p-8">
               <div className="space-y-6">
                 <div className="flex items-center justify-center space-x-3 mb-6">
-                  <CheckCircle className="h-6 w-6 text-red-600" />
+                  <CheckCircle className="h-6 w-6 text-green-600" />
                   <h2 className="text-3xl font-bold text-slate-800">Evaluación Incompleta</h2>
                 </div>
 
-                <div className="bg-red-50 p-6 rounded-lg border border-red-200">
-                  <p className="text-red-900 font-medium">
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                  <p className="text-blue-900 font-medium">
                     {typeof mensajeFinal === "string" ? (
                       <div className="space-y-4">
                         <p className="font-medium text-lg">
@@ -2387,19 +2378,19 @@ export default function CalculadoraEctopico() {
                           <ul className="list-none space-y-2 ml-4">
                             {mensajeFinal.includes("prueba de embarazo") && (
                               <li className="flex items-start">
-                                <span className="text-red-600 mr-2">•</span>
+                                <span className="text-blue-600 mr-2">•</span>
                                 <span>Prueba de embarazo cualitativa (PIE)</span>
                               </li>
                             )}
                             {mensajeFinal.includes("ecografía transvaginal") && (
                               <li className="flex items-start">
-                                <span className="text-red-600 mr-2">•</span>
+                                <span className="text-blue-600 mr-2">•</span>
                                 <span>Ecografía transvaginal (TVUS)</span>
                               </li>
                             )}
                             {mensajeFinal.includes("β-hCG") && (
                               <li className="flex items-start">
-                                <span className="text-red-600 mr-2">•</span>
+                                <span className="text-blue-600 mr-2">•</span>
                                 <span>β-hCG en sangre</span>
                               </li>
                             )}
@@ -2412,12 +2403,12 @@ export default function CalculadoraEctopico() {
                   </p>
                 </div>
 
-                <div className="bg-red-50 p-6 rounded-lg border border-red-200">
+                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
                   <div className="flex items-center space-x-2 mb-3">
-                    <CheckCircle className="h-5 w-5 text-red-600" />
-                    <span className="font-semibold text-red-900">Información Guardada</span>
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <span className="font-semibold text-green-900">Información Guardada</span>
                   </div>
-                  <div className="text-red-800 text-sm space-y-2">
+                  <div className="text-green-800 text-sm space-y-2">
                     <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
                     <div className="flex items-center space-x-2">
                       <span>📋 ID de Consulta:</span>
@@ -2426,10 +2417,10 @@ export default function CalculadoraEctopico() {
                         onClick={copiarId}
                         variant="ghost"
                         size="sm"
-                        className="h-6 w-6 p-0 hover:bg-red-100"
+                        className="h-6 w-6 p-0 hover:bg-green-100"
                         title="Copiar ID"
                       >
-                        <Copy className="h-3 w-3 text-red-700" />
+                        <Copy className="h-3 w-3 text-green-700" />
                       </Button>
                     </div>
                     <p>
@@ -2443,7 +2434,7 @@ export default function CalculadoraEctopico() {
                 <div className="text-center">
                   <Button
                     onClick={volverAInicio}
-                    className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 text-lg"
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 text-lg"
                   >
                     <User className="h-4 w-4 mr-2" />
                     Regresar al Inicio
@@ -2572,12 +2563,12 @@ export default function CalculadoraEctopico() {
             <CardContent className="p-8">
               <div className="space-y-6">
                 <div className="flex items-center justify-center space-x-3 mb-6">
-                  <CheckCircle className="h-6 w-6 text-red-600" />
+                  <CheckCircle className="h-6 w-6 text-green-600" />
                   <h2 className="text-3xl font-bold text-slate-800">Evaluación Incompleta</h2>
                 </div>
 
-                <div className="bg-red-50 p-6 rounded-lg border border-red-200">
-                  <p className="text-red-900 font-medium">
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                  <p className="text-blue-900 font-medium">
                     {typeof mensajeFinal === "string" ? (
                       <div className="space-y-4">
                         <p className="font-medium text-lg">
@@ -2593,19 +2584,19 @@ export default function CalculadoraEctopico() {
                           <ul className="list-none space-y-2 ml-4">
                             {mensajeFinal.includes("prueba de embarazo") && (
                               <li className="flex items-start">
-                                <span className="text-red-600 mr-2">•</span>
+                                <span className="text-blue-600 mr-2">•</span>
                                 <span>Prueba de embarazo cualitativa (PIE)</span>
                               </li>
                             )}
                             {mensajeFinal.includes("ecografía transvaginal") && (
                               <li className="flex items-start">
-                                <span className="text-red-600 mr-2">•</span>
+                                <span className="text-blue-600 mr-2">•</span>
                                 <span>Ecografía transvaginal (TVUS)</span>
                               </li>
                             )}
                             {mensajeFinal.includes("β-hCG") && (
                               <li className="flex items-start">
-                                <span className="text-red-600 mr-2">•</span>
+                                <span className="text-blue-600 mr-2">•</span>
                                 <span>β-hCG en sangre</span>
                               </li>
                             )}
@@ -2618,12 +2609,12 @@ export default function CalculadoraEctopico() {
                   </p>
                 </div>
 
-                <div className="bg-red-50 p-6 rounded-lg border border-red-200">
+                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
                   <div className="flex items-center space-x-2 mb-3">
-                    <CheckCircle className="h-5 w-5 text-red-600" />
-                    <span className="font-semibold text-red-900">Información Guardada</span>
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <span className="font-semibold text-green-900">Información Guardada</span>
                   </div>
-                  <div className="text-red-800 text-sm space-y-2">
+                  <div className="text-green-800 text-sm space-y-2">
                     <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
                     <div className="flex items-center space-x-2">
                       <span>📋 ID de Consulta:</span>
@@ -2632,10 +2623,10 @@ export default function CalculadoraEctopico() {
                         onClick={copiarId}
                         variant="ghost"
                         size="sm"
-                        className="h-6 w-6 p-0 hover:bg-red-100"
+                        className="h-6 w-6 p-0 hover:bg-green-100"
                         title="Copiar ID"
                       >
-                        <Copy className="h-3 w-3 text-red-700" />
+                        <Copy className="h-3 w-3 text-green-700" />
                       </Button>
                     </div>
                     <p>
@@ -2649,7 +2640,419 @@ export default function CalculadoraEctopico() {
                 <div className="text-center">
                   <Button
                     onClick={volverAInicio}
-                    className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 text-lg"
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 text-lg"
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Regresar al Inicio
+                  </Button>
+                </div>
+
+                <CMGFooter />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : pantalla === "resultados" ? (
+        <div className="max-w-4xl mx-auto p-6">
+          <Card className="shadow-lg">
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="flex items-center justify-center space-x-3 mb-6">
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <Calculator className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-slate-800">Resultados de la Evaluación</h2>
+                </div>
+
+                {resultado !== null && (
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 text-center">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-4">
+                      Estimación de Riesgo - Consulta {numeroConsultaActual}
+                    </h3>
+                    <div className="text-5xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
+                    <p className="text-blue-800 text-sm">
+                      {resultado >= 0.95
+                        ? "Alta probabilidad de embarazo ectópico"
+                        : resultado < 0.01
+                          ? "Baja probabilidad de embarazo ectópico"
+                          : "Probabilidad intermedia de embarazo ectópico"}
+                    </p>
+                  </div>
+                )}
+
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                  <p className="text-blue-900 font-medium">
+                    {resultado !== null ? (
+                      resultado < 0.01 ? (
+                        <>
+                          <strong>Bajas probabilidades de embarazo ectópico.</strong>
+                          <br />
+                          <br />
+                          Se recomienda mantener un monitoreo constante con su ginecólogo de confianza y estar atenta a
+                          cualquier cambio en los síntomas.
+                        </>
+                      ) : resultado >= 0.95 ? (
+                        <>
+                          <strong>Alta probabilidad de embarazo ectópico.</strong>
+                          <br />
+                          <br />
+                          Se recomienda referencia inmediata a un centro médico especializado para evaluación y manejo
+                          apropiado.
+                        </>
+                      ) : (
+                        <>
+                          <strong>Probabilidad intermedia de embarazo ectópico.</strong>
+                          <br />
+                          <br />
+                          Guarde el código de consulta (disponible abajo para copiar) y regrese en 48 a 72 horas con
+                          nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento.
+                        </>
+                      )
+                    ) : (
+                      "Los datos de esta consulta han sido guardados exitosamente."
+                    )}
+                  </p>
+                </div>
+
+                {mostrarIdSeguimiento && idSeguimiento && (
+                  <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <span className="font-semibold text-green-900">Información Guardada</span>
+                    </div>
+                    <div className="text-green-800 text-sm space-y-2">
+                      <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
+                      <div className="flex items-center space-x-2">
+                        <span>📋 ID de Consulta:</span>
+                        <span className="font-mono font-bold">{idSeguimiento}</span>
+                        <Button
+                          onClick={copiarId}
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 hover:bg-green-100"
+                          title="Copiar ID"
+                        >
+                          <Copy className="h-3 w-3 text-green-700" />
+                        </Button>
+                      </div>
+                      <p>
+                        👤 Paciente: {nombrePaciente}, {edadPaciente} años
+                      </p>
+                      <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex space-x-4">
+                  <Button
+                    onClick={generarInformePDF}
+                    variant="outline"
+                    className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Generar Reporte
+                  </Button>
+                  <Button onClick={volverAInicio} className="bg-green-600 hover:bg-green-700 text-white">
+                    <User className="h-4 w-4 mr-2" />
+                    Nueva Evaluación
+                  </Button>
+                </div>
+
+                <CMGFooter />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : pantalla === "completada" ? (
+        <div className="max-w-4xl mx-auto p-6">
+          <Card className="shadow-lg">
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="flex items-center justify-center space-x-3 mb-6">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <h2 className="text-3xl font-bold text-slate-800">Evaluación Incompleta</h2>
+                </div>
+
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                  <p className="text-blue-900 font-medium">
+                    {typeof mensajeFinal === "string" ? (
+                      <div className="space-y-4">
+                        <p className="font-medium text-lg">
+                          {mensajeFinal.includes("tres estudios")
+                            ? "Se necesitan realizar los tres estudios (prueba de embarazo cuantitativa, ecografía transvaginal y β-hCG en sangre) para poder continuar con la evaluación."
+                            : mensajeFinal.includes("siguientes estudios")
+                              ? "Se necesitan realizar los siguientes estudios para poder continuar con la evaluación:"
+                              : mensajeFinal}
+                        </p>
+                        {(mensajeFinal.includes("prueba de embarazo") ||
+                          mensajeFinal.includes("ecografía transvaginal") ||
+                          mensajeFinal.includes("β-hCG")) && (
+                          <ul className="list-none space-y-2 ml-4">
+                            {mensajeFinal.includes("prueba de embarazo") && (
+                              <li className="flex items-start">
+                                <span className="text-blue-600 mr-2">•</span>
+                                <span>Prueba de embarazo cualitativa (PIE)</span>
+                              </li>
+                            )}
+                            {mensajeFinal.includes("ecografía transvaginal") && (
+                              <li className="flex items-start">
+                                <span className="text-blue-600 mr-2">•</span>
+                                <span>Ecografía transvaginal (TVUS)</span>
+                              </li>
+                            )}
+                            {mensajeFinal.includes("β-hCG") && (
+                              <li className="flex items-start">
+                                <span className="text-blue-600 mr-2">•</span>
+                                <span>β-hCG en sangre</span>
+                              </li>
+                            )}
+                          </ul>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="font-medium">{mensajeFinal}</div>
+                    )}
+                  </p>
+                </div>
+
+                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <span className="font-semibold text-green-900">Información Guardada</span>
+                  </div>
+                  <div className="text-green-800 text-sm space-y-2">
+                    <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
+                    <div className="flex items-center space-x-2">
+                      <span>📋 ID de Consulta:</span>
+                      <span className="font-mono font-bold">{idSeguimiento}</span>
+                      <Button
+                        onClick={copiarId}
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-green-100"
+                        title="Copiar ID"
+                      >
+                        <Copy className="h-3 w-3 text-green-700" />
+                      </Button>
+                    </div>
+                    <p>
+                      👤 Paciente: {nombrePaciente}, {edadPaciente} años
+                    </p>
+                    <p>💾 Sección completada: {Math.max(...seccionesCompletadas, seccionActual - 1)} de 8</p>
+                    <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <Button
+                    onClick={volverAInicio}
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 text-lg"
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Regresar al Inicio
+                  </Button>
+                </div>
+
+                <CMGFooter />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : pantalla === "resultados" ? (
+        <div className="max-w-4xl mx-auto p-6">
+          <Card className="shadow-lg">
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="flex items-center justify-center space-x-3 mb-6">
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <Calculator className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-slate-800">Resultados de la Evaluación</h2>
+                </div>
+
+                {resultado !== null && (
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 text-center">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-4">
+                      Estimación de Riesgo - Consulta {numeroConsultaActual}
+                    </h3>
+                    <div className="text-5xl font-bold text-blue-700 mb-4">{(resultado * 100).toFixed(1)}%</div>
+                    <p className="text-blue-800 text-sm">
+                      {resultado >= 0.95
+                        ? "Alta probabilidad de embarazo ectópico"
+                        : resultado < 0.01
+                          ? "Baja probabilidad de embarazo ectópico"
+                          : "Probabilidad intermedia de embarazo ectópico"}
+                    </p>
+                  </div>
+                )}
+
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                  <p className="text-blue-900 font-medium">
+                    {resultado !== null ? (
+                      resultado < 0.01 ? (
+                        <>
+                          <strong>Bajas probabilidades de embarazo ectópico.</strong>
+                          <br />
+                          <br />
+                          Se recomienda mantener un monitoreo constante con su ginecólogo de confianza y estar atenta a
+                          cualquier cambio en los síntomas.
+                        </>
+                      ) : resultado >= 0.95 ? (
+                        <>
+                          <strong>Alta probabilidad de embarazo ectópico.</strong>
+                          <br />
+                          <br />
+                          Se recomienda referencia inmediata a un centro médico especializado para evaluación y manejo
+                          apropiado.
+                        </>
+                      ) : (
+                        <>
+                          <strong>Probabilidad intermedia de embarazo ectópico.</strong>
+                          <br />
+                          <br />
+                          Guarde el código de consulta (disponible abajo para copiar) y regrese en 48 a 72 horas con
+                          nueva ecografía transvaginal y nueva prueba de β-hCG para seguimiento.
+                        </>
+                      )
+                    ) : (
+                      "Los datos de esta consulta han sido guardados exitosamente."
+                    )}
+                  </p>
+                </div>
+
+                {mostrarIdSeguimiento && idSeguimiento && (
+                  <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <span className="font-semibold text-green-900">Información Guardada</span>
+                    </div>
+                    <div className="text-green-800 text-sm space-y-2">
+                      <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
+                      <div className="flex items-center space-x-2">
+                        <span>📋 ID de Consulta:</span>
+                        <span className="font-mono font-bold">{idSeguimiento}</span>
+                        <Button
+                          onClick={copiarId}
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 hover:bg-green-100"
+                          title="Copiar ID"
+                        >
+                          <Copy className="h-3 w-3 text-green-700" />
+                        </Button>
+                      </div>
+                      <p>
+                        👤 Paciente: {nombrePaciente}, {edadPaciente} años
+                      </p>
+                      <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex space-x-4">
+                  <Button
+                    onClick={generarInformePDF}
+                    variant="outline"
+                    className="border-blue-300 text-blue-600 hover:bg-blue-50 bg-transparent"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Generar Reporte
+                  </Button>
+                  <Button onClick={volverAInicio} className="bg-green-600 hover:bg-green-700 text-white">
+                    <User className="h-4 w-4 mr-2" />
+                    Nueva Evaluación
+                  </Button>
+                </div>
+
+                <CMGFooter />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : pantalla === "completada" ? (
+        <div className="max-w-4xl mx-auto p-6">
+          <Card className="shadow-lg">
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="flex items-center justify-center space-x-3 mb-6">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <h2 className="text-3xl font-bold text-slate-800">Evaluación Incompleta</h2>
+                </div>
+
+                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                  <p className="text-blue-900 font-medium">
+                    {typeof mensajeFinal === "string" ? (
+                      <div className="space-y-4">
+                        <p className="font-medium text-lg">
+                          {mensajeFinal.includes("tres estudios")
+                            ? "Se necesitan realizar los tres estudios (prueba de embarazo cuantitativa, ecografía transvaginal y β-hCG en sangre) para poder continuar con la evaluación."
+                            : mensajeFinal.includes("siguientes estudios")
+                              ? "Se necesitan realizar los siguientes estudios para poder continuar con la evaluación:"
+                              : mensajeFinal}
+                        </p>
+                        {(mensajeFinal.includes("prueba de embarazo") ||
+                          mensajeFinal.includes("ecografía transvaginal") ||
+                          mensajeFinal.includes("β-hCG")) && (
+                          <ul className="list-none space-y-2 ml-4">
+                            {mensajeFinal.includes("prueba de embarazo") && (
+                              <li className="flex items-start">
+                                <span className="text-blue-600 mr-2">•</span>
+                                <span>Prueba de embarazo cualitativa (PIE)</span>
+                              </li>
+                            )}
+                            {mensajeFinal.includes("ecografía transvaginal") && (
+                              <li className="flex items-start">
+                                <span className="text-blue-600 mr-2">•</span>
+                                <span>Ecografía transvaginal (TVUS)</span>
+                              </li>
+                            )}
+                            {mensajeFinal.includes("β-hCG") && (
+                              <li className="flex items-start">
+                                <span className="text-blue-600 mr-2">•</span>
+                                <span>β-hCG en sangre</span>
+                              </li>
+                            )}
+                          </ul>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="font-medium">{mensajeFinal}</div>
+                    )}
+                  </p>
+                </div>
+
+                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <span className="font-semibold text-green-900">Información Guardada</span>
+                  </div>
+                  <div className="text-green-800 text-sm space-y-2">
+                    <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
+                    <div className="flex items-center space-x-2">
+                      <span>📋 ID de Consulta:</span>
+                      <span className="font-mono font-bold">{idSeguimiento}</span>
+                      <Button
+                        onClick={copiarId}
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-green-100"
+                        title="Copiar ID"
+                      >
+                        <Copy className="h-3 w-3 text-green-700" />
+                      </Button>
+                    </div>
+                    <p>
+                      👤 Paciente: {nombrePaciente}, {edadPaciente} años
+                    </p>
+                    <p>💾 Sección completada: {Math.max(...seccionesCompletadas, seccionActual - 1)} de 8</p>
+                    <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <Button
+                    onClick={volverAInicio}
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 text-lg"
                   >
                     <User className="h-4 w-4 mr-2" />
                     Regresar al Inicio
@@ -3458,7 +3861,7 @@ export default function CalculadoraEctopico() {
                         Anterior
                       </Button>
                       <Button
-                        onClick={async () => {
+                        onClick={() => {
                           if (!tienePruebaEmbarazoDisponible) {
                             setErrorSeccion("Por favor seleccione si tiene la prueba realizada")
                             return
@@ -3518,8 +3921,8 @@ export default function CalculadoraEctopico() {
                 {seccionActual === 5 && (
                   <div className="space-y-6">
                     {alertaPruebaEmbarazoPendiente ? (
-                      <div className="space-y-6">
-                        <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-lg">
+                      <>
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-2xl border-2 border-blue-200 shadow-lg">
                           <div className="flex items-start space-x-4 mb-6">
                             <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
                               <AlertTriangle className="h-7 w-7 text-white" />
@@ -3590,9 +3993,9 @@ export default function CalculadoraEctopico() {
                           </Button>
                         </div>
                         <CMGFooter />
-                      </div>
+                      </>
                     ) : (
-                      <div className="space-y-6">
+                      <>
                         <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl border border-cyan-100">
                           <div className="flex items-center space-x-3">
                             <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
@@ -3791,7 +4194,7 @@ export default function CalculadoraEctopico() {
                           </Button>
                         </div>
                         <CMGFooter />
-                      </div>
+                      </>
                     )}
                   </div>
                 )}
@@ -3801,7 +4204,7 @@ export default function CalculadoraEctopico() {
                   <div className="space-y-6">
                     {alertaEcografiaPendiente ? (
                       <div className="space-y-6">
-                        <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-lg">
+                        <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
                           <div className="flex items-start space-x-4 mb-6">
                             <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
                               <AlertTriangle className="h-7 w-7 text-white" />
@@ -3879,26 +4282,97 @@ export default function CalculadoraEctopico() {
                               <Droplet className="h-6 w-6 text-white" />
                             </div>
                             <div>
-                              <h2 className="text-2xl font-bold text-slate-800">β-hCG en Sangre</h2>
-                              <p className="text-sm text-slate-600">Nivel cuantitativo de β-hCG</p>
+                              <h2 className="text-2xl font-bold text-slate-800">Estudios Complementarios</h2>
+                              <p className="text-sm text-slate-600">Verificación de estudios realizados</p>
                             </div>
                           </div>
                         </div>
 
-                        <div className="space-y-5">
-                          <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-teal-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                            <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                              <span>Valor de β-hCG</span>
+                        <p className="text-slate-600 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                          Por favor, indique si la paciente cuenta con los siguientes estudios realizados:
+                        </p>
+
+                        <div className="space-y-4">
+                          {/* Eco TVUS */}
+                          <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                            <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                              <span>¿Cuenta con ecografía transvaginal (TVUS)?</span>
                             </Label>
-                            <input
-                              type="number"
-                              placeholder="Ingrese el valor"
-                              value={nivelBetaHCG}
-                              onChange={(e) => setNivelBetaHCG(e.target.value)}
-                              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all duration-200"
-                            />
-                            <span className="text-xs text-slate-500 mt-1 block">mUI/mL</span>
+                            <div className="grid grid-cols-2 gap-3">
+                              {["si", "no"].map((opcion) => (
+                                <label
+                                  key={opcion}
+                                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                    tieneEcoDisponible === opcion
+                                      ? "border-purple-500 bg-purple-50 shadow-md"
+                                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name="tieneEcoDisponible"
+                                    value={opcion}
+                                    checked={tieneEcoDisponible === opcion}
+                                    onChange={(e) => setTieneEcoDisponible(e.target.value)}
+                                    className="sr-only"
+                                  />
+                                  <div
+                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                      tieneEcoDisponible === opcion
+                                        ? "border-purple-500 bg-purple-500"
+                                        : "border-gray-300"
+                                    }`}
+                                  >
+                                    {tieneEcoDisponible === opcion && (
+                                      <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                                    )}
+                                  </div>
+                                  <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Beta hCG */}
+                          <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                            <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                              <span>¿Cuenta con resultado de β-hCG en sangre?</span>
+                            </Label>
+                            <div className="grid grid-cols-2 gap-3">
+                              {["si", "no"].map((opcion) => (
+                                <label
+                                  key={opcion}
+                                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                                    tieneBetaDisponible === opcion
+                                      ? "border-purple-500 bg-purple-50 shadow-md"
+                                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name="tieneBetaDisponible"
+                                    value={opcion}
+                                    checked={tieneBetaDisponible === opcion}
+                                    onChange={(e) => setTieneBetaDisponible(e.target.value)}
+                                    className="sr-only"
+                                  />
+                                  <div
+                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                      tieneBetaDisponible === opcion
+                                        ? "border-purple-500 bg-purple-500"
+                                        : "border-gray-300"
+                                    }`}
+                                  >
+                                    {tieneBetaDisponible === opcion && (
+                                      <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                                    )}
+                                  </div>
+                                  <span className="text-sm font-medium text-slate-700 capitalize">{opcion}</span>
+                                </label>
+                              ))}
+                            </div>
                           </div>
                         </div>
 
@@ -3922,20 +4396,208 @@ export default function CalculadoraEctopico() {
                           </Button>
                           <Button
                             onClick={async () => {
-                              if (!nivelBetaHCG) {
-                                setErrorSeccion("Por favor, ingrese el valor de β-hCG.")
+                              if (!tieneEcoDisponible || !tieneBetaDisponible) {
+                                setErrorSeccion("Por favor llene todos los campos")
                                 return
                               }
-                              await calcular()
+
+                              // Check how many are "no"
+                              const faltantes = []
+                              if (tieneEcoDisponible === "no") faltantes.push("ecografía transvaginal (TVUS)")
+                              if (tieneBetaDisponible === "no") faltantes.push("β-hCG en sangre")
+
+                              if (faltantes.length > 0) {
+                                let mensaje = ""
+                                if (faltantes.length === 2) {
+                                  mensaje =
+                                    "Se necesitan realizar los siguientes estudios para poder continuar con la evaluación: ecografía transvaginal (TVUS) y β-hCG en sangre. Por favor, acuda a un laboratorio clínico y regrese cuando tenga los resultados."
+                                } else {
+                                  mensaje = `Se necesita realizar ${faltantes[0]} para poder continuar con la evaluación. Por favor, acuda a un laboratorio clínico y regrese cuando tenga el resultado.`
+                                }
+
+                                setMensajeFinal(mensaje)
+                                await guardarDatosIncompletos("estudios_faltantes", 6)
+                                setPantalla("completada")
+                                setMostrarResumen(false)
+                                setProtocoloFinalizado(true)
+                              } else {
+                                // All are "si", continue
+                                setErrorSeccion("")
+                                setSeccion(7)
+                                completarSeccion(6)
+                              }
                             }}
                             className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                           >
-                            Calcular Riesgo
+                            Continuar
                             <ChevronRight className="ml-2 h-4 w-4" />
                           </Button>
                         </div>
+                        <CMGFooter />
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* SECCION 7: TVUS */}
+                {seccionActual === 7 && (
+                  <div className="space-y-8">
+                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 border border-purple-100 shadow-sm">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                          <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">Ecografía Transvaginal (TVUS)</h2>
+                          <p className="text-sm text-gray-600 mt-1">Hallazgos ecográficos</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <label className="flex items-center gap-2 text-sm font-medium text-purple-900">
+                          <div className="h-2 w-2 rounded-full bg-purple-500"></div>
+                          Hallazgos en TVUS
+                        </label>
+                        <div className="space-y-3">
+                          {[
+                            { value: "normal", label: "Normal (Sin evidencia de embarazo intrauterino)" },
+                            { value: "libre", label: "Líquido libre" },
+                            { value: "masa", label: "Masa anexial" },
+                            { value: "masa_libre", label: "Masa anexial + Líquido libre" },
+                          ].map((opcion) => (
+                            <button
+                              key={opcion.value}
+                              type="button"
+                              onClick={() => setTvus(opcion.value)}
+                              className={`
+                                w-full px-4 py-3.5 rounded-xl border-2 transition-all duration-200
+                                flex items-center gap-3 text-left
+                                ${
+                                  tvus === opcion.value
+                                    ? "border-purple-500 bg-purple-50 shadow-md"
+                                    : "border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50"
+                                }
+                              `}
+                            >
+                              <div
+                                className={`
+                                  w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
+                                  ${tvus === opcion.value ? "border-purple-500 bg-purple-500" : "border-gray-300"}
+                                `}
+                              >
+                                {tvus === opcion.value && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
+                              </div>
+                              <span className="text-sm font-medium text-gray-700">{opcion.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {errorSeccion && (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                        <p className="text-sm text-red-700">{errorSeccion}</p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between pt-4">
+                      <Button
+                        onClick={() => setSeccion(6)}
+                        variant="outline"
+                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                      >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        Anterior
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (!tvus) {
+                            setErrorSeccion("Por favor seleccione los hallazgos en TVUS.")
+                            return
+                          }
+                          setSeccion(8)
+                          completarSeccion(7)
+                        }}
+                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                      >
+                        Continuar
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* SECCION 8: β-hCG */}
+                {seccionActual === 8 && (
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
+                          <Droplet className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-slate-800">β-hCG en Sangre</h2>
+                          <p className="text-sm text-slate-600">Nivel cuantitativo de β-hCG</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-5">
+                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-teal-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                        <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                          <span>Valor de β-hCG</span>
+                        </Label>
+                        <input
+                          type="number"
+                          placeholder="Ingrese el valor"
+                          value={nivelBetaHCG}
+                          onChange={(e) => setNivelBetaHCG(e.target.value)}
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all duration-200"
+                        />
+                        <span className="text-xs text-slate-500 mt-1 block">mUI/mL</span>
+                      </div>
+                    </div>
+
+                    {errorSeccion && (
+                      <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center space-x-2">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <p className="text-red-700 font-medium">{errorSeccion}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between pt-4">
+                      <Button
+                        onClick={() => setSeccion(7)}
+                        variant="outline"
+                        className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                      >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        Anterior
+                      </Button>
+                      <Button
+                        onClick={async () => {
+                          if (!nivelBetaHCG) {
+                            setErrorSeccion("Por favor, ingrese el valor de β-hCG.")
+                            return
+                          }
+                          await calcular()
+                        }}
+                        className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                      >
+                        Calcular Riesgo
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 )}
               </CardContent>

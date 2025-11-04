@@ -2600,6 +2600,15 @@ export default function CalculadoraEctopico() {
                 </div>
               </div>
 
+              {errorSeccion && (
+                <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                    <p className="text-red-700 font-medium">{errorSeccion}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Botones de navegación */}
               <div className="flex justify-between">
                 <Button
@@ -2612,6 +2621,11 @@ export default function CalculadoraEctopico() {
                 </Button>
                 <Button
                   onClick={() => {
+                    if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
+                      setErrorSeccion("Por favor complete todos los campos de signos vitales")
+                      return
+                    }
+                    setErrorSeccion("")
                     if (validarSignosVitales()) {
                       setSeccionesCompletadas([...seccionesCompletadas, 2])
                       setSeccion(3)
@@ -2623,6 +2637,8 @@ export default function CalculadoraEctopico() {
                   <ChevronRight className="h-5 w-5" />
                 </Button>
               </div>
+
+              <CMGFooter />
             </div>
           )}
 
@@ -2699,6 +2715,7 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="h-5 w-5" />
                     </Button>
                   </div>
+                  <CMGFooter />
                 </div>
               ) : (
                 <div className="space-y-6">

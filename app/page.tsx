@@ -2216,10 +2216,10 @@ export default function CalculadoraEctopico() {
 
                 <div className="bg-red-50 p-6 rounded-lg border border-red-200">
                   <div className="flex items-center space-x-2 mb-3">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <span className="font-semibold text-green-900">Información Guardada</span>
+                    <CheckCircle className="h-5 w-5 text-red-600" />
+                    <span className="font-semibold text-red-900">Información Guardada</span>
                   </div>
-                  <div className="text-green-800 text-sm space-y-2">
+                  <div className="text-red-800 text-sm space-y-2">
                     <p>✅ Los datos de esta consulta han sido guardados exitosamente</p>
                     <div className="flex items-center space-x-2">
                       <span>📋 ID de Consulta:</span>

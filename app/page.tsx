@@ -3783,7 +3783,7 @@ export default function CalculadoraEctopico() {
                           </div>
                           <div>
                             <h4 className="font-semibold text-slate-800 mb-2">Recomendación Médica</h4>
-                            <p className="text-slate-700 leading-relaxed">
+                            <p className="text-lg front-medium text-slate-700 leading-relaxed">
                               Se recomienda seguir monitoreando continuamente el estado de la paciente y realizar los
                               estudios complementarios necesarios para una evaluación completa.
                             </p>
@@ -4017,7 +4017,7 @@ export default function CalculadoraEctopico() {
                           </div>
                           <div>
                             <h4 className="font-semibold text-slate-800 mb-2">Recomendación Médica</h4>
-                            <p className="text-slate-700 leading-relaxed">
+                            <p className="text-lg front-medium text-slate-700 leading-relaxed">
                               Se recomienda seguir monitoreando continuamente el estado de la paciente y realizar los
                               estudios complementarios necesarios para una evaluación completa.
                             </p>

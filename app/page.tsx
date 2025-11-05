@@ -3010,7 +3010,7 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-red-100 mb-6">
+                    <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
                       <div className="flex items-start space-x-3 mb-4">
                         <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
                         <div>
@@ -3023,13 +3023,13 @@ export default function CalculadoraEctopico() {
 
                       {/* CHANGE START: Making the recommendation section larger and more attention-grabbing */}
                       <div className="mt-6 pt-6 border-t border-orange-100">
-                        <div className="flex items-start space-x-4">
+                        <div className="flex items-start space-x-3">
                           <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-orange-600 text-xl font-bold">!</span>
+                            <span className="text-orange-600 text-lg font-bold">!</span>
                           </div>
                           <div>
-                            <h4 className="font-bold text-xl text-slate-900 mb-3">Recomendación Médica</h4>
-                            <p className="text-lg text-slate-800 leading-relaxed font-medium">
+                            <h4 className="text-xl font-bold text-slate-800 mb-2">Recomendación Médica</h4>
+                            <p className="text-lg font-medium text-slate-700 leading-relaxed">
                               La paciente requiere atención médica inmediata. Los signos vitales fuera de rango pueden
                               indicar inestabilidad hemodinámica que requiere evaluación urgente.
                             </p>
@@ -3502,7 +3502,7 @@ export default function CalculadoraEctopico() {
 
                       <div className="mt-6 pt-6 border-t border-orange-100">
                         <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                             <span className="text-orange-600 text-sm font-bold">!</span>
                           </div>
                           <div>

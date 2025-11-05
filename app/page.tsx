@@ -3477,14 +3477,14 @@ export default function CalculadoraEctopico() {
             <div className="space-y-6">
               {alertaPruebaEmbarazoPendiente ? (
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
+                  <div className="bg-gradient-to-br from-orange-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
                       <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
                         <AlertTriangle className="h-7 w-7 text-white" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Prueba de Embarazo</h2>
-                        <p className="text-blue-700 font-medium">Se detectaron hallazgos que requieren atención</p>
+                        <p className="text-orange-700 font-medium">Se detectaron hallazgos que requieren atención</p>
                       </div>
                     </div>
 

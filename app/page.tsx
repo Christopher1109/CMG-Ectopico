@@ -1613,7 +1613,7 @@ export default function CalculadoraEctopico() {
       doc.roundedRect(margin, y, (pageWidth - 2 * margin - 5) / 2, 25, 2, 2, "F")
       doc.setFontSize(9)
       doc.setTextColor(100, 100, 100)
-      doc.text("ID de consulta:", margin + 5, y + 6)
+      doc.text("ID de seguimiento:", margin + 5, y + 6)
       doc.setFontSize(12)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(0, 0, 0)
@@ -1752,8 +1752,8 @@ export default function CalculadoraEctopico() {
       doc.text("Esta aplicación no constituye un dispositivo médico de diagnóstico.", margin + 5, y + 22)
       doc.text("Los resultados deben interpretarse en el contexto clínico completo del paciente.", margin + 5, y + 27)
       doc.setTextColor(0, 0, 0)
-      y += 38
 
+      // Footer
       doc.setFillColor(41, 98, 255)
       doc.rect(0, pageHeight - 15, pageWidth, 15, "F")
       doc.setTextColor(200, 200, 200) // Light gray text
@@ -3025,7 +3025,7 @@ export default function CalculadoraEctopico() {
                       <div className="mt-6 pt-6 border-t border-orange-100">
                         <div className="flex items-start space-x-3">
                           <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-orange-600 text-lg font-bold">!</span>
+                            <span className="text-orange-600 text-sm font-bold">!</span>
                           </div>
                           <div>
                             <h4 className="text-xl font-bold text-slate-800 mb-2">Recomendación Médica</h4>
@@ -3499,7 +3499,7 @@ export default function CalculadoraEctopico() {
                           <p className="text-slate-700 leading-relaxed">{mensajeAlertaPruebaEmbarazo}</p>
                         </div>
                       </div>
-                        
+
                       <div className="mt-6 pt-6 border-t border-orange-100">
                         <div className="flex items-start space-x-3">
                           <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
@@ -3527,7 +3527,8 @@ export default function CalculadoraEctopico() {
                   <div className="flex justify-between pt-4">
                     <Button
                       onClick={() => {
-                        setSeccion(1)
+                        resetCalculadora()
+                        setPantalla("bienvenida")
                         setAlertaPruebaEmbarazoPendiente(false)
                       }}
                       variant="outline"
@@ -3756,30 +3757,30 @@ export default function CalculadoraEctopico() {
             <div className="space-y-6">
               {alertaEcografiaPendiente ? (
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-br from-orange-50 via-orange-50 to-orange-50 p-8 rounded-2xl border-2 border-orange-200 shadow-xl">
+                  <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
-                      <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
                         <AlertTriangle className="h-7 w-7 text-white" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Ecografía</h2>
-                        <p className="text-orange-700 font-medium">Se detectaron hallazgos que requieren atención</p>
+                        <p className="text-blue-700 font-medium">Se detectaron hallazgos que requieren atención</p>
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
+                    <div className="bg-white rounded-xl p-6 shadow-md border border-blue-100 mb-6">
                       <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
+                        <AlertTriangle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
                           <p className="text-slate-700 leading-relaxed">{mensajeAlertaEcografia}</p>
                         </div>
                       </div>
 
-                      <div className="mt-6 pt-6 border-t border-orange-100">
+                      <div className="mt-6 pt-6 border-t border-blue-100">
                         <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-orange-600 text-sm font-bold">!</span>
+                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span className="text-blue-600 text-sm font-bold">!</span>
                           </div>
                           <div>
                             <h4 className="font-semibold text-slate-800 mb-2">Recomendación Médica</h4>
@@ -3792,7 +3793,7 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    <div className="bg-orange-50 rounded-xl p-5 border border-orange-200">
+                    <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
                       <p className="text-slate-700 leading-relaxed">
                         Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
                         emergencia.
@@ -3803,7 +3804,8 @@ export default function CalculadoraEctopico() {
                   <div className="flex justify-between pt-4">
                     <Button
                       onClick={() => {
-                        setSeccion(1)
+                        resetCalculadora()
+                        setPantalla("bienvenida")
                         setAlertaEcografiaPendiente(false)
                       }}
                       variant="outline"
@@ -4037,7 +4039,8 @@ export default function CalculadoraEctopico() {
                   <div className="flex justify-between pt-4">
                     <Button
                       onClick={() => {
-                        setSeccion(1)
+                        resetCalculadora()
+                        setPantalla("bienvenida")
                         setAlertaEcografiaPendiente(false)
                       }}
                       variant="outline"

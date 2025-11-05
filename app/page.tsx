@@ -1705,6 +1705,7 @@ export default function CalculadoraEctopico() {
       }
 
       addTitle("RECOMENDACIONES CLÍNICAS")
+      doc.setFillColor(224, 247, 250)
       const recomendacion =
         resultado != null
           ? resultado >= 0.95
@@ -3020,53 +3021,55 @@ export default function CalculadoraEctopico() {
                         </div>
                       </div>
 
+                      {/* CHANGE START: Making the recommendation section larger and more attention-grabbing */}
                       <div className="mt-6 pt-6 border-t border-orange-100">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-orange-600 text-sm font-bold">!</span>
+                        <div className="flex items-start space-x-4">
+                          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span className="text-orange-600 text-xl font-bold">!</span>
                           </div>
                           <div>
-                            <h4 className="font-semibold text-slate-800 mb-2">Recomendación Médica</h4>
-                            <p className="text-slate-700 leading-relaxed">
+                            <h4 className="font-bold text-xl text-slate-900 mb-3">Recomendación Médica</h4>
+                            <p className="text-lg text-slate-800 leading-relaxed font-medium">
                               La paciente requiere atención médica inmediata. Los signos vitales fuera de rango pueden
                               indicar inestabilidad hemodinámica que requiere evaluación urgente.
                             </p>
                           </div>
                         </div>
                       </div>
+                      {/* CHANGE END */}
+
+                      <div className="bg-orange-50 rounded-xl p-5 border border-orange-200">
+                        <p className="text-slate-700 leading-relaxed">
+                          Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
+                          emergencia.
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="bg-orange-50 rounded-xl p-5 border border-orange-200">
-                      <p className="text-slate-700 leading-relaxed">
-                        Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
-                        emergencia.
-                      </p>
+                    <div className="flex justify-between pt-4">
+                      <Button
+                        onClick={() => {
+                          resetCalculadora()
+                          setPantalla("bienvenida")
+                        }}
+                        variant="outline"
+                        className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                      >
+                        <Home className="h-5 w-5" />
+                        Regresar al Inicio
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setAlertaSignosVitalesPendiente(false)
+                        }}
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium"
+                      >
+                        Continuar con la Evaluación
+                        <ChevronRight className="h-5 w-5" />
+                      </Button>
                     </div>
+                    <CMGFooter />
                   </div>
-
-                  <div className="flex justify-between pt-4">
-                    <Button
-                      onClick={() => {
-                        resetCalculadora()
-                        setPantalla("bienvenida")
-                      }}
-                      variant="outline"
-                      className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-                    >
-                      <Home className="h-5 w-5" />
-                      Regresar al Inicio
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setAlertaSignosVitalesPendiente(false)
-                      }}
-                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium"
-                    >
-                      Continuar con la Evaluación
-                      <ChevronRight className="h-5 w-5" />
-                    </Button>
-                  </div>
-                  <CMGFooter />
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -3753,34 +3756,34 @@ export default function CalculadoraEctopico() {
             <div className="space-y-6">
               {alertaEcografiaPendiente ? (
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-br from-orange-50 via-orange-50 to-orange-50 p-8 rounded-2xl border-2 border-orange-200 shadow-xl">
+                  <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
-                      <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
                         <AlertTriangle className="h-7 w-7 text-white" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Ecografía</h2>
-                        <p className="text-orange-700 font-medium">Se detectaron hallazgos que requieren atención</p>
+                        <p className="text-blue-700 font-medium">Se detectaron hallazgos que requieren atención</p>
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
+                    <div className="bg-white rounded-xl p-6 shadow-md border border-blue-100 mb-6">
                       <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0 mt-1" />
+                        <AlertTriangle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
                           <p className="text-slate-700 leading-relaxed">{mensajeAlertaEcografia}</p>
                         </div>
                       </div>
 
-                      <div className="mt-6 pt-6 border-t border-orange-100">
+                      <div className="mt-6 pt-6 border-t border-blue-100">
                         <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-orange-600 text-sm font-bold">!</span>
+                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span className="text-blue-600 text-sm font-bold">!</span>
                           </div>
                           <div>
                             <h4 className="font-semibold text-slate-800 mb-2">Recomendación Médica</h4>
-                            <p className="text-slate-7000 leading-relaxed">
+                            <p className="text-slate-700 leading-relaxed">
                               Se recomienda seguir monitoreando continuamente el estado de la paciente y realizar los
                               estudios complementarios necesarios para una evaluación completa.
                             </p>
@@ -3789,7 +3792,7 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    <div className="bg-orange-50 rounded-xl p-5 border border-orange-200">
+                    <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
                       <p className="text-slate-700 leading-relaxed">
                         Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
                         emergencia.

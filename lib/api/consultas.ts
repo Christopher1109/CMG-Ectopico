@@ -12,6 +12,11 @@ function normalizaId(folioOrId: string | number): number {
   return folioOrId
 }
 
+function isCURP(value: string): boolean {
+  // CURP format: 18 alphanumeric characters
+  return /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/.test(value.toUpperCase())
+}
+
 /**
  * Tipos útiles (opcional)
  */
@@ -98,6 +103,19 @@ export async function actualizarConsulta(folioOrId: string | number, visitaNo: 2
  */
 export async function obtenerConsulta(folioOrId: string | number) {
   try {
+    if (typeof folioOrId === "string" && isCURP(folioOrId)) {
+      // Search by CURP using query parameter
+      const url = `/api/consultas?id=${encodeURIComponent(folioOrId)}`
+      console.log("[fix] obtenerConsulta (CURP):", { curp: folioOrId, url })
+
+      const res = await fetch(url, { method: "GET" })
+      const json = await res.json().catch(() => ({}))
+
+      if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`)
+      return json
+    }
+
+    // Original logic for numeric ID
     const numericId = normalizaId(folioOrId)
     const url = `/api/consultas/${numericId}`
 

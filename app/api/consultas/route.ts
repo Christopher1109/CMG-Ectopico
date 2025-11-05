@@ -10,17 +10,19 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "ID o CURP requerido" }, { status: 400 })
     }
 
-    // Check if it's a numeric ID or a CURP (alphanumeric, 18 characters)
     const isNumericId = /^\d+$/.test(searchValue)
+    const isCURP = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/i.test(searchValue)
 
     let query = supabaseAdmin.from("consultas").select("*")
 
     if (isNumericId) {
       // Search by numeric ID
       query = query.eq("id", Number.parseInt(searchValue))
+    } else if (isCURP) {
+      // Search by CURP - use exact column name with quotes
+      query = query.eq('"CURP"', searchValue.toUpperCase())
     } else {
-      // Search by CURP
-      query = query.eq("CURP", searchValue.toUpperCase())
+      return NextResponse.json({ error: "Formato inválido. Use ID numérico o CURP válido" }, { status: 400 })
     }
 
     const { data, error } = await query.single()
@@ -29,11 +31,13 @@ export async function GET(req: Request) {
       if (error.code === "PGRST116") {
         return NextResponse.json({ error: "Consulta no encontrada" }, { status: 404 })
       }
+      console.error("[API] Error searching consulta:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ data })
   } catch (e: any) {
+    console.error("[API] Exception in GET /api/consultas:", e)
     return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
 }
@@ -154,6 +158,7 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ data })
   } catch (e: any) {
+    console.error("[API] Exception in PATCH /api/consultas:", e)
     return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
   }
 }

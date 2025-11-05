@@ -3046,12 +3046,11 @@ export default function CalculadoraEctopico() {
                         Protocolo de seguimiento (Day {numeroConsultaActual}, Visit {numeroConsultaActual})
                       </p>
                       <p>
-                        Según el paper, debe identificar nuevamente los signos, síntomas y factores de riesgo
-                        presentes en esta consulta. El sistema calculará automáticamente la probabilidad pretest
-                        ajustada usando la fórmula:{" "}
+                        Según el paper, debe identificar nuevamente los signos, síntomas y factores de riesgo presentes
+                        en esta consulta. El sistema calculará automáticamente la probabilidad pretest ajustada usando
+                        la fórmula:{" "}
                         <span className="font-mono text-xs">
-                          [(1-v{numeroConsultaActual - 1}b)(v{numeroConsultaActual}a)] + v
-                          {numeroConsultaActual - 1}b
+                          [(1-v{numeroConsultaActual - 1}b)(v{numeroConsultaActual}a)] + v{numeroConsultaActual - 1}b
                         </span>
                       </p>
                     </div>
@@ -3092,9 +3091,7 @@ export default function CalculadoraEctopico() {
                             if (isAsintomatica && e.target.checked) {
                               setSintomasSeleccionados(["asintomatica"])
                             } else if (isAsintomatica && !e.target.checked) {
-                              setSintomasSeleccionados(
-                                sintomasSeleccionados.filter((id) => id !== "asintomatica"),
-                              )
+                              setSintomasSeleccionados(sintomasSeleccionados.filter((id) => id !== "asintomatica"))
                             } else if (e.target.checked) {
                               setSintomasSeleccionados([
                                 ...sintomasSeleccionados.filter((id) => id !== "asintomatica"),
@@ -3144,9 +3141,7 @@ export default function CalculadoraEctopico() {
                             if (isSinFactores && e.target.checked) {
                               setFactoresSeleccionados(["sin_factores"])
                             } else if (isSinFactores && !e.target.checked) {
-                              setFactoresSeleccionados(
-                                factoresSeleccionados.filter((id) => id !== "sin_factores"),
-                              )
+                              setFactoresSeleccionados(factoresSeleccionados.filter((id) => id !== "sin_factores"))
                             } else if (e.target.checked) {
                               setFactoresSeleccionados([
                                 ...factoresSeleccionados.filter((id) => id !== "sin_factores"),
@@ -3253,7 +3248,9 @@ export default function CalculadoraEctopico() {
                         />
                         <div
                           className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                            tienePruebaEmbarazoDisponible === opcion ? "border-purple-500 bg-purple-500" : "border-gray-300"
+                            tienePruebaEmbarazoDisponible === opcion
+                              ? "border-purple-500 bg-purple-500"
+                              : "border-gray-300"
                           }`}
                         >
                           {tienePruebaEmbarazoDisponible === opcion && (
@@ -4126,6 +4123,7 @@ export default function CalculadoraEctopico() {
             </div>
           )}
         </div>
-      </div>
+      )}
+    </div>
   )
 }

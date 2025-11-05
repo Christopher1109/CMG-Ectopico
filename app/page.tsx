@@ -3009,9 +3009,9 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
+                    <div className="bg-white rounded-xl p-6 shadow-md border border-red-100 mb-6">
                       <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0 mt-1" />
+                        <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Valores Anormales</h3>
                           <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">

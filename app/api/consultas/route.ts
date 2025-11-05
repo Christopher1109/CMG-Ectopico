@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       // NO incluimos id - se genera automáticamente
       Dr: body.usuario_creador ?? null,
       Px: body.nombre_paciente ?? null,
-      CURP: body.curp ?? null,
+      CURP: body.curp_paciente ?? body.curp ?? null,
       Edad_Px: body.edad_paciente ?? null,
       FC: body.frecuencia_cardiaca ?? null,
       PS: body.presion_sistolica ?? null,
@@ -94,7 +94,7 @@ export async function PATCH(req: Request) {
     // Map body fields to database columns (only if provided)
     if (body.usuario_creador !== undefined) updateData.Dr = body.usuario_creador
     if (body.nombre_paciente !== undefined) updateData.Px = body.nombre_paciente
-    if (body.curp !== undefined) updateData.CURP = body.curp
+    if (body.curp_paciente !== undefined || body.curp !== undefined) updateData.CURP = body.curp_paciente ?? body.curp
     if (body.edad_paciente !== undefined) updateData.Edad_Px = body.edad_paciente
     if (body.frecuencia_cardiaca !== undefined) updateData.FC = body.frecuencia_cardiaca
     if (body.presion_sistolica !== undefined) updateData.PS = body.presion_sistolica

@@ -71,6 +71,7 @@ async function enviarDatosAlBackend(datos: any): Promise<{ success: boolean; dat
       variacion_hcg: datos.variacionHcg || null,
       hcg_anterior: Number.isFinite(+datos.hcgAnterior) ? +datos.hcgAnterior : null,
       resultado: typeof datos.resultado === "number" ? datos.resultado : null,
+      CURP: datos.CURP || null,
     }
 
     const res = await crearConsulta(payload)
@@ -218,6 +219,7 @@ function normalizarDesdeLocal(d: any) {
     variacion_hcg_3: d.variacion_hcg_3 ?? null,
     resultado_3: d.resultado_3 ?? null,
     resultado: d.resultado ?? null,
+    CURP: d.CURP ?? null,
   }
 }
 
@@ -274,6 +276,7 @@ export default function CalculadoraEctopico() {
   // Estados principales
   const [nombrePaciente, setNombrePaciente] = useState("")
   const [edadPaciente, setEdadPaciente] = useState("")
+  const [curp, setCurp] = useState("")
   const [frecuenciaCardiaca, setFrecuenciaCardiaca] = useState("")
   const [presionSistolica, setPresionSistolica] = useState("")
   const [presionDiastolica, setPresionDiastolica] = useState("")
@@ -321,6 +324,7 @@ export default function CalculadoraEctopico() {
   const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
   const [mostrarPantallaBienvenida, setMostrarPantallaBienvenida] = useState(false)
   const [mostrarResumen, setMostrarResumen] = useState(false) // Added for new state
+  const [searchMode, setSearchMode] = useState<"id" | "curp">("id")
 
   // Estados específicos para el cálculo
   const [resultadoTVUS, setResultadoTVUS] = useState<string>("") // Renamed from 'tvus' for clarity
@@ -385,7 +389,7 @@ export default function CalculadoraEctopico() {
   // ==================== GUARDAR DATOS INCOMPLETOS ====================
   async function guardarDatosIncompletos(motivoFinalizacion: string, seccionCompletada: number): Promise<boolean> {
     if (guardandoConsulta) {
-      console.log("[v0] ⚠️ Ya se está guardando una consulta, evitando duplicado")
+      console.log("[v0] Ya hay un guardado en progreso, ignorando...")
       return false
     }
 
@@ -399,6 +403,7 @@ export default function CalculadoraEctopico() {
         usuarioCreador: usuarioActual || "anon",
         nombrePaciente: nombrePaciente || null,
         edadPaciente: edadPaciente ? Number.parseInt(edadPaciente) : null,
+        CURP: curp ? curp.toUpperCase().trim() : null,
         frecuenciaCardiaca: frecuenciaCardiaca ? Number.parseInt(frecuenciaCardiaca) : null,
         presionSistolica: presionSistolica ? Number.parseInt(presionSistolica) : null,
         presionDiastolica: presionDiastolica ? Number.parseInt(presionDiastolica) : null,
@@ -884,6 +889,7 @@ export default function CalculadoraEctopico() {
     setIdSeguimiento("")
     setNombrePaciente("")
     setEdadPaciente("")
+    setCurp("")
     setFrecuenciaCardiaca("")
     setPresionSistolica("")
     setPresionDiastolica("")
@@ -920,6 +926,8 @@ export default function CalculadoraEctopico() {
     setTieneBetaHCG("") // Reset tieneBetaHCG state
     setErrorSeccion("")
     setMostrarResumen(false) // Resetting new state
+    // Reset search mode
+    setSearchMode("id")
 
     // Resetting states related to the calculation itself
     setResultadoTVUS("")
@@ -959,51 +967,81 @@ export default function CalculadoraEctopico() {
   }
 
   const buscarConsulta = async () => {
-    const id = idBusqueda.trim().toUpperCase()
-    if (!/^ID-\d{5}$/.test(id)) {
-      alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)")
-      return
-    }
-
-    let consultaEncontrada: any = null
-    const folioNumerico = Number.parseInt(id.replace(/^ID-0*/, ""), 10)
-
-    try {
-      const res = await leerDatosDesdeBackend(folioNumerico.toString())
-      if (res) {
-        consultaEncontrada = res
-        console.log("[v0] ✅ Consulta loaded from backend:", consultaEncontrada)
-        // Update localStorage cache
-        localStorage.setItem(`ectopico_folio_${res.folio}`, JSON.stringify(res))
+    if (searchMode === "id") {
+      const id = idBusqueda.trim().toUpperCase()
+      if (!/^ID-\d{5}$/.test(id)) {
+        alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)")
+        return
       }
-    } catch (error) {
-      console.error("[v0] ❌ Error al buscar en backend:", error)
-    }
 
-    if (!consultaEncontrada) {
-      const datosLocal = localStorage.getItem(`ectopico_folio_${folioNumerico}`)
-      if (datosLocal) {
-        try {
-          consultaEncontrada = normalizarDesdeLocal(JSON.parse(datosLocal))
-          console.log("[v0] ⚠️ Consulta loaded from localStorage (fallback):", consultaEncontrada)
-        } catch (error) {
-          console.warn("[v0] Error al parsear datos de localStorage:", error)
+      let consultaEncontrada: any = null
+      const folioNumerico = Number.parseInt(id.replace(/^ID-0*/, ""), 10)
+
+      try {
+        const res = await leerDatosDesdeBackend(folioNumerico.toString())
+        if (res) {
+          consultaEncontrada = res
+          console.log("[v0] ✅ Consulta loaded from backend:", consultaEncontrada)
+          // Update localStorage cache
+          localStorage.setItem(`ectopico_folio_${res.folio}`, JSON.stringify(res))
+        }
+      } catch (error) {
+        console.error("[v0] ❌ Error al buscar en backend:", error)
+      }
+
+      if (!consultaEncontrada) {
+        const datosLocal = localStorage.getItem(`ectopico_folio_${folioNumerico}`)
+        if (datosLocal) {
+          try {
+            consultaEncontrada = normalizarDesdeLocal(JSON.parse(datosLocal))
+            console.log("[v0] ⚠️ Consulta loaded from localStorage (fallback):", consultaEncontrada)
+          } catch (error) {
+            console.warn("[v0] Error al parsear datos de localStorage:", error)
+          }
         }
       }
-    }
 
-    if (consultaEncontrada) {
-      console.log("✅ Consulta encontrada y cargada:", consultaEncontrada)
-      console.log("[v0] Checking consultations after load:")
-      console.log("[v0] C1 exists:", existeConsulta(consultaEncontrada, 1))
-      console.log("[v0] C2 exists:", existeConsulta(consultaEncontrada, 2))
-      console.log("[v0] C3 exists:", existeConsulta(consultaEncontrada, 3))
+      if (consultaEncontrada) {
+        console.log("✅ Consulta encontrada y cargada:", consultaEncontrada)
+        console.log("[v0] Checking consultations after load:")
+        console.log("[v0] C1 exists:", existeConsulta(consultaEncontrada, 1))
+        console.log("[v0] C2 exists:", existeConsulta(consultaEncontrada, 2))
+        console.log("[v0] C3 exists:", existeConsulta(consultaEncontrada, 3))
 
-      setConsultaCargada(consultaEncontrada)
-      setPantalla("resumen")
-      setModoCargarConsulta(false)
+        setConsultaCargada(consultaEncontrada)
+        setPantalla("resumen")
+        setModoCargarConsulta(false)
+      } else {
+        alert("No se encontró ninguna consulta con ese ID")
+      }
     } else {
-      alert("No se encontró ninguna consulta con ese ID")
+      const curpBusqueda = idBusqueda.trim().toUpperCase()
+      if (curpBusqueda.length < 18) {
+        alert("CURP incompleto. Debe contener 18 caracteres.")
+        return
+      }
+
+      try {
+        const { createClient } = await import("@supabase/supabase-js")
+        const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+
+        const { data, error } = await supabase.from("consultas").select("*").eq("CURP", curpBusqueda).limit(1).single()
+
+        if (error || !data) {
+          alert("No se encontró una consulta con ese CURP.")
+          return
+        }
+
+        const consultaEncontrada = normalizarDesdeLocal(data)
+        console.log("✅ Consulta encontrada por CURP:", consultaEncontrada)
+
+        setConsultaCargada(consultaEncontrada)
+        setPantalla("resumen")
+        setModoCargarConsulta(false)
+      } catch (error) {
+        console.error("[v0] Error al buscar por CURP:", error)
+        alert("Error al buscar la consulta. Intente nuevamente.")
+      }
     }
   }
 
@@ -1311,6 +1349,8 @@ export default function CalculadoraEctopico() {
       addTitle("DATOS DEL PACIENTE")
       addInfoBox("Nombre", nombrePaciente, [254, 226, 226])
       addInfoBox("Edad", `${edadPaciente} años`, [254, 226, 226])
+      // CHANGE: Add CURP to the PDF report
+      addInfoBox("CURP", curp || "No proporcionado", [254, 226, 226])
       y += 3
 
       // Vital signs
@@ -1637,6 +1677,8 @@ export default function CalculadoraEctopico() {
       addTitle("DATOS DEL PACIENTE")
       addInfoBox("Nombre", nombrePaciente, [232, 245, 233])
       addInfoBox("Edad", `${edadPaciente} años`, [232, 245, 233])
+      // CHANGE: Add CURP to the PDF report
+      addInfoBox("CURP", curp || "No proporcionado", [232, 245, 233])
       y += 3
 
       addTitle("SIGNOS VITALES")
@@ -2095,21 +2137,58 @@ export default function CalculadoraEctopico() {
                   </div>
                   <p className="text-blue-800 text-sm">
                     Las consultas de seguimiento se sugiere realizarlas entre 48-72 horas después de la consulta
-                    inicial. Ingrese el ID de seguimiento.
+                    inicial. Ingrese el ID de seguimiento o CURP.
                   </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-700">Buscar por:</Label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="searchMode"
+                        value="id"
+                        checked={searchMode === "id"}
+                        onChange={() => setSearchMode("id")}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-sm font-medium text-slate-700">ID</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="searchMode"
+                        value="curp"
+                        checked={searchMode === "curp"}
+                        onChange={() => setSearchMode("curp")}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-sm font-medium text-slate-700">CURP</span>
+                    </label>
+                  </div>
                 </div>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-base font-medium text-slate-700">ID de Seguimiento:</Label>
+                    <Label className="text-base font-medium text-slate-700">
+                      {searchMode === "id" ? "ID de Seguimiento:" : "CURP:"}
+                    </Label>
                     <input
                       type="text"
-                      placeholder="Ej: ID-00001"
+                      placeholder={searchMode === "id" ? "Ej: ID-00001" : "Ingrese CURP (18 caracteres)"}
                       value={idBusqueda}
-                      onChange={(e) => setIdBusqueda(e.target.value)}
+                      onChange={(e) =>
+                        setIdBusqueda(searchMode === "curp" ? e.target.value.toUpperCase() : e.target.value)
+                      }
+                      maxLength={searchMode === "curp" ? 18 : undefined}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     />
-                    <p className="text-xs text-slate-500">Formato: ID-NNNNN (Ej: ID-00001)</p>
+                    <p className="text-xs text-slate-500">
+                      {searchMode === "id"
+                        ? "Formato: ID-NNNNN (Ej: ID-00001)"
+                        : "Debe contener exactamente 18 caracteres"}
+                    </p>
                   </div>
+
                   <div className="flex space-x-4">
                     <Button
                       onClick={buscarConsulta}
@@ -2220,6 +2299,11 @@ export default function CalculadoraEctopico() {
                         <div className="text-slate-600 capitalize text-sm">
                           {consultaCargada.estado_conciencia || "No especificado"}
                         </div>
+                      </div>
+                      {/* CHANGE: Add CURP to the summary */}
+                      <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
+                        <span className="font-semibold text-slate-700 block mb-1">CURP</span>
+                        <div className="text-slate-600 text-sm">{consultaCargada.CURP || "No especificado"}</div>
                       </div>
                     </div>
                   </div>
@@ -2535,6 +2619,8 @@ export default function CalculadoraEctopico() {
                     <p>
                       👤 Paciente: {nombrePaciente}, {edadPaciente} años
                     </p>
+                    {/* CHANGE: Display CURP in the completed screen */}
+                    <p>🆔 CURP: {curp || "No especificado"}</p>
                     <p>💾 Sección completada: {Math.max(...seccionesCompletadas, seccionActual - 1)} de 8</p>
                     <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
                   </div>
@@ -2705,6 +2791,8 @@ export default function CalculadoraEctopico() {
                                 <p>
                                   👤 Paciente: {nombrePaciente}, {edadPaciente} años
                                 </p>
+                                {/* CHANGE: Add CURP to results screen */}
+                                <p>🆔 CURP: {curp || "No especificado"}</p>
                                 <p>💾 Esta información estará disponible para análisis y seguimiento médico</p>
                               </div>
                             </div>
@@ -2781,6 +2869,23 @@ export default function CalculadoraEctopico() {
                   />
                   <span className="text-xs text-slate-500 mt-1 block">años</span>
                 </div>
+
+                <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>CURP (Opcional)</span>
+                  </Label>
+                  <input
+                    type="text"
+                    placeholder="AAAA001122HNLRRN09"
+                    value={curp}
+                    onChange={(e) => setCurp(e.target.value.toUpperCase().trim())}
+                    onBlur={(e) => setCurp(e.target.value.toUpperCase().trim())}
+                    maxLength={18}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 uppercase"
+                  />
+                  <span className="text-xs text-slate-500 mt-1 block">18 caracteres (opcional)</span>
+                </div>
               </div>
 
               {errorSeccion && (
@@ -2799,6 +2904,10 @@ export default function CalculadoraEctopico() {
                       setErrorSeccion("Por favor, complete todos los campos.")
                       return
                     }
+                    if (curp && curp.length < 18) {
+                      alert("CURP incompleto. Debe contener 18 caracteres. Verifique e intente nuevamente.")
+                      return
+                    }
                     setSeccion(2)
                     completarSeccion(1)
                   }}
@@ -2808,6 +2917,7 @@ export default function CalculadoraEctopico() {
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
+
               <CMGFooter />
             </div>
           )}
@@ -2997,301 +3107,218 @@ export default function CalculadoraEctopico() {
           {/* SECCION 3: Síntomas y Factores de Riesgo */}
           {seccionActual === 3 && (
             <div className="space-y-6">
-              {alertaSignosVitalesPendiente ? (
-                <div className="space-y-6">
-                  <div className="bg-gradient-to-br from-orange-50 via-orange-50 to-blue-50 p-8 rounded-2xl border-2 border-orange-200 shadow-xl">
-                    <div className="flex items-start space-x-4 mb-6">
-                      <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-                        <AlertTriangle className="h-7 w-7 text-white" />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Signos Vitales</h2>
-                        <p className="text-orange-700 font-medium">Se detectaron valores fuera de rango</p>
-                      </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
-                      <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
-                        <div>
-                          <h3 className="font-semibold text-slate-800 text-lg mb-3">Valores Anormales</h3>
-                          <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
-                            {mensajeAlertaSignosVitales}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* CHANGE START: Making the recommendation section larger and more attention-grabbing */}
-                      <div className="mt-6 pt-6 border-t border-orange-100">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-orange-600 text-sm font-bold">!</span>
-                          </div>
-                          <div>
-                            <h4 className="text-xl font-bold text-slate-800 mb-2">Recomendación Médica</h4>
-                            <p className="text-lg font-medium text-slate-700 leading-relaxed">
-                              La paciente requiere atención médica inmediata. Los signos vitales fuera de rango pueden
-                              indicar inestabilidad hemodinámica que requiere evaluación urgente.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      {/* CHANGE END */}
-
-                      <div className="bg-orange-50 rounded-xl p-5 border border-orange-200">
-                        <p className="text-slate-700 leading-relaxed">
-                          Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
-                          emergencia.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between pt-4">
-                      <Button
-                        onClick={() => {
-                          resetCalculadora()
-                          setPantalla("bienvenida")
-                        }}
-                        variant="outline"
-                        className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-                      >
-                        <Home className="h-5 w-5" />
-                        Regresar al Inicio
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setAlertaSignosVitalesPendiente(false)
-                        }}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium"
-                      >
-                        Continuar con la Evaluación
-                        <ChevronRight className="h-5 w-5" />
-                      </Button>
-                    </div>
-                    <CMGFooter />
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
+                    <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {numeroConsultaActual === 1
+                        ? "¿Cuál es el motivo de consulta?"
+                        : `Síntomas y Factores de Riesgo - Consulta ${numeroConsultaActual}`}
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {numeroConsultaActual === 1
+                        ? "Evaluación clínica de la paciente"
+                        : "Reevaluación clínica de la paciente (según protocolo del paper)"}
+                    </p>
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
-                        <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-bold text-gray-900">
-                          {numeroConsultaActual === 1
-                            ? "¿Cuál es el motivo de consulta?"
-                            : `Síntomas y Factores de Riesgo - Consulta ${numeroConsultaActual}`}
-                        </h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {numeroConsultaActual === 1
-                            ? "Evaluación clínica de la paciente"
-                            : "Reevaluación clínica de la paciente (según protocolo del paper)"}
+
+                {numeroConsultaActual > 1 && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <svg
+                        className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <div className="text-sm text-blue-800">
+                        <p className="font-semibold mb-1">
+                          Protocolo de seguimiento (Day {numeroConsultaActual}, Visit {numeroConsultaActual})
+                        </p>
+                        <p>
+                          Según el paper, debe identificar nuevamente los signos, síntomas y factores de riesgo
+                          presentes en esta consulta. El sistema calculará automáticamente la probabilidad pretest
+                          ajustada usando la fórmula:{" "}
+                          <span className="font-mono text-xs">
+                            [(1-v{numeroConsultaActual - 1}b)(v{numeroConsultaActual}a)] + v{numeroConsultaActual - 1}b
+                          </span>
                         </p>
                       </div>
                     </div>
-
-                    {numeroConsultaActual > 1 && (
-                      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <svg
-                            className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          <div className="text-sm text-blue-800">
-                            <p className="font-semibold mb-1">
-                              Protocolo de seguimiento (Day {numeroConsultaActual}, Visit {numeroConsultaActual})
-                            </p>
-                            <p>
-                              Según el paper, debe identificar nuevamente los signos, síntomas y factores de riesgo
-                              presentes en esta consulta. El sistema calculará automáticamente la probabilidad pretest
-                              ajustada usando la fórmula:{" "}
-                              <span className="font-mono text-xs">
-                                [(1-v{numeroConsultaActual - 1}b)(v{numeroConsultaActual}a)] + v
-                                {numeroConsultaActual - 1}b
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Síntomas Presentes */}
-                    <div className="space-y-4 mb-8">
-                      <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
-                        <div className="h-2 w-2 rounded-full bg-orange-500"></div>
-                        Síntomas Presentes
-                      </label>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {sintomas.map((s) => {
-                          const isChecked = sintomasSeleccionados.includes(s.id)
-                          const isAsintomatica = s.id === "asintomatica"
-                          const hayOtrosSintomas = sintomasSeleccionados.some(
-                            (id) => id !== "asintomatica" && id !== "sincope",
-                          )
-
-                          // Si hay otros síntomas (sangrado/dolor), deshabilitar asintomática
-                          const isDisabled = isAsintomatica && hayOtrosSintomas
-
-                          return (
-                            <label
-                              key={s.id}
-                              className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                                isChecked
-                                  ? "border-orange-500 bg-orange-50"
-                                  : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
-                              } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                disabled={isDisabled}
-                                onChange={(e) => {
-                                  if (isAsintomatica && e.target.checked) {
-                                    // Si selecciona asintomática, limpiar otros síntomas (excepto síncope)
-                                    setSintomasSeleccionados(["asintomatica"])
-                                  } else if (isAsintomatica && !e.target.checked) {
-                                    // Si deselecciona asintomática
-                                    setSintomasSeleccionados(
-                                      sintomasSeleccionados.filter((id) => id !== "asintomatica"),
-                                    )
-                                  } else if (e.target.checked) {
-                                    // Si selecciona otro síntoma, quitar asintomática
-                                    setSintomasSeleccionados([
-                                      ...sintomasSeleccionados.filter((id) => id !== "asintomatica"),
-                                      s.id,
-                                    ])
-                                  } else {
-                                    // Si deselecciona
-                                    setSintomasSeleccionados(sintomasSeleccionados.filter((id) => id !== s.id))
-                                  }
-                                }}
-                                className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
-                              />
-                              <span className="text-sm font-medium text-gray-700">{s.label}</span>
-                            </label>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Factores de Riesgo */}
-                    <div className="space-y-4">
-                      <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
-                        <div className="h-2 w-2 rounded-full bg-orange-500"></div>
-                        Factores de Riesgo
-                      </label>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {factoresRiesgo.map((f) => {
-                          const isChecked = factoresSeleccionados.includes(f.id)
-                          const isSinFactores = f.id === "sin_factores"
-                          const hayOtrosFactores = factoresSeleccionados.some((id) => id !== "sin_factores")
-
-                          // Si hay otros factores, deshabilitar "sin factores"
-                          const isDisabled = isSinFactores && hayOtrosFactores
-
-                          return (
-                            <label
-                              key={f.id}
-                              className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                                isChecked
-                                  ? "border-orange-500 bg-orange-50"
-                                  : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
-                              } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                disabled={isDisabled}
-                                onChange={(e) => {
-                                  if (isSinFactores && e.target.checked) {
-                                    // Si selecciona "sin factores", limpiar otros
-                                    setFactoresSeleccionados(["sin_factores"])
-                                  } else if (isSinFactores && !e.target.checked) {
-                                    // Si deselecciona "sin factores"
-                                    setFactoresSeleccionados(
-                                      factoresSeleccionados.filter((id) => id !== "sin_factores"),
-                                    )
-                                  } else if (e.target.checked) {
-                                    // Si selecciona otro factor, quitar "sin factores"
-                                    setFactoresSeleccionados([
-                                      ...factoresSeleccionados.filter((id) => id !== "sin_factores"),
-                                      f.id,
-                                    ])
-                                  } else {
-                                    // Si deselecciona
-                                    setFactoresSeleccionados(factoresSeleccionados.filter((id) => id !== f.id))
-                                  }
-                                }}
-                                className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
-                              />
-                              <span className="text-sm font-medium text-gray-700">{f.label}</span>
-                            </label>
-                          )
-                        })}
-                      </div>
-                    </div>
                   </div>
+                )}
 
-                  {/* Botones de navegación */}
-                  <div className="flex justify-between">
-                    <Button
-                      onClick={() => setSeccion(2)}
-                      variant="outline"
-                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                    >
-                      <ChevronLeft className="mr-2 h-4 w-4" />
-                      Anterior
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        // Validar que se haya seleccionado al menos un síntoma
-                        if (sintomasSeleccionados.length === 0) {
-                          setErrorSeccion("Por favor seleccione al menos un síntoma")
-                          return
-                        }
-                        // Validar que se haya seleccionado al menos un factor de riesgo
-                        if (factoresSeleccionados.length === 0) {
-                          setErrorSeccion("Por favor seleccione al menos un factor de riesgo")
-                          return
-                        }
-                        setErrorSeccion("")
-                        setSeccionesCompletadas([...seccionesCompletadas, 3])
-                        setSeccion(4)
-                      }}
-                      className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg font-medium"
-                    >
-                      Siguiente
-                      <ChevronRight className="h-5 w-5" />
-                    </Button>
+                {/* Síntomas Presentes */}
+                <div className="space-y-4 mb-8">
+                  <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
+                    <div className="h-2 w-2 rounded-full bg-orange-500"></div>
+                    Síntomas Presentes
+                  </label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {sintomas.map((s) => {
+                      const isChecked = sintomasSeleccionados.includes(s.id)
+                      const isAsintomatica = s.id === "asintomatica"
+                      const hayOtrosSintomas = sintomasSeleccionados.some(
+                        (id) => id !== "asintomatica" && id !== "sincope",
+                      )
+
+                      // Si hay otros síntomas (sangrado/dolor), deshabilitar asintomática
+                      const isDisabled = isAsintomatica && hayOtrosSintomas
+
+                      return (
+                        <label
+                          key={s.id}
+                          className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
+                            isChecked
+                              ? "border-orange-500 bg-orange-50"
+                              : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
+                          } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={isDisabled}
+                            onChange={(e) => {
+                              if (isAsintomatica && e.target.checked) {
+                                // Si selecciona asintomática, limpiar otros síntomas (excepto síncope)
+                                setSintomasSeleccionados(["asintomatica"])
+                              } else if (isAsintomatica && !e.target.checked) {
+                                // Si deselecciona asintomática
+                                setSintomasSeleccionados(sintomasSeleccionados.filter((id) => id !== "asintomatica"))
+                              } else if (e.target.checked) {
+                                // Si selecciona otro síntoma, quitar asintomática
+                                setSintomasSeleccionados([
+                                  ...sintomasSeleccionados.filter((id) => id !== "asintomatica"),
+                                  s.id,
+                                ])
+                              } else {
+                                // Si deselecciona
+                                setSintomasSeleccionados(sintomasSeleccionados.filter((id) => id !== s.id))
+                              }
+                            }}
+                            className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">{s.label}</span>
+                        </label>
+                      )
+                    })}
                   </div>
+                </div>
 
-                  {errorSeccion && (
-                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm text-red-700">{errorSeccion}</p>
-                    </div>
-                  )}
+                {/* Factores de Riesgo */}
+                <div className="space-y-4">
+                  <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
+                    <div className="h-2 w-2 rounded-full bg-orange-500"></div>
+                    Factores de Riesgo
+                  </label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {factoresRiesgo.map((f) => {
+                      const isChecked = factoresSeleccionados.includes(f.id)
+                      const isSinFactores = f.id === "sin_factores"
+                      const hayOtrosFactores = factoresSeleccionados.some((id) => id !== "sin_factores")
 
-                  <CMGFooter />
+                      // Si hay otros factores, deshabilitar "sin factores"
+                      const isDisabled = isSinFactores && hayOtrosFactores
+
+                      return (
+                        <label
+                          key={f.id}
+                          className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
+                            isChecked
+                              ? "border-orange-500 bg-orange-50"
+                              : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
+                          } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={isDisabled}
+                            onChange={(e) => {
+                              if (isSinFactores && e.target.checked) {
+                                // Si selecciona "sin factores", limpiar otros
+                                setFactoresSeleccionados(["sin_factores"])
+                              } else if (isSinFactores && !e.target.checked) {
+                                // Si deselecciona "sin factores"
+                                setFactoresSeleccionados(factoresSeleccionados.filter((id) => id !== "sin_factores"))
+                              } else if (e.target.checked) {
+                                // Si selecciona otro factor, quitar "sin factores"
+                                setFactoresSeleccionados([
+                                  ...factoresSeleccionados.filter((id) => id !== "sin_factores"),
+                                  f.id,
+                                ])
+                              } else {
+                                // Si deselecciona
+                                setFactoresSeleccionados(factoresSeleccionados.filter((id) => id !== f.id))
+                              }
+                            }}
+                            className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">{f.label}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de navegación */}
+              <div className="flex justify-between">
+                <Button
+                  onClick={() => setSeccion(2)}
+                  variant="outline"
+                  className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Anterior
+                </Button>
+                <Button
+                  onClick={() => {
+                    // Validar que se haya seleccionado al menos un síntoma
+                    if (sintomasSeleccionados.length === 0) {
+                      setErrorSeccion("Por favor seleccione al menos un síntoma")
+                      return
+                    }
+                    // Validar que se haya seleccionado al menos un factor de riesgo
+                    if (factoresSeleccionados.length === 0) {
+                      setErrorSeccion("Por favor seleccione al menos un factor de riesgo")
+                      return
+                    }
+                    setErrorSeccion("")
+                    setSeccionesCompletadas([...seccionesCompletadas, 3])
+                    setSeccion(4)
+                  }}
+                  className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg font-medium"
+                >
+                  Siguiente
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </div>
+
+              {errorSeccion && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700">{errorSeccion}</p>
                 </div>
               )}
+
+              <CMGFooter />
             </div>
           )}
 
@@ -3757,20 +3784,20 @@ export default function CalculadoraEctopico() {
             <div className="space-y-6">
               {alertaEcografiaPendiente ? (
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-br from-orange-50 via-orange-50 to-orange-50 p-8 rounded-2xl border-2 border-orange-200 shadow-xl">
+                  <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
-                      <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
                         <AlertTriangle className="h-7 w-7 text-white" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Ecografía</h2>
-                        <p className="text-orange-700 font-medium">Se detectaron hallazgos que requieren atención</p>
+                        <p className="text-blue-700 font-medium">Se detectaron hallazgos que requieren atención</p>
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
+                    <div className="bg-white rounded-xl p-6 shadow-md border border-blue-100 mb-6">
                       <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
+                        <AlertTriangle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
                           <p className="text-slate-700 leading-relaxed">{mensajeAlertaEcografia}</p>
@@ -3779,8 +3806,8 @@ export default function CalculadoraEctopico() {
 
                       <div className="mt-6 pt-6 border-t border-blue-100">
                         <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-orange-600 text-sm font-bold">!</span>
+                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span className="text-blue-600 text-sm font-bold">!</span>
                           </div>
                           <div>
                             <h4 className="font-semibold text-slate-800 mb-2">Recomendación Médica</h4>

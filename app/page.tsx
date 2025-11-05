@@ -2228,10 +2228,10 @@ export default function CalculadoraEctopico() {
                         onClick={copiarId}
                         variant="ghost"
                         size="sm"
-                        className="h-6 w-6 p-0 hover:bg-green-100"
+                        className="h-6 w-6 p-0 hover:bg-red-100"
                         title="Copiar ID"
                       >
-                        <Copy className="h-3 w-3 text-green-700" />
+                        <Copy className="h-3 w-3 text-red-700" />
                       </Button>
                     </div>
                     <p>

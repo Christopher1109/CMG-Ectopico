@@ -3780,7 +3780,7 @@ export default function CalculadoraEctopico() {
                           </div>
                           <div>
                             <h4 className="font-semibold text-slate-800 mb-2">Recomendación Médica</h4>
-                            <p className="text-slate-1000 leading-relaxed">
+                            <p className="text-slate-7000 leading-relaxed">
                               Se recomienda seguir monitoreando continuamente el estado de la paciente y realizar los
                               estudios complementarios necesarios para una evaluación completa.
                             </p>

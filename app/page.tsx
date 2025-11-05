@@ -3756,30 +3756,30 @@ export default function CalculadoraEctopico() {
             <div className="space-y-6">
               {alertaEcografiaPendiente ? (
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
+                  <div className="bg-gradient-to-br from-orange-50 via-orange-50 to-orange-50 p-8 rounded-2xl border-2 border-orange-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
-                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                      <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
                         <AlertTriangle className="h-7 w-7 text-white" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Ecografía</h2>
-                        <p className="text-blue-700 font-medium">Se detectaron hallazgos que requieren atención</p>
+                        <p className="text-orange-700 font-medium">Se detectaron hallazgos que requieren atención</p>
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-blue-100 mb-6">
+                    <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
                       <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
+                        <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
                           <p className="text-slate-700 leading-relaxed">{mensajeAlertaEcografia}</p>
                         </div>
                       </div>
 
-                      <div className="mt-6 pt-6 border-t border-blue-100">
+                      <div className="mt-6 pt-6 border-t border-orange-100">
                         <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-blue-600 text-sm font-bold">!</span>
+                          <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span className="text-orange-600 text-sm font-bold">!</span>
                           </div>
                           <div>
                             <h4 className="font-semibold text-slate-800 mb-2">Recomendación Médica</h4>
@@ -3792,7 +3792,7 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
+                    <div className="bg-orange-50 rounded-xl p-5 border border-orange-200">
                       <p className="text-slate-700 leading-relaxed">
                         Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
                         emergencia.

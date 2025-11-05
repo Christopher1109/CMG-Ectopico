@@ -10,17 +10,15 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "ID o CURP requerido" }, { status: 400 })
     }
 
-    // Check if it's a numeric ID or a CURP (alphanumeric, 18 characters)
     const isNumericId = /^\d+$/.test(searchValue)
 
     let query = supabaseAdmin.from("consultas").select("*")
 
     if (isNumericId) {
-      // Search by numeric ID
       query = query.eq("id", Number.parseInt(searchValue))
     } else {
-      // Search by CURP
-      query = query.eq("CURP", searchValue.toUpperCase())
+      // Search by CURP - use the exact column name from database
+      query = query.eq('"CURP"', searchValue.toUpperCase())
     }
 
     const { data, error } = await query.single()
@@ -42,12 +40,10 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    // --- Mapeo a columnas REALES de tu tabla (SIN incluir id) ---
     const insertData: Record<string, any> = {
-      // NO incluimos id - se genera automáticamente
       Dr: body.usuario_creador ?? null,
       Px: body.nombre_paciente ?? null,
-      CURP: body.curp_paciente ?? body.curp ?? null,
+      '"CURP"': body.curp_paciente ?? body.curp ?? null,
       Edad_Px: body.edad_paciente ?? null,
       FC: body.frecuencia_cardiaca ?? null,
       PS: body.presion_sistolica ?? null,
@@ -59,7 +55,6 @@ export async function POST(req: Request) {
       Eco_abdominal: body.tiene_eco_transabdominal ?? null,
       Resultado_EcoAbd: body.resultado_eco_transabdominal ?? null,
 
-      // Consulta 1
       Sintomas: Array.isArray(body.sintomas_seleccionados) ? body.sintomas_seleccionados.join(", ") : null,
       Fac_Riesg: Array.isArray(body.factores_seleccionados) ? body.factores_seleccionados.join(", ") : null,
       TVUS_1: body.tvus ?? null,
@@ -81,20 +76,17 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json()
 
-    // Validate that id is provided
     if (!body.id) {
       return NextResponse.json({ error: "ID is required for update" }, { status: 400 })
     }
 
     const consultaId = body.id
-
-    // Build update object with only provided fields
     const updateData: Record<string, any> = {}
 
-    // Map body fields to database columns (only if provided)
     if (body.usuario_creador !== undefined) updateData.Dr = body.usuario_creador
     if (body.nombre_paciente !== undefined) updateData.Px = body.nombre_paciente
-    if (body.curp_paciente !== undefined || body.curp !== undefined) updateData.CURP = body.curp_paciente ?? body.curp
+    if (body.curp_paciente !== undefined || body.curp !== undefined)
+      updateData['"CURP"'] = body.curp_paciente ?? body.curp
     if (body.edad_paciente !== undefined) updateData.Edad_Px = body.edad_paciente
     if (body.frecuencia_cardiaca !== undefined) updateData.FC = body.frecuencia_cardiaca
     if (body.presion_sistolica !== undefined) updateData.PS = body.presion_sistolica
@@ -106,7 +98,6 @@ export async function PATCH(req: Request) {
     if (body.tiene_eco_transabdominal !== undefined) updateData.Eco_abdominal = body.tiene_eco_transabdominal
     if (body.resultado_eco_transabdominal !== undefined) updateData.Resultado_EcoAbd = body.resultado_eco_transabdominal
 
-    // Consulta 1 fields
     if (body.sintomas_seleccionados !== undefined) {
       updateData.Sintomas = Array.isArray(body.sintomas_seleccionados)
         ? body.sintomas_seleccionados.join(", ")
@@ -124,7 +115,6 @@ export async function PATCH(req: Request) {
         typeof body.resultado === "number" ? `${(body.resultado * 100).toFixed(1)}%` : body.resultado
     }
 
-    // Consulta 2 fields
     if (body.tvus_2 !== undefined) updateData.TVUS_2 = body.tvus_2
     if (body.hcg_valor_2 !== undefined) updateData.hCG_2 = body.hcg_valor_2
     if (body.resultado_2 !== undefined) {
@@ -133,12 +123,10 @@ export async function PATCH(req: Request) {
     }
     if (body.consulta_2_date !== undefined) updateData.Consulta_2_Date = body.consulta_2_date
 
-    // Check if there's anything to update
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 })
     }
 
-    // Update the record
     const { data, error } = await supabaseAdmin
       .from("consultas")
       .update(updateData)

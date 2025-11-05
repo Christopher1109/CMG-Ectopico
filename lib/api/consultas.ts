@@ -41,20 +41,6 @@ export async function crearConsulta(payload: any) {
     // Eliminar el campo id si existe - la base de datos lo genera automáticamente
     delete dbPayload.id
 
-    if (dbPayload.curp_paciente) {
-      const curpLimpio = dbPayload.curp_paciente.trim().toUpperCase()
-      if (curpLimpio.length === 0) {
-        dbPayload.curp_paciente = null
-      } else if (curpLimpio.length !== 18) {
-        // Si tiene contenido pero no son 18 caracteres, también enviarlo como null
-        dbPayload.curp_paciente = null
-      } else {
-        dbPayload.curp_paciente = curpLimpio
-      }
-    } else {
-      dbPayload.curp_paciente = null
-    }
-
     const res = await fetch("/api/consultas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

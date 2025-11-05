@@ -3,7 +3,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { clienteSeguro } from "@/lib/api/clienteSeguro"
 import { calcularRiesgo, validarEmbarazo } from "@/lib/api/calculos"
 import {
@@ -2809,13 +2808,13 @@ export default function CalculadoraEctopico() {
                   </Label>
                   <input
                     type="text"
-                    placeholder="Ingrese el CURP de la paciente"
+                    placeholder="Ingrese el CURP de la paciente (18 caracteres)"
                     value={curpPaciente}
                     onChange={(e) => setCurpPaciente(e.target.value.toUpperCase())}
                     maxLength={18}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 uppercase"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 uppercase font-mono"
                   />
-                  <span className="text-xs text-slate-500 mt-1 block">18 caracteres</span>
+                  <span className="text-xs text-slate-500 mt-1 block">{curpPaciente.length}/18 caracteres</span>
                 </div>
               </div>
 
@@ -2835,6 +2834,13 @@ export default function CalculadoraEctopico() {
                       setErrorSeccion("Por favor, complete todos los campos.")
                       return
                     }
+                    if (curpPaciente.length !== 18) {
+                      setErrorSeccion(
+                        "El CURP debe tener exactamente 18 caracteres. Por favor, verifique que esté completo.",
+                      )
+                      return
+                    }
+                    setErrorSeccion("")
                     setSeccion(2)
                     completarSeccion(1)
                   }}
@@ -2851,182 +2857,237 @@ export default function CalculadoraEctopico() {
           {/* SECCION 2: Signos Vitales */}
           {seccionActual === 2 && (
             <div className="space-y-6">
-              <div className="bg-pink-50 rounded-2xl p-8">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center shadow-md">
-                    <Activity className="w-8 h-8 text-white" strokeWidth={2.5} />
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-xl border border-red-100">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
+                    <Activity className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Signos Vitales</h2>
-                    <p className="text-sm text-gray-600 mt-1">Evaluación hemodinámica de la paciente</p>
+                    <h2 className="text-2xl font-bold text-slate-800">Signos Vitales</h2>
+                    <p className="text-sm text-slate-600">Evaluación de constantes vitales</p>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Frecuencia Cardíaca */}
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Frecuencia Cardíaca</span>
-                  </Label>
-                  <Input
-                    type="number"
-                    value={frecuenciaCardiaca}
-                    onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
-                    placeholder="60-100"
-                    className="w-full text-lg font-medium border-gray-200 focus:border-green-400 focus:ring-green-400 rounded-lg mb-2"
-                  />
-                  <p className="text-xs text-gray-500">lpm</p>
-                </div>
-
-                {/* Presión Sistólica */}
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Presión Sistólica</span>
-                  </Label>
-                  <Input
-                    type="number"
-                    value={presionSistolica}
-                    onChange={(e) => setPresionSistolica(e.target.value)}
-                    placeholder="90-140"
-                    className="w-full text-lg font-medium border-gray-200 focus:border-green-400 focus:ring-green-400 rounded-lg mb-2"
-                  />
-                  <p className="text-xs text-gray-500">mmHg</p>
-                </div>
-
-                {/* Presión Diastólica */}
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Presión Diastólica</span>
-                  </Label>
-                  <Input
-                    type="number"
-                    value={presionDiastolica}
-                    onChange={(e) => setPresionDiastolica(e.target.value)}
-                    placeholder="60-90"
-                    className="w-full text-lg font-medium border-gray-200 focus:border-green-400 focus:ring-green-400 rounded-lg mb-2"
-                  />
-                  <p className="text-xs text-gray-500">mmHg</p>
-                </div>
-
-                {/* PAM */}
-                <div className="bg-blue-50 p-6 rounded-xl border border-blue-200 shadow-sm">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span>PAM</span>
-                  </Label>
-                  {/* CHANGE: Show calculated PAM value instead of -- */}
-                  <div className="w-full text-lg font-medium text-gray-900 border border-gray-200 rounded-lg mb-2 px-3 py-2 bg-white">
-                    {pam || "--"}
+              {alertaSignosVitalesPendiente && (
+                <div className="bg-gradient-to-br from-orange-50 via-orange-50 to-blue-50 p-8 rounded-2xl border-2 border-orange-200 shadow-xl">
+                  <div className="flex items-start space-x-4 mb-6">
+                    <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                      <AlertTriangle className="h-7 w-7 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Signos Vitales</h2>
+                      <p className="text-red-600 font-medium">Se detectaron hallazgos que requieren atención</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-blue-600 font-medium">mmHg (65-100)</p>
-                </div>
-              </div>
 
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <Label className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Estado de Conciencia</span>
-                </Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label
-                    className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      estadoConciencia === "alerta"
-                        ? "border-green-400 bg-green-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        estadoConciencia === "alerta" ? "border-green-500" : "border-gray-300"
-                      }`}
-                    >
-                      {/* CHANGE: Changed radio button fill color to green */}
-                      {estadoConciencia === "alerta" && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}
+                  <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
+                    <div className="flex items-start space-x-3">
+                      <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
+                      <div className="flex-1">
+                        <h3 className="font-bold text-slate-800 mb-2">Advertencia</h3>
+                        <p className="text-slate-700 whitespace-pre-line">{mensajeAlertaSignosVitales}</p>
+                      </div>
                     </div>
-                    <input
-                      type="radio"
-                      name="estadoConciencia"
-                      value="alerta"
-                      checked={estadoConciencia === "alerta"}
-                      onChange={(e) => setEstadoConciencia(e.target.value)}
-                      className="sr-only"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Alerta</span>
-                  </label>
+                  </div>
 
-                  <label
-                    className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      estadoConciencia === "no_alerta"
-                        ? "border-red-400 bg-red-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        estadoConciencia === "no_alerta" ? "border-red-500" : "border-gray-300"
-                      }`}
-                    >
-                      {/* CHANGE: Changed radio button fill color to red */}
-                      {estadoConciencia === "no_alerta" && <div className="w-3 h-3 bg-red-500 rounded-full"></div>}
+                  <div className="bg-amber-50 rounded-xl p-6 border border-amber-200 mb-6">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-lg">!</span>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-slate-800 mb-2">Recomendación</h3>
+                        <p className="text-slate-700">
+                          Se recomienda seguir monitoreando continuamente el estado de la paciente y realizar los
+                          estudios complementarios necesarios para una evaluación completa.
+                        </p>
+                      </div>
                     </div>
-                    <input
-                      type="radio"
-                      name="estadoConciencia"
-                      value="no_alerta"
-                      checked={estadoConciencia === "no_alerta"}
-                      onChange={(e) => setEstadoConciencia(e.target.value)}
-                      className="sr-only"
-                    />
-                    <span className="text-sm font-medium text-gray-700">
-                      No alerta (estuporosa, comatosa, somnolienta)
-                    </span>
-                  </label>
-                </div>
-              </div>
+                  </div>
 
-              {errorSeccion && (
-                <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                  <div className="flex items-center space-x-2">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
-                    <p className="text-red-700 font-medium">{errorSeccion}</p>
+                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                    <p className="text-sm text-blue-800">
+                      Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
+                      emergencia.
+                    </p>
+                  </div>
+
+                  <div className="flex justify-between mt-6">
+                    <Button
+                      onClick={() => {
+                        setAlertaSignosVitalesPendiente(false)
+                        setPantalla("bienvenida")
+                      }}
+                      variant="outline"
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
+                      <Home className="mr-2 h-4 w-4" />
+                      Regresar al Inicio
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setAlertaSignosVitalesPendiente(false)
+                        setSeccion(3)
+                        completarSeccion(2)
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Continuar con la Evaluación
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               )}
 
-              {/* Botones de navegación */}
-              <div className="flex justify-between">
-                <Button
-                  onClick={() => setSeccion(1)}
-                  variant="outline"
-                  className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                >
-                  <ChevronLeft className="mr-2 h-4 w-4" />
-                  Anterior
-                </Button>
-                <Button
-                  onClick={() => {
-                    if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
-                      setErrorSeccion("Por favor complete todos los campos de signos vitales")
-                      return
-                    }
-                    setErrorSeccion("")
-                    if (validarSignosVitales()) {
-                      setSeccionesCompletadas([...seccionesCompletadas, 2])
-                      setSeccion(3)
-                    }
-                  }}
-                  className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 transition-all shadow-lg font-medium"
-                >
-                  Continuar
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
-              </div>
+              {!alertaSignosVitalesPendiente && (
+                <>
+                  <div className="space-y-5">
+                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                      <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span>Frecuencia Cardíaca</span>
+                      </Label>
+                      <input
+                        type="number"
+                        placeholder="60-100"
+                        value={frecuenciaCardiaca}
+                        onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200"
+                      />
+                      <span className="text-xs text-slate-500 mt-1 block">lpm</span>
+                    </div>
 
-              <CMGFooter />
+                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                      <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span>Presión Sistólica</span>
+                      </Label>
+                      <input
+                        type="number"
+                        placeholder="90-140"
+                        value={presionSistolica}
+                        onChange={(e) => setPresionSistolica(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200"
+                      />
+                      <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                      <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span>Presión Diastólica</span>
+                      </Label>
+                      <input
+                        type="number"
+                        placeholder="60-90"
+                        value={presionDiastolica}
+                        onChange={(e) => setPresionDiastolica(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200"
+                      />
+                      <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span>Estado de Conciencia</span>
+                    </Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <label
+                        className={`flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          estadoConciencia === "alerta"
+                            ? "border-green-400 bg-green-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="estadoConciencia"
+                          value="alerta"
+                          checked={estadoConciencia === "alerta"}
+                          onChange={(e) => setEstadoConciencia(e.target.value)}
+                          className="sr-only"
+                        />
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            estadoConciencia === "alerta" ? "border-green-500" : "border-gray-300"
+                          }`}
+                        >
+                          {estadoConciencia === "alerta" && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Alerta</span>
+                      </label>
+
+                      <label
+                        className={`flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          estadoConciencia === "no_alerta"
+                            ? "border-red-400 bg-red-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="estadoConciencia"
+                          value="no_alerta"
+                          checked={estadoConciencia === "no_alerta"}
+                          onChange={(e) => setEstadoConciencia(e.target.value)}
+                          className="sr-only"
+                        />
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            estadoConciencia === "no_alerta" ? "border-red-500" : "border-gray-300"
+                          }`}
+                        >
+                          {estadoConciencia === "no_alerta" && <div className="w-3 h-3 bg-red-500 rounded-full"></div>}
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">
+                          No alerta (somnolienta, estuporosa, comatosa)
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {errorSeccion && (
+                    <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center space-x-2">
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                        <p className="text-red-700 font-medium">{errorSeccion}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between">
+                    <Button
+                      onClick={() => setSeccion(1)}
+                      variant="outline"
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
+                          setErrorSeccion("Por favor complete todos los campos de signos vitales")
+                          return
+                        }
+                        setErrorSeccion("")
+                        if (validarSignosVitales()) {
+                          setSeccionesCompletadas([...seccionesCompletadas, 2])
+                          setSeccion(3)
+                        }
+                      }}
+                      className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 transition-all shadow-lg font-medium"
+                    >
+                      Continuar
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </div>
+                  <CMGFooter />
+                </>
+              )}
             </div>
           )}
 
@@ -3445,7 +3506,7 @@ export default function CalculadoraEctopico() {
                     </div>
 
                     <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
-                      <div className="flex items-start space-x-3 mb-4">
+                      <div className="flex items-start space-x-3">
                         <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
@@ -3721,7 +3782,7 @@ export default function CalculadoraEctopico() {
                     </div>
 
                     <div className="bg-white rounded-xl p-6 shadow-md border border-blue-100 mb-6">
-                      <div className="flex items-start space-x-3 mb-4">
+                      <div className="flex items-start space-x-3">
                         <AlertTriangle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
@@ -3955,7 +4016,7 @@ export default function CalculadoraEctopico() {
                     </div>
 
                     <div className="bg-white rounded-xl p-6 shadow-md border border-blue-100 mb-6">
-                      <div className="flex items-start space-x-3 mb-4">
+                      <div className="flex items-start space-x-3">
                         <AlertTriangle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>

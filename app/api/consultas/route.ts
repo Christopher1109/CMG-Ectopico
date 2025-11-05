@@ -1,6 +1,43 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const searchValue = searchParams.get("id")
+
+    if (!searchValue) {
+      return NextResponse.json({ error: "ID o CURP requerido" }, { status: 400 })
+    }
+
+    // Check if it's a numeric ID or a CURP (alphanumeric, 18 characters)
+    const isNumericId = /^\d+$/.test(searchValue)
+
+    let query = supabaseAdmin.from("consultas").select("*")
+
+    if (isNumericId) {
+      // Search by numeric ID
+      query = query.eq("id", Number.parseInt(searchValue))
+    } else {
+      // Search by CURP
+      query = query.eq("CURP", searchValue.toUpperCase())
+    }
+
+    const { data, error } = await query.single()
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return NextResponse.json({ error: "Consulta no encontrada" }, { status: 404 })
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ data })
+  } catch (e: any) {
+    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()

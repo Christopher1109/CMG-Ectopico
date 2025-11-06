@@ -1738,7 +1738,7 @@ export default function CalculadoraEctopico() {
     }
   }
 
-  // ✅ LOGIN SEGURO
+  // ==================== LOGIN SEGURO ====================
   const manejarLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorLogin("")
@@ -2768,7 +2768,7 @@ export default function CalculadoraEctopico() {
           {seccionActual === 2 && (
             <div className="space-y-6">
               {/* CHANGE START: Modified header for Section 2 */}
-              <div className="bg-gradient-to-r from-pink-50 to-red-50 rounded-2xl p-8 border border-pink-100 shadow-sm">
+              <div className="bg-gradient-to-r from-pink-50 to-red-50 rounded-2xl p-8 border border-pink-100 shadow-xl">
                 <div className="flex items-start gap-4 mb-6">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-600 to-red-600 flex items-center justify-center shadow-lg">
                     <Activity className="w-8 h-8 text-white" />
@@ -3710,10 +3710,7 @@ export default function CalculadoraEctopico() {
                           setMensajeAlertaEcografia(
                             "Se necesita realizar una ecografía transabdominal para poder continuar con la evaluación de embarazo ectópico.",
                           )
-                          // CHANGE: For Consulta 2, alerts are informational only
-                          if (numeroConsultaActual === 1) {
-                            setAlertaEcografiaPendiente(true)
-                          }
+                          setAlertaEcografiaPendiente(true)
                           if (
                             !recomendaciones.includes(
                               "Ecografía Transabdominal No Realizada: Se recomienda realizar una ecografía transabdominal.",
@@ -3722,6 +3719,27 @@ export default function CalculadoraEctopico() {
                             setRecomendaciones([
                               ...recomendaciones,
                               "Ecografía Transabdominal No Realizada: Se recomienda realizar una ecografía transabdominal.",
+                            ])
+                          }
+                        }
+
+                        if (
+                          tieneEcoTransabdominal === "si" &&
+                          resultadoEcoTransabdominal &&
+                          resultadoEcoTransabdominal !== "ausencia_saco_gestacional"
+                        ) {
+                          setMensajeAlertaEcografia(
+                            "Se detectó un hallazgo en la ecografía transabdominal que requiere atención médica inmediata.",
+                          )
+                          setAlertaEcografiaPendiente(true)
+                          if (
+                            !recomendaciones.includes(
+                              "Hallazgo en Ecografía Transabdominal: Se recomienda evaluación médica inmediata.",
+                            )
+                          ) {
+                            setRecomendaciones([
+                              ...recomendaciones,
+                              "Hallazgo en Ecografía Transabdominal: Se recomienda evaluación médica inmediata.",
                             ])
                           }
                         }
@@ -3855,7 +3873,7 @@ export default function CalculadoraEctopico() {
                   <div className="space-y-4">
                     {/* Eco TVUS */}
                     <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                      <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                      <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
                         <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                         <span>¿Cuenta con ecografía transvaginal (TVUS)?</span>
                       </Label>
@@ -4166,7 +4184,7 @@ export default function CalculadoraEctopico() {
                   Anterior
                 </Button>
                 <Button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!tvus) {
                       setErrorSeccion("Por favor seleccione los hallazgos en TVUS.")
                       return

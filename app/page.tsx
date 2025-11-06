@@ -3,7 +3,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { clienteSeguro } from "@/lib/api/clienteSeguro"
 import { calcularRiesgo, validarEmbarazo } from "@/lib/api/calculos"
 import {
@@ -1010,16 +1009,13 @@ export default function CalculadoraEctopico() {
   const continuarConsultaCargada = async () => {
     console.log("🔄 Continuing consulta cargada:", consultaCargada)
 
-    // Emergency blocking only applies to initial consultation (Consulta 1)
-    // Follow-up consultations (Consulta 2 and 3) should not be blocked by previous alerts
-
+    // CHANGE REMOVED: Remove all blocking for Consulta 2 - no emergency checks
     const folioNumeric = Number(
       (consultaCargada.id_publico || consultaCargada.folio || "").toString().replace(/^ID-0*/, ""),
     )
 
     console.log("[v0] 🔍 Fetching previous visit from backend...")
     try {
-      // Assuming your API endpoint structure for fetching previous visits
       const prevResponse = await fetch(`/api/consultas/${folioNumeric}?scope=previous`)
       const prev = await prevResponse.json()
 
@@ -1030,7 +1026,6 @@ export default function CalculadoraEctopico() {
 
       console.log("[v0] 📥 Previous visit data:", prev)
 
-      // Determine next visit number based on previous visit
       const nextVisit = Math.min((prev.visit_number ?? 1) + 1, 3) as 2 | 3
 
       if (nextVisit > 3) {
@@ -1039,17 +1034,15 @@ export default function CalculadoraEctopico() {
         return
       }
 
-      // Check if can continue based on previous result
       if (prev.resultado != null && (prev.resultado >= 0.95 || prev.resultado < 0.01)) {
         alert("La última consulta ya tiene una decisión final (confirmar o descartar). No se puede continuar.")
         setPantalla("resumen")
         return
       }
 
-      // Set consultation number and previous data
       setNumeroConsultaActual(nextVisit)
       setConsultaAnteriorParaMostrar(prev.visit_number as 1 | 2 | 3)
-      setHcgAnterior((prev.hcg ?? "").toString()) // Assuming 'hcg' is the key for hCG value in the previous visit response
+      setHcgAnterior((prev.hcg ?? "").toString())
 
       console.log(`[v0] ➡️ Será consulta ${nextVisit}, usando C${prev.visit_number} como anterior`)
       console.log(`[v0] 📊 hCG anterior: ${prev.hcg}`)
@@ -1062,7 +1055,7 @@ export default function CalculadoraEctopico() {
 
     setIdSeguimiento(consultaCargada.id_publico || consultaCargada.folio || consultaCargada.id?.toString())
 
-    // Mantener datos del paciente
+    // CHANGE: Clear vital signs for Consulta 2
     setNombrePaciente(consultaCargada.nombre_paciente || "")
     setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
 
@@ -1072,12 +1065,21 @@ export default function CalculadoraEctopico() {
     setPam("")
     setEstadoConciencia("")
 
+    // CHANGE: Preselect symptoms and risk factors from Consulta 1
     setSintomasSeleccionados(consultaCargada.sintomas_seleccionados || [])
     setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
 
+    // CHANGE: Prefill eco transabdominal from Consulta 1
+    setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
+    setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
+
+    // CHANGE: Prefill TVUS from Consulta 1
+    setTvus(consultaCargada.tvus || "")
+
     setEsConsultaSeguimiento(true)
     setPantalla("formulario")
-    setSeccion(3) // Start from Section 3 as we are collecting symptoms and risk factors
+    // CHANGE: Start from Section 2 (Signos Vitales) for Consulta 2
+    setSeccion(2)
   }
 
   const obtenerNombreSintoma = (sintomaId: string) => {
@@ -2765,185 +2767,154 @@ export default function CalculadoraEctopico() {
           {/* SECCION 2: Signos Vitales */}
           {seccionActual === 2 && (
             <div className="space-y-6">
-              <div className="bg-pink-50 rounded-2xl p-8">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center shadow-md">
-                    <Activity className="w-8 h-8 text-white" strokeWidth={2.5} />
+              {/* CHANGE START: Modified header for Section 2 */}
+              <div className="bg-gradient-to-r from-pink-50 to-red-50 rounded-2xl p-8 border border-pink-100 shadow-sm">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-600 to-red-600 flex items-center justify-center shadow-lg">
+                    <Activity className="w-8 h-8 text-white" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">Signos Vitales</h2>
-                    <p className="text-sm text-gray-600 mt-1">Evaluación hemodinámica de la paciente</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {numeroConsultaActual === 1
+                        ? "Registre los signos vitales actuales de la paciente"
+                        : "Confirme o actualice los signos vitales de la paciente"}
+                    </p>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Frecuencia Cardíaca */}
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Frecuencia Cardíaca</span>
-                  </Label>
-                  <Input
-                    type="number"
-                    value={frecuenciaCardiaca}
-                    onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
-                    placeholder="60-100"
-                    className="w-full text-lg font-medium border-gray-200 focus:border-green-400 focus:ring-green-400 rounded-lg mb-2"
-                  />
-                  <p className="text-xs text-gray-500">lpm</p>
-                </div>
-
-                {/* Presión Sistólica */}
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Presión Sistólica</span>
-                  </Label>
-                  <Input
-                    type="number"
-                    value={presionSistolica}
-                    onChange={(e) => setPresionSistolica(e.target.value)}
-                    placeholder="90-140"
-                    className="w-full text-lg font-medium border-gray-200 focus:border-green-400 focus:ring-green-400 rounded-lg mb-2"
-                  />
-                  <p className="text-xs text-gray-500">mmHg</p>
-                </div>
-
-                {/* Presión Diastólica */}
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Presión Diastólica</span>
-                  </Label>
-                  <Input
-                    type="number"
-                    value={presionDiastolica}
-                    onChange={(e) => setPresionDiastolica(e.target.value)}
-                    placeholder="60-90"
-                    className="w-full text-lg font-medium border-gray-200 focus:border-green-400 focus:ring-green-400 rounded-lg mb-2"
-                  />
-                  <p className="text-xs text-gray-500">mmHg</p>
-                </div>
-
-                {/* PAM */}
-                <div className="bg-blue-50 p-6 rounded-xl border border-blue-200 shadow-sm">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span>PAM</span>
-                  </Label>
-                  <div className="w-full text-lg font-medium text-gray-900 border border-gray-200 rounded-lg mb-2 px-3 py-2 bg-white">
-                    {pam || "--"}
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-pink-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                      <span>Frecuencia Cardíaca (FC)</span>
+                    </Label>
+                    <input
+                      type="number"
+                      placeholder="Ej: 80"
+                      value={frecuenciaCardiaca}
+                      onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-pink-500 focus:ring-4 focus:ring-pink-100 transition-all duration-200"
+                    />
+                    <span className="text-xs text-slate-500 mt-1 block">latidos por minuto (lpm)</span>
                   </div>
-                  <p className="text-xs text-blue-600 font-medium">mmHg (65-100)</p>
+
+                  <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-pink-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                      <span>Presión Sistólica (PS)</span>
+                    </Label>
+                    <input
+                      type="number"
+                      placeholder="Ej: 120"
+                      value={presionSistolica}
+                      onChange={(e) => setPresionSistolica(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-pink-500 focus:ring-4 focus:ring-pink-100 transition-all duration-200"
+                    />
+                    <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-pink-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                      <span>Presión Diastólica (PD)</span>
+                    </Label>
+                    <input
+                      type="number"
+                      placeholder="Ej: 80"
+                      value={presionDiastolica}
+                      onChange={(e) => {
+                        setPresionDiastolica(e.target.value)
+                        const ps = Number.parseFloat(presionSistolica)
+                        const pd = Number.parseFloat(e.target.value)
+                        if (!Number.isNaN(ps) && !Number.isNaN(pd)) {
+                          const pamCalc = ((ps + 2 * pd) / 3).toFixed(1)
+                          setPam(pamCalc)
+                        }
+                      }}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-pink-500 focus:ring-4 focus:ring-pink-100 transition-all duration-200"
+                    />
+                    <span className="text-xs text-slate-500 mt-1 block">mmHg</span>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-pink-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                      <span>PAM (Presión Arterial Media)</span>
+                    </Label>
+                    <input
+                      type="number"
+                      placeholder="Calculado automáticamente"
+                      value={pam}
+                      readOnly
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 cursor-not-allowed"
+                    />
+                    <span className="text-xs text-slate-500 mt-1 block">mmHg (calculado)</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <Label className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Estado de Conciencia</span>
-                </Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <label
-                    className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      estadoConciencia === "Alerta"
-                        ? "border-green-400 bg-green-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        estadoConciencia === "Alerta" ? "border-green-500" : "border-gray-300"
+                <div className="mt-6 bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
+                  <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                    <span>Estado de Conciencia</span>
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label
+                      className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
+                        estadoConciencia === "Alerta"
+                          ? "border-green-400 bg-green-50"
+                          : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      {estadoConciencia === "Alerta" && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}
-                    </div>
-                    <input
-                      type="radio"
-                      name="estadoConciencia"
-                      value="Alerta"
-                      checked={estadoConciencia === "Alerta"}
-                      onChange={(e) => setEstadoConciencia(e.target.value)}
-                      className="sr-only"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Alerta</span>
-                  </label>
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          estadoConciencia === "Alerta" ? "border-green-500" : "border-gray-300"
+                        }`}
+                      >
+                        {estadoConciencia === "Alerta" && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}
+                      </div>
+                      <input
+                        type="radio"
+                        name="estadoConciencia"
+                        value="Alerta"
+                        checked={estadoConciencia === "Alerta"}
+                        onChange={(e) => setEstadoConciencia(e.target.value)}
+                        className="sr-only"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Alerta</span>
+                    </label>
 
-                  <label
-                    className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      estadoConciencia === "Verbal"
-                        ? "border-yellow-400 bg-yellow-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        estadoConciencia === "Verbal" ? "border-yellow-500" : "border-gray-300"
+                    <label
+                      className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
+                        estadoConciencia === "No alerta (estuporosa, comatosa, somnoliente)"
+                          ? "border-red-400 bg-red-50"
+                          : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      {estadoConciencia === "Verbal" && <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>}
-                    </div>
-                    <input
-                      type="radio"
-                      name="estadoConciencia"
-                      value="Verbal"
-                      checked={estadoConciencia === "Verbal"}
-                      onChange={(e) => setEstadoConciencia(e.target.value)}
-                      className="sr-only"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Verbal</span>
-                  </label>
-
-                  <label
-                    className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      estadoConciencia === "Dolor"
-                        ? "border-orange-400 bg-orange-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        estadoConciencia === "Dolor" ? "border-orange-500" : "border-gray-300"
-                      }`}
-                    >
-                      {estadoConciencia === "Dolor" && <div className="w-3 h-3 bg-orange-500 rounded-full"></div>}
-                    </div>
-                    <input
-                      type="radio"
-                      name="estadoConciencia"
-                      value="Dolor"
-                      checked={estadoConciencia === "Dolor"}
-                      onChange={(e) => setEstadoConciencia(e.target.value)}
-                      className="sr-only"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Dolor</span>
-                  </label>
-
-                  <label
-                    className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      estadoConciencia === "Inconsciente"
-                        ? "border-red-400 bg-red-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        estadoConciencia === "Inconsciente" ? "border-red-500" : "border-gray-300"
-                      }`}
-                    >
-                      {estadoConciencia === "Inconsciente" && <div className="w-3 h-3 bg-red-500 rounded-full"></div>}
-                    </div>
-                    <input
-                      type="radio"
-                      name="estadoConciencia"
-                      value="Inconsciente"
-                      checked={estadoConciencia === "Inconsciente"}
-                      onChange={(e) => setEstadoConciencia(e.target.value)}
-                      className="sr-only"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Inconsciente</span>
-                  </label>
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          estadoConciencia === "No alerta (estuporosa, comatosa, somnoliente)"
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {estadoConciencia === "No alerta (estuporosa, comatosa, somnoliente)" && (
+                          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        )}
+                      </div>
+                      <input
+                        type="radio"
+                        name="estadoConciencia"
+                        value="No alerta (estuporosa, comatosa, somnoliente)"
+                        checked={estadoConciencia === "No alerta (estuporosa, comatosa, somnoliente)"}
+                        onChange={(e) => setEstadoConciencia(e.target.value)}
+                        className="sr-only"
+                      />
+                      <span className="text-sm font-medium text-gray-700">
+                        No alerta (estuporosa, comatosa, somnoliente)
+                      </span>
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -2982,8 +2953,10 @@ export default function CalculadoraEctopico() {
                     if (ps > 140 || ps < 90) alertas.push(`Presión sistólica anormal: ${ps} mmHg (normal: 90-140)`)
                     if (pd > 90 || pd < 60) alertas.push(`Presión diastólica anormal: ${pd} mmHg (normal: 60-90)`)
                     if (pamValue < 65 || pamValue > 100) alertas.push(`PAM anormal: ${pamValue} mmHg (normal: 65-100)`)
-                    if (estadoConciencia === "Inconsciente") alertas.push("Estado de conciencia Inconsciente") // Check for 'Inconsciente'
+                    if (estadoConciencia === "No alerta (estuporosa, comatosa, somnoliente)")
+                      alertas.push("Estado de conciencia alterado")
 
+                    // CHANGE: For Consulta 2, alerts are informational only, not blocking
                     if (alertas.length > 0) {
                       setMensajeAlertaSignosVitales(alertas.join("\n"))
                       if (numeroConsultaActual === 1) {
@@ -3001,6 +2974,7 @@ export default function CalculadoraEctopico() {
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
+
               <CMGFooter />
             </div>
           )}
@@ -3288,8 +3262,9 @@ export default function CalculadoraEctopico() {
                           return
                         }
                         setErrorSeccion("")
+                        // CHANGE: For Consulta 2, skip section 4 (PIE) and go to section 5 (Eco Transabdominal)
                         if (numeroConsultaActual > 1) {
-                          setSeccion(7)
+                          setSeccion(5)
                         } else {
                           setSeccion(4)
                         }
@@ -3308,6 +3283,7 @@ export default function CalculadoraEctopico() {
           )}
 
           {/* SECCION 4: PIE - Prueba de Embarazo Cualitativa */}
+          {/* CHANGE: Only show PIE section for Consulta 1 */}
           {seccionActual === 4 && numeroConsultaActual === 1 && (
             <div className="space-y-6">
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100">
@@ -3489,6 +3465,7 @@ export default function CalculadoraEctopico() {
           {/* SECCION 5: Eco Transabdominal */}
           {seccionActual === 5 && (
             <div className="space-y-6">
+              {/* CHANGE START: For Consulta 2, show alerts as informational only */}
               {alertaPruebaEmbarazoPendiente && numeroConsultaActual === 1 ? (
                 <div className="space-y-6">
                   <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-8 rounded-2xl border-2 border-purple-200 shadow-xl">
@@ -3704,6 +3681,7 @@ export default function CalculadoraEctopico() {
                   <div className="flex justify-between pt-4">
                     <Button
                       onClick={() => {
+                        // CHANGE: For Consulta 2, go back to section 3 (skip section 4)
                         if (numeroConsultaActual > 1) {
                           setSeccion(3)
                         } else {
@@ -3719,67 +3697,43 @@ export default function CalculadoraEctopico() {
                     <Button
                       onClick={async () => {
                         if (!tieneEcoTransabdominal) {
-                          setErrorSeccion("Por favor, seleccione si tiene ecografía transabdominal.")
+                          setErrorSeccion("Por favor seleccione si tiene ecografía transabdominal.")
                           return
                         }
 
                         if (tieneEcoTransabdominal === "si" && !resultadoEcoTransabdominal) {
-                          setErrorSeccion("Por favor, seleccione el resultado de la ecografía.")
+                          setErrorSeccion("Por favor seleccione el resultado de la ecografía.")
                           return
                         }
 
                         if (tieneEcoTransabdominal === "no") {
-                          // No tiene ecografía: continuar sin alerta
-                          setErrorSeccion("")
-                          if (numeroConsultaActual > 1) {
-                            setSeccion(7)
-                          } else {
-                            setSeccion(6)
-                          }
-                          completarSeccion(5)
-                        } else if (
-                          tieneEcoTransabdominal === "si" &&
-                          resultadoEcoTransabdominal === "ausencia_saco_gestacional"
-                        ) {
-                          // Ausencia de saco: continuar sin alerta
-                          setErrorSeccion("")
-                          if (numeroConsultaActual > 1) {
-                            setSeccion(7)
-                          } else {
-                            setSeccion(6)
-                          }
-                          completarSeccion(5)
-                        } else if (tieneEcoTransabdominal === "si") {
-                          // Cualquier otro hallazgo: mostrar alerta
-                          let mensaje = ""
-
-                          if (resultadoEcoTransabdominal === "saco_gestacional") {
-                            mensaje =
-                              "Se detectó saco gestacional en la ecografía transabdominal. Se recomienda realizar seguimiento con ecografía transvaginal para evaluación más detallada."
-                          } else if (resultadoEcoTransabdominal === "saco_gestacional_vitelino") {
-                            mensaje =
-                              "Se detectó saco gestacional con saco vitelino en la ecografía transabdominal. Se recomienda realizar seguimiento con ecografía transvaginal."
-                          } else if (resultadoEcoTransabdominal === "saco_gestacional_vitelino_embrion_sin_fc") {
-                            mensaje =
-                              "Se detectó saco gestacional con saco vitelino y embrión sin frecuencia cardíaca. Se recomienda evaluación médica inmediata."
-                          } else if (resultadoEcoTransabdominal === "saco_gestacional_vitelino_embrion_con_fc") {
-                            mensaje =
-                              "Se detectó saco gestacional con saco vitelino y embrión con frecuencia cardíaca. Se recomienda seguimiento médico continuo."
-                          }
-
-                          setMensajeAlertaEcografia(mensaje)
+                          setMensajeAlertaEcografia(
+                            "Se necesita realizar una ecografía transabdominal para poder continuar con la evaluación de embarazo ectópico.",
+                          )
+                          // CHANGE: For Consulta 2, alerts are informational only
                           if (numeroConsultaActual === 1) {
                             setAlertaEcografiaPendiente(true)
                           }
-                          setRecomendaciones((prev) => [...prev, `Hallazgo Ecográfico: ${mensaje}`])
-                          setErrorSeccion("")
-                          if (numeroConsultaActual > 1) {
-                            setSeccion(7)
-                          } else {
-                            setSeccion(6)
+                          if (
+                            !recomendaciones.includes(
+                              "Ecografía Transabdominal No Realizada: Se recomienda realizar una ecografía transabdominal.",
+                            )
+                          ) {
+                            setRecomendaciones([
+                              ...recomendaciones,
+                              "Ecografía Transabdominal No Realizada: Se recomienda realizar una ecografía transabdominal.",
+                            ])
                           }
-                          completarSeccion(5)
                         }
+
+                        setErrorSeccion("")
+                        // CHANGE: For Consulta 2, skip section 6 (Estudios Complementarios) and go to section 7 (TVUS)
+                        if (numeroConsultaActual > 1) {
+                          setSeccion(7)
+                        } else {
+                          setSeccion(6)
+                        }
+                        completarSeccion(5)
                       }}
                       className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                     >
@@ -3787,13 +3741,15 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
+
                   <CMGFooter />
                 </div>
               )}
             </div>
           )}
 
-          {/* SECCION 6: TVUS y β-hCG Disponibles */}
+          {/* SECCION 6: Estudios Complementarios */}
+          {/* CHANGE: Only show Estudios Complementarios section for Consulta 1 */}
           {seccionActual === 6 && numeroConsultaActual === 1 && (
             <div className="space-y-6">
               {alertaEcografiaPendiente ? (
@@ -3988,8 +3944,9 @@ export default function CalculadoraEctopico() {
                   <div className="flex justify-between pt-4">
                     <Button
                       onClick={() => {
+                        // CHANGE: For Consulta 2, go back to section 3 (skip section 4)
                         if (numeroConsultaActual > 1) {
-                          setSeccion(5)
+                          setSeccion(3)
                         } else {
                           setSeccion(4)
                         }
@@ -4195,6 +4152,7 @@ export default function CalculadoraEctopico() {
               <div className="flex justify-between pt-4">
                 <Button
                   onClick={() => {
+                    // CHANGE: For Consulta 2, go back to section 5 (skip section 6)
                     if (numeroConsultaActual > 1) {
                       setSeccion(5)
                     } else {

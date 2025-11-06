@@ -512,7 +512,7 @@ export default function CalculadoraEctopico() {
     const pdNormal = pd >= 60 && pd <= 90
     const pamNormal = pamValor >= 65 && pamValor <= 100
     // CHANGE: Corrected state value to match radio button value
-    const concienciaNormal = estadoConciencia === "alerta"
+    const concienciaNormal = estadoConciencia === "Alerta" // <- Changed "alerta" to "Alerta"
 
     if (!fcNormal || !psNormal || !pdNormal || !pamNormal || !concienciaNormal) {
       let mensajeAnormal = "Se detectaron los siguientes valores que requieren atención:\n\n"
@@ -2844,26 +2844,26 @@ export default function CalculadoraEctopico() {
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span>Estado de Conciencia</span>
                 </Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <label
                     className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      estadoConciencia === "alerta"
+                      estadoConciencia === "Alerta"
                         ? "border-green-400 bg-green-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
                     <div
                       className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        estadoConciencia === "alerta" ? "border-green-500" : "border-gray-300"
+                        estadoConciencia === "Alerta" ? "border-green-500" : "border-gray-300"
                       }`}
                     >
-                      {estadoConciencia === "alerta" && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}
+                      {estadoConciencia === "Alerta" && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}
                     </div>
                     <input
                       type="radio"
                       name="estadoConciencia"
-                      value="alerta"
-                      checked={estadoConciencia === "alerta"}
+                      value="Alerta"
+                      checked={estadoConciencia === "Alerta"}
                       onChange={(e) => setEstadoConciencia(e.target.value)}
                       className="sr-only"
                     />
@@ -2872,27 +2872,77 @@ export default function CalculadoraEctopico() {
 
                   <label
                     className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      estadoConciencia === "alterado"
+                      estadoConciencia === "Verbal"
+                        ? "border-yellow-400 bg-yellow-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        estadoConciencia === "Verbal" ? "border-yellow-500" : "border-gray-300"
+                      }`}
+                    >
+                      {estadoConciencia === "Verbal" && <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>}
+                    </div>
+                    <input
+                      type="radio"
+                      name="estadoConciencia"
+                      value="Verbal"
+                      checked={estadoConciencia === "Verbal"}
+                      onChange={(e) => setEstadoConciencia(e.target.value)}
+                      className="sr-only"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Verbal</span>
+                  </label>
+
+                  <label
+                    className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
+                      estadoConciencia === "Dolor"
+                        ? "border-orange-400 bg-orange-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        estadoConciencia === "Dolor" ? "border-orange-500" : "border-gray-300"
+                      }`}
+                    >
+                      {estadoConciencia === "Dolor" && <div className="w-3 h-3 bg-orange-500 rounded-full"></div>}
+                    </div>
+                    <input
+                      type="radio"
+                      name="estadoConciencia"
+                      value="Dolor"
+                      checked={estadoConciencia === "Dolor"}
+                      onChange={(e) => setEstadoConciencia(e.target.value)}
+                      className="sr-only"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Dolor</span>
+                  </label>
+
+                  <label
+                    className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
+                      estadoConciencia === "Inconsciente"
                         ? "border-red-400 bg-red-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        estadoConciencia === "Inconsciente" ? "border-red-500" : "border-gray-300"
+                      }`}
+                    >
+                      {estadoConciencia === "Inconsciente" && <div className="w-3 h-3 bg-red-500 rounded-full"></div>}
+                    </div>
                     <input
                       type="radio"
                       name="estadoConciencia"
-                      value="alterado"
-                      checked={estadoConciencia === "alterado"}
+                      value="Inconsciente"
+                      checked={estadoConciencia === "Inconsciente"}
                       onChange={(e) => setEstadoConciencia(e.target.value)}
                       className="sr-only"
                     />
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        estadoConciencia === "alterado" ? "border-red-500" : "border-gray-300"
-                      }`}
-                    >
-                      {estadoConciencia === "alterado" && <div className="w-3 h-3 bg-red-500 rounded-full"></div>}
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">Alterado</span>
+                    <span className="text-sm font-medium text-gray-700">Inconsciente</span>
                   </label>
                 </div>
               </div>
@@ -2932,7 +2982,7 @@ export default function CalculadoraEctopico() {
                     if (ps > 140 || ps < 90) alertas.push(`Presión sistólica anormal: ${ps} mmHg (normal: 90-140)`)
                     if (pd > 90 || pd < 60) alertas.push(`Presión diastólica anormal: ${pd} mmHg (normal: 60-90)`)
                     if (pamValue < 65 || pamValue > 100) alertas.push(`PAM anormal: ${pamValue} mmHg (normal: 65-100)`)
-                    if (estadoConciencia === "alterado") alertas.push("Estado de conciencia alterado")
+                    if (estadoConciencia === "Inconsciente") alertas.push("Estado de conciencia Inconsciente") // Check for 'Inconsciente'
 
                     if (alertas.length > 0) {
                       setMensajeAlertaSignosVitales(alertas.join("\n"))
@@ -3239,12 +3289,11 @@ export default function CalculadoraEctopico() {
                         }
                         setErrorSeccion("")
                         if (numeroConsultaActual > 1) {
-                          setSeccion(5)
-                          completarSeccion(3)
+                          setSeccion(7)
                         } else {
                           setSeccion(4)
-                          completarSeccion(3)
                         }
+                        completarSeccion(3)
                       }}
                       className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                     >
@@ -3407,7 +3456,7 @@ export default function CalculadoraEctopico() {
                       }
                     } else if (tienePruebaEmbarazoDisponible === "no") {
                       setMensajeAlertaPruebaEmbarazo(
-                        "Se necesita realizar una prueba de embarazo cualitativa (PIE) para poder continuar con la evaluación. Por favor, acuda a un laboratorio clínico y regrese cuando tenga el resultado.",
+                        "Se necesita realizar una prueba de embarazo cualitativa (PIE) para poder continuar con la evaluación de embarazo ectópico. Por favor, acuda a un laboratorio clínico y regrese cuando tenga el resultado.",
                       )
                       setAlertaPruebaEmbarazoPendiente(true)
                       if (
@@ -3999,7 +4048,7 @@ export default function CalculadoraEctopico() {
           {/* SECCION 7: TVUS */}
           {seccionActual === 7 && (
             <div className="space-y-6">
-              {alertaEcografiaPendiente && numeroConsultaActual === 1 ? (
+              {alertaEcografiaPendiente ? (
                 <div className="space-y-6">
                   <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">

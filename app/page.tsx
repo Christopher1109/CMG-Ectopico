@@ -1010,35 +1010,8 @@ export default function CalculadoraEctopico() {
   const continuarConsultaCargada = async () => {
     console.log("🔄 Continuing consulta cargada:", consultaCargada)
 
-    const fc = Number.parseFloat(consultaCargada.frecuencia_cardiaca?.toString() || "0")
-    const sistolica = Number.parseFloat(consultaCargada.presion_sistolica?.toString() || "0")
-    const diastolica = Number.parseFloat(consultaCargada.presion_diastolica?.toString() || "0")
-    const pamValor = Number.parseFloat(consultaCargada.pam?.toString() || "0") // PAM from loaded data
-    const conciencia = consultaCargada.estado_conciencia || ""
-
-    const tieneCriteriosEmergencia =
-      sistolica >= 180 ||
-      diastolica >= 110 ||
-      pamValor >= 120 || // Added PAM check
-      fc > 120 ||
-      fc < 50 ||
-      (fc > 100 && (sistolica <= 90 || diastolica <= 60)) ||
-      conciencia === "somnolienta" ||
-      conciencia === "estuporosa" ||
-      conciencia === "comatosa"
-
-    if (tieneCriteriosEmergencia) {
-      alert(
-        "⚠️ SEGUIMIENTO BLOQUEADO\n\n" +
-          "Esta paciente presenta signos vitales críticos o alteración del estado de conciencia que requieren atención médica inmediata.\n\n" +
-          "No se puede continuar con el seguimiento ambulatorio. Se recomienda:\n" +
-          "• Acudir de inmediato a urgencias\n" +
-          "• Monitoreo continuo de signos vitales\n" +
-          "• Evaluación médica presencial\n\n" +
-          "La herramienta de seguimiento está diseñada para pacientes estables.",
-      )
-      return
-    }
+    // Emergency blocking only applies to initial consultation (Consulta 1)
+    // Follow-up consultations (Consulta 2 and 3) should not be blocked by previous alerts
 
     const folioNumeric = Number(
       (consultaCargada.id_publico || consultaCargada.folio || "").toString().replace(/^ID-0*/, ""),
@@ -1102,18 +1075,9 @@ export default function CalculadoraEctopico() {
     setSintomasSeleccionados(consultaCargada.sintomas_seleccionados || [])
     setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
 
-    // Note: The original code had a typo here, `eco_abdominal` instead of `tiene_eco_transabdominal`
-    // Also `resultado_eco_abd` instead of `resultado_eco_transabdominal`
-    setTieneEcoTransabdominal(
-      consultaCargada.tiene_eco_transabdominal ? "si" : consultaCargada.tiene_eco_transabdominal === "no" ? "no" : "",
-    )
-    setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
-
-    setTvus(consultaCargada.tvus || "")
-
     setEsConsultaSeguimiento(true)
     setPantalla("formulario")
-    setSeccion(1) // Start from Section 1 as we are collecting new vital signs
+    setSeccion(3) // Start from Section 3 as we are collecting symptoms and risk factors
   }
 
   const obtenerNombreSintoma = (sintomaId: string) => {
@@ -3010,7 +2974,7 @@ export default function CalculadoraEctopico() {
                           </div>
                           <div>
                             <h4 className="text-xl font-bold text-slate-800 mb-2">Recomendación Médica</h4>
-                            <p className="text-lg font-medium text-slate-700 leading-relaxed">
+                            <p className="text-lg front-medium text-slate-700 leading-relaxed">
                               La paciente requiere atención médica inmediata. Los signos vitales fuera de rango pueden
                               indicar inestabilidad hemodinámica que requiere evaluación urgente.
                             </p>
@@ -3066,13 +3030,13 @@ export default function CalculadoraEctopico() {
                   )}
 
                   <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
-                    <div className="flex items-center gap-4 mb-6">
+                    <div className="flex items-start gap-4 mb-6">
                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
-                        <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            strokeWidth={2}
+                            strokeWidth={2.5}
                             d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
@@ -3267,7 +3231,7 @@ export default function CalculadoraEctopico() {
                         setErrorSeccion("")
                         setSeccionesCompletadas([...seccionesCompletadas, 3])
                         if (numeroConsultaActual > 1) {
-                          setSeccion(5)
+                          setSeccion(5) // Skip section 4 for follow-up consultations
                         } else {
                           setSeccion(4)
                         }

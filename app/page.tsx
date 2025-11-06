@@ -4244,7 +4244,7 @@ export default function CalculadoraEctopico() {
                 </Button>
               </div>
 
-              <CMGFooter />
+              <CMGFooter /> 
             </div>
           )}
         </div>

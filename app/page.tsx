@@ -3246,7 +3246,7 @@ export default function CalculadoraEctopico() {
                   </div>
 
                   {/* Botones de navegación */}
-                  <div className="flex justify-between">
+                  <div className="flex justify-between pt-4">
                     <Button
                       onClick={() => setSeccion(2)}
                       variant="outline"
@@ -3262,10 +3262,13 @@ export default function CalculadoraEctopico() {
                           return
                         }
                         setErrorSeccion("")
+                        console.log("[v0] Navigating from section 3, numeroConsultaActual:", numeroConsultaActual)
                         // CHANGE: For Consulta 2, skip section 4 (PIE) and go to section 5 (Eco Transabdominal)
                         if (numeroConsultaActual > 1) {
+                          console.log("[v0] Setting section to 5 for Consulta 2")
                           setSeccion(5)
                         } else {
+                          console.log("[v0] Setting section to 4 for Consulta 1")
                           setSeccion(4)
                         }
                         completarSeccion(3)
@@ -3465,6 +3468,12 @@ export default function CalculadoraEctopico() {
           {/* SECCION 5: Eco Transabdominal */}
           {seccionActual === 5 && (
             <div className="space-y-6">
+              {console.log(
+                "[v0] Rendering section 5, numeroConsultaActual:",
+                numeroConsultaActual,
+                "seccionActual:",
+                seccionActual,
+              )}
               {/* CHANGE START: For Consulta 2, show alerts as informational only */}
               {alertaPruebaEmbarazoPendiente && numeroConsultaActual === 1 ? (
                 <div className="space-y-6">
@@ -3706,23 +3715,7 @@ export default function CalculadoraEctopico() {
                           return
                         }
 
-                        if (tieneEcoTransabdominal === "no") {
-                          setMensajeAlertaEcografia(
-                            "Se necesita realizar una ecografía transabdominal para poder continuar con la evaluación de embarazo ectópico.",
-                          )
-                          setAlertaEcografiaPendiente(true)
-                          if (
-                            !recomendaciones.includes(
-                              "Ecografía Transabdominal No Realizada: Se recomienda realizar una ecografía transabdominal.",
-                            )
-                          ) {
-                            setRecomendaciones([
-                              ...recomendaciones,
-                              "Ecografía Transabdominal No Realizada: Se recomienda realizar una ecografía transabdominal.",
-                            ])
-                          }
-                        }
-
+                        // CHANGE: Removed alert when "no" is selected - only alert when "sí" + finding other than ausencia_saco
                         if (
                           tieneEcoTransabdominal === "si" &&
                           resultadoEcoTransabdominal &&
@@ -3745,10 +3738,13 @@ export default function CalculadoraEctopico() {
                         }
 
                         setErrorSeccion("")
+                        console.log("[v0] Navigating from section 5, numeroConsultaActual:", numeroConsultaActual)
                         // CHANGE: For Consulta 2, skip section 6 (Estudios Complementarios) and go to section 7 (TVUS)
                         if (numeroConsultaActual > 1) {
+                          console.log("[v0] Setting section to 7 for Consulta 2")
                           setSeccion(7)
                         } else {
+                          console.log("[v0] Setting section to 6 for Consulta 1")
                           setSeccion(6)
                         }
                         completarSeccion(5)

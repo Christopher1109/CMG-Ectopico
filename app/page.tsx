@@ -1010,13 +1010,12 @@ export default function CalculadoraEctopico() {
   const continuarConsultaCargada = async () => {
     console.log("🔄 Continuing consulta cargada:", consultaCargada)
 
-    const fc = Number.parseFloat(consultaCargada.frecuencia_cardiaca?.toString() || "0")
-    const sistolica = Number.parseFloat(consultaCargada.presion_sistolica?.toString() || "0")
-    const diastolica = Number.parseFloat(consultaCargada.presion_diastolica?.toString() || "0")
-    const pamValor = Number.parseFloat(consultaCargada.pam?.toString() || "0") // PAM from loaded data
+    const sistolica = Number(consultaCargada.presion_sistolica) || 0
+    const diastolica = Number(consultaCargada.presion_diastolica) || 0
+    const pamValor = Number(consultaCargada.pam) || 0
+    const fc = Number(consultaCargada.frecuencia_cardiaca) || 0
     const conciencia = consultaCargada.estado_conciencia || ""
 
-    // Check for critical vital signs or altered consciousness
     const tieneCriteriosEmergencia =
       sistolica >= 180 ||
       diastolica >= 110 ||
@@ -1028,18 +1027,11 @@ export default function CalculadoraEctopico() {
       conciencia === "estuporosa" ||
       conciencia === "comatosa"
 
+    // Log emergency criteria for reference but don't block
     if (tieneCriteriosEmergencia) {
-      alert(
-        "⚠️ SEGUIMIENTO BLOQUEADO\n\n" +
-          "Esta paciente presenta signos vitales críticos o alteración del estado de conciencia que requieren atención médica inmediata.\n\n" +
-          "No se puede continuar con el seguimiento ambulatorio. Se recomienda:\n" +
-          "• Acudir de<bos>immediate a urgencias\n" +
-          "• Monitoreo continuo de signos vitales\n" +
-          "• Evaluación médica presencial\n\n" +
-          "La herramienta de seguimiento está diseñada para pacientes estables.",
-      )
-      return
+      console.log("[v0] ⚠️ Patient had emergency criteria in previous consultation")
     }
+    // </CHANGE>
 
     const folioNumeric = Number(
       (consultaCargada.id_publico || consultaCargada.folio || "").toString().replace(/^ID-0*/, ""),
@@ -2235,6 +2227,62 @@ export default function CalculadoraEctopico() {
                       <h3 className="text-xl font-semibold text-slate-800">📋 Consulta 1 - Evaluación Inicial</h3>
                     </div>
 
+                    {(() => {
+                      const sistolica = Number(consultaCargada.presion_sistolica) || 0
+                      const diastolica = Number(consultaCargada.presion_diastolica) || 0
+                      const pamValor = Number(consultaCargada.pam) || 0
+                      const fc = Number(consultaCargada.frecuencia_cardiaca) || 0
+                      const conciencia = consultaCargada.estado_conciencia || ""
+                      const hcgValor = Number(consultaCargada.hcg_valor) || 0
+                      const tvus = consultaCargada.tvus || ""
+
+                      const alertas: string[] = []
+
+                      // Check vital signs alerts
+                      if (sistolica >= 180 || diastolica >= 110 || pamValor >= 120) {
+                        alertas.push("⚠️ Presión arterial crítica")
+                      }
+                      if (fc > 120 || fc < 50) {
+                        alertas.push("⚠️ Frecuencia cardíaca anormal")
+                      }
+                      if (fc > 100 && (sistolica <= 90 || diastolica <= 60)) {
+                        alertas.push("⚠️ Taquicardia con hipotensión")
+                      }
+                      if (conciencia === "somnolienta" || conciencia === "estuporosa" || conciencia === "comatosa") {
+                        alertas.push("⚠️ Estado de conciencia alterado")
+                      }
+
+                      // Check pregnancy test alert (PIE)
+                      if (hcgValor < 1500 && tvus === "liquido_libre") {
+                        alertas.push("⚠️ Prueba de embarazo: β-hCG < 1500 con líquido libre")
+                      }
+                      if (hcgValor >= 1500 && tvus === "liquido_libre") {
+                        alertas.push("⚠️ Prueba de embarazo: β-hCG ≥ 1500 con líquido libre")
+                      }
+
+                      // Check ultrasound alerts
+                      if (tvus === "liquido_libre") {
+                        alertas.push("⚠️ Ecografía: Líquido libre detectado")
+                      }
+
+                      return alertas.length > 0 ? (
+                        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                          <div className="flex items-start space-x-2">
+                            <div className="text-amber-600 font-semibold">⚠️ Alertas Activadas:</div>
+                          </div>
+                          <ul className="mt-2 space-y-1 text-sm text-amber-800">
+                            {alertas.map((alerta, idx) => (
+                              <li key={idx} className="flex items-start">
+                                <span className="mr-2">•</span>
+                                <span>{alerta}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null
+                    })()}
+                    {/* </CHANGE> */}
+
                     <div className="grid md:grid-cols-2 gap-4 text-sm">
                       <div className="space-y-3">
                         <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
@@ -2997,301 +3045,218 @@ export default function CalculadoraEctopico() {
           {/* SECCION 3: Síntomas y Factores de Riesgo */}
           {seccionActual === 3 && (
             <div className="space-y-6">
-              {alertaSignosVitalesPendiente ? (
-                <div className="space-y-6">
-                  <div className="bg-gradient-to-br from-orange-50 via-orange-50 to-blue-50 p-8 rounded-2xl border-2 border-orange-200 shadow-xl">
-                    <div className="flex items-start space-x-4 mb-6">
-                      <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-                        <AlertTriangle className="h-7 w-7 text-white" />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Signos Vitales</h2>
-                        <p className="text-orange-700 font-medium">Se detectaron valores fuera de rango</p>
-                      </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
-                      <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
-                        <div>
-                          <h3 className="font-semibold text-slate-800 text-lg mb-3">Valores Anormales</h3>
-                          <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
-                            {mensajeAlertaSignosVitales}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* CHANGE START: Making the recommendation section larger and more attention-grabbing */}
-                      <div className="mt-6 pt-6 border-t border-orange-100">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-orange-600 text-lg font-bold">!</span>
-                          </div>
-                          <div>
-                            <h4 className="text-xl font-bold text-slate-800 mb-2">Recomendación Médica</h4>
-                            <p className="text-lg font-medium text-slate-700 leading-relaxed">
-                              La paciente requiere atención médica inmediata. Los signos vitales fuera de rango pueden
-                              indicar inestabilidad hemodinámica que requiere evaluación urgente.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      {/* CHANGE END */}
-
-                      <div className="bg-orange-50 rounded-xl p-5 border border-orange-200">
-                        <p className="text-slate-700 leading-relaxed">
-                          Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
-                          emergencia.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between pt-4">
-                      <Button
-                        onClick={() => {
-                          resetCalculadora()
-                          setPantalla("bienvenida")
-                        }}
-                        variant="outline"
-                        className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-                      >
-                        <Home className="h-5 w-5" />
-                        Regresar al Inicio
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setAlertaSignosVitalesPendiente(false)
-                        }}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium"
-                      >
-                        Continuar con la Evaluación
-                        <ChevronRight className="h-5 w-5" />
-                      </Button>
-                    </div>
-                    <CMGFooter />
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
+                    <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {numeroConsultaActual === 1
+                        ? "¿Cuál es el motivo de consulta?"
+                        : `Síntomas y Factores de Riesgo - Consulta ${numeroConsultaActual}`}
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {numeroConsultaActual === 1
+                        ? "Evaluación clínica de la paciente"
+                        : "Reevaluación clínica de la paciente (según protocolo del paper)"}
+                    </p>
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
-                        <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-bold text-gray-900">
-                          {numeroConsultaActual === 1
-                            ? "¿Cuál es el motivo de consulta?"
-                            : `Síntomas y Factores de Riesgo - Consulta ${numeroConsultaActual}`}
-                        </h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {numeroConsultaActual === 1
-                            ? "Evaluación clínica de la paciente"
-                            : "Reevaluación clínica de la paciente (según protocolo del paper)"}
+
+                {numeroConsultaActual > 1 && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <svg
+                        className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <div className="text-sm text-blue-800">
+                        <p className="font-semibold mb-1">
+                          Protocolo de seguimiento (Day {numeroConsultaActual}, Visit {numeroConsultaActual})
+                        </p>
+                        <p>
+                          Según el paper, debe identificar nuevamente los signos, síntomas y factores de riesgo
+                          presentes en esta consulta. El sistema calculará automáticamente la probabilidad pretest
+                          ajustada usando la fórmula:{" "}
+                          <span className="font-mono text-xs">
+                            [(1-v{numeroConsultaActual - 1}b)(v{numeroConsultaActual}a)] + v{numeroConsultaActual - 1}b
+                          </span>
                         </p>
                       </div>
                     </div>
-
-                    {numeroConsultaActual > 1 && (
-                      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <svg
-                            className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          <div className="text-sm text-blue-800">
-                            <p className="font-semibold mb-1">
-                              Protocolo de seguimiento (Day {numeroConsultaActual}, Visit {numeroConsultaActual})
-                            </p>
-                            <p>
-                              Según el paper, debe identificar nuevamente los signos, síntomas y factores de riesgo
-                              presentes en esta consulta. El sistema calculará automáticamente la probabilidad pretest
-                              ajustada usando la fórmula:{" "}
-                              <span className="font-mono text-xs">
-                                [(1-v{numeroConsultaActual - 1}b)(v{numeroConsultaActual}a)] + v
-                                {numeroConsultaActual - 1}b
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Síntomas Presentes */}
-                    <div className="space-y-4 mb-8">
-                      <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
-                        <div className="h-2 w-2 rounded-full bg-orange-500"></div>
-                        Síntomas Presentes
-                      </label>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {sintomas.map((s) => {
-                          const isChecked = sintomasSeleccionados.includes(s.id)
-                          const isAsintomatica = s.id === "asintomatica"
-                          const hayOtrosSintomas = sintomasSeleccionados.some(
-                            (id) => id !== "asintomatica" && id !== "sincope",
-                          )
-
-                          // Si hay otros síntomas (sangrado/dolor), deshabilitar asintomática
-                          const isDisabled = isAsintomatica && hayOtrosSintomas
-
-                          return (
-                            <label
-                              key={s.id}
-                              className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                                isChecked
-                                  ? "border-orange-500 bg-orange-50"
-                                  : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
-                              } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                disabled={isDisabled}
-                                onChange={(e) => {
-                                  if (isAsintomatica && e.target.checked) {
-                                    // Si selecciona asintomática, limpiar otros síntomas (excepto síncope)
-                                    setSintomasSeleccionados(["asintomatica"])
-                                  } else if (isAsintomatica && !e.target.checked) {
-                                    // Si deselecciona asintomática
-                                    setSintomasSeleccionados(
-                                      sintomasSeleccionados.filter((id) => id !== "asintomatica"),
-                                    )
-                                  } else if (e.target.checked) {
-                                    // Si selecciona otro síntoma, quitar asintomática
-                                    setSintomasSeleccionados([
-                                      ...sintomasSeleccionados.filter((id) => id !== "asintomatica"),
-                                      s.id,
-                                    ])
-                                  } else {
-                                    // Si deselecciona
-                                    setSintomasSeleccionados(sintomasSeleccionados.filter((id) => id !== s.id))
-                                  }
-                                }}
-                                className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
-                              />
-                              <span className="text-sm font-medium text-gray-700">{s.label}</span>
-                            </label>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Factores de Riesgo */}
-                    <div className="space-y-4">
-                      <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
-                        <div className="h-2 w-2 rounded-full bg-orange-500"></div>
-                        Factores de Riesgo
-                      </label>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {factoresRiesgo.map((f) => {
-                          const isChecked = factoresSeleccionados.includes(f.id)
-                          const isSinFactores = f.id === "sin_factores"
-                          const hayOtrosFactores = factoresSeleccionados.some((id) => id !== "sin_factores")
-
-                          // Si hay otros factores, deshabilitar "sin factores"
-                          const isDisabled = isSinFactores && hayOtrosFactores
-
-                          return (
-                            <label
-                              key={f.id}
-                              className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
-                                isChecked
-                                  ? "border-orange-500 bg-orange-50"
-                                  : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
-                              } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                disabled={isDisabled}
-                                onChange={(e) => {
-                                  if (isSinFactores && e.target.checked) {
-                                    // Si selecciona "sin factores", limpiar otros
-                                    setFactoresSeleccionados(["sin_factores"])
-                                  } else if (isSinFactores && !e.target.checked) {
-                                    // Si deselecciona "sin factores"
-                                    setFactoresSeleccionados(
-                                      factoresSeleccionados.filter((id) => id !== "sin_factores"),
-                                    )
-                                  } else if (e.target.checked) {
-                                    // Si selecciona otro factor, quitar "sin factores"
-                                    setFactoresSeleccionados([
-                                      ...factoresSeleccionados.filter((id) => id !== "sin_factores"),
-                                      f.id,
-                                    ])
-                                  } else {
-                                    // Si deselecciona
-                                    setFactoresSeleccionados(factoresSeleccionados.filter((id) => id !== f.id))
-                                  }
-                                }}
-                                className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
-                              />
-                              <span className="text-sm font-medium text-gray-700">{f.label}</span>
-                            </label>
-                          )
-                        })}
-                      </div>
-                    </div>
                   </div>
+                )}
 
-                  {/* Botones de navegación */}
-                  <div className="flex justify-between">
-                    <Button
-                      onClick={() => setSeccion(2)}
-                      variant="outline"
-                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                    >
-                      <ChevronLeft className="mr-2 h-4 w-4" />
-                      Anterior
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        // Validar que se haya seleccionado al menos un síntoma
-                        if (sintomasSeleccionados.length === 0) {
-                          setErrorSeccion("Por favor seleccione al menos un síntoma")
-                          return
-                        }
-                        // Validar que se haya seleccionado al menos un factor de riesgo
-                        if (factoresSeleccionados.length === 0) {
-                          setErrorSeccion("Por favor seleccione al menos un factor de riesgo")
-                          return
-                        }
-                        setErrorSeccion("")
-                        setSeccionesCompletadas([...seccionesCompletadas, 3])
-                        setSeccion(4)
-                      }}
-                      className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg font-medium"
-                    >
-                      Siguiente
-                      <ChevronRight className="h-5 w-5" />
-                    </Button>
+                {/* Síntomas Presentes */}
+                <div className="space-y-4 mb-8">
+                  <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
+                    <div className="h-2 w-2 rounded-full bg-orange-500"></div>
+                    Síntomas Presentes
+                  </label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {sintomas.map((s) => {
+                      const isChecked = sintomasSeleccionados.includes(s.id)
+                      const isAsintomatica = s.id === "asintomatica"
+                      const hayOtrosSintomas = sintomasSeleccionados.some(
+                        (id) => id !== "asintomatica" && id !== "sincope",
+                      )
+
+                      // Si hay otros síntomas (sangrado/dolor), deshabilitar asintomática
+                      const isDisabled = isAsintomatica && hayOtrosSintomas
+
+                      return (
+                        <label
+                          key={s.id}
+                          className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
+                            isChecked
+                              ? "border-orange-500 bg-orange-50"
+                              : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
+                          } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={isDisabled}
+                            onChange={(e) => {
+                              if (isAsintomatica && e.target.checked) {
+                                // Si selecciona asintomática, limpiar otros síntomas (excepto síncope)
+                                setSintomasSeleccionados(["asintomatica"])
+                              } else if (isAsintomatica && !e.target.checked) {
+                                // Si deselecciona asintomática
+                                setSintomasSeleccionados(sintomasSeleccionados.filter((id) => id !== "asintomatica"))
+                              } else if (e.target.checked) {
+                                // Si selecciona otro síntoma, quitar asintomática
+                                setSintomasSeleccionados([
+                                  ...sintomasSeleccionados.filter((id) => id !== "asintomatica"),
+                                  s.id,
+                                ])
+                              } else {
+                                // Si deselecciona
+                                setSintomasSeleccionados(sintomasSeleccionados.filter((id) => id !== s.id))
+                              }
+                            }}
+                            className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">{s.label}</span>
+                        </label>
+                      )
+                    })}
                   </div>
+                </div>
 
-                  {errorSeccion && (
-                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm text-red-700">{errorSeccion}</p>
-                    </div>
-                  )}
+                {/* Factores de Riesgo */}
+                <div className="space-y-4">
+                  <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
+                    <div className="h-2 w-2 rounded-full bg-orange-500"></div>
+                    Factores de Riesgo
+                  </label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {factoresRiesgo.map((f) => {
+                      const isChecked = factoresSeleccionados.includes(f.id)
+                      const isSinFactores = f.id === "sin_factores"
+                      const hayOtrosFactores = factoresSeleccionados.some((id) => id !== "sin_factores")
 
-                  <CMGFooter />
+                      // Si hay otros factores, deshabilitar "sin factores"
+                      const isDisabled = isSinFactores && hayOtrosFactores
+
+                      return (
+                        <label
+                          key={f.id}
+                          className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
+                            isChecked
+                              ? "border-orange-500 bg-orange-50"
+                              : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
+                          } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={isDisabled}
+                            onChange={(e) => {
+                              if (isSinFactores && e.target.checked) {
+                                // Si selecciona "sin factores", limpiar otros
+                                setFactoresSeleccionados(["sin_factores"])
+                              } else if (isSinFactores && !e.target.checked) {
+                                // Si deselecciona "sin factores"
+                                setFactoresSeleccionados(factoresSeleccionados.filter((id) => id !== "sin_factores"))
+                              } else if (e.target.checked) {
+                                // Si selecciona otro factor, quitar "sin factores"
+                                setFactoresSeleccionados([
+                                  ...factoresSeleccionados.filter((id) => id !== "sin_factores"),
+                                  f.id,
+                                ])
+                              } else {
+                                // Si deselecciona
+                                setFactoresSeleccionados(factoresSeleccionados.filter((id) => id !== f.id))
+                              }
+                            }}
+                            className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">{f.label}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de navegación */}
+              <div className="flex justify-between">
+                <Button
+                  onClick={() => setSeccion(2)}
+                  variant="outline"
+                  className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Anterior
+                </Button>
+                <Button
+                  onClick={() => {
+                    // Validar que se haya seleccionado al menos un síntoma
+                    if (sintomasSeleccionados.length === 0) {
+                      setErrorSeccion("Por favor seleccione al menos un síntoma")
+                      return
+                    }
+                    // Validar que se haya seleccionado al menos un factor de riesgo
+                    if (factoresSeleccionados.length === 0) {
+                      setErrorSeccion("Por favor seleccione al menos un factor de riesgo")
+                      return
+                    }
+                    setErrorSeccion("")
+                    setSeccionesCompletadas([...seccionesCompletadas, 3])
+                    setSeccion(4)
+                  }}
+                  className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg font-medium"
+                >
+                  Siguiente
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </div>
+
+              {errorSeccion && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700">{errorSeccion}</p>
                 </div>
               )}
+
+              <CMGFooter />
             </div>
           )}
 
@@ -3499,7 +3464,7 @@ export default function CalculadoraEctopico() {
                           <p className="text-slate-700 leading-relaxed">{mensajeAlertaPruebaEmbarazo}</p>
                         </div>
                       </div>
-                        
+
                       <div className="mt-6 pt-6 border-t border-orange-100">
                         <div className="flex items-start space-x-3">
                           <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
@@ -3756,30 +3721,30 @@ export default function CalculadoraEctopico() {
             <div className="space-y-6">
               {alertaEcografiaPendiente ? (
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-br from-orange-50 via-orange-50 to-orange-50 p-8 rounded-2xl border-2 border-orange-200 shadow-xl">
+                  <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
-                      <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
                         <AlertTriangle className="h-7 w-7 text-white" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Ecografía</h2>
-                        <p className="text-orange-700 font-medium">Se detectaron hallazgos que requieren atención</p>
+                        <p className="text-blue-700 font-medium">Se detectaron hallazgos que requieren atención</p>
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
+                    <div className="bg-white rounded-xl p-6 shadow-md border border-blue-100 mb-6">
                       <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
+                        <AlertTriangle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
                           <p className="text-slate-700 leading-relaxed">{mensajeAlertaEcografia}</p>
                         </div>
                       </div>
 
-                      <div className="mt-6 pt-6 border-t border-orange-100">
+                      <div className="mt-6 pt-6 border-t border-blue-100">
                         <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-orange-600 text-sm font-bold">!</span>
+                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span className="text-blue-600 text-sm font-bold">!</span>
                           </div>
                           <div>
                             <h4 className="font-semibold text-slate-800 mb-2">Recomendación Médica</h4>
@@ -3792,7 +3757,7 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    <div className="bg-orange-50 rounded-xl p-5 border border-orange-200">
+                    <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
                       <p className="text-slate-700 leading-relaxed">
                         Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
                         emergencia.

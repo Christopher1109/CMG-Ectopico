@@ -1255,7 +1255,7 @@ export default function CalculadoraEctopico() {
         })
       }
 
-      // Header with red color for incomplete evaluation
+      // Header with red color for incomplete<bos>evaluation
       doc.setFillColor(220, 38, 38)
       doc.rect(0, 0, pageWidth, 35, "F")
       doc.setTextColor(255, 255, 255)
@@ -2252,16 +2252,14 @@ export default function CalculadoraEctopico() {
                         alertas.push("⚠️ Estado de conciencia alterado")
                       }
 
-                      // Check pregnancy test alert (PIE)
-                      if (hcgValor < 1500 && tvus === "liquido_libre") {
-                        alertas.push("⚠️ Prueba de embarazo: β-hCG < 1500 con líquido libre")
+                      // Check pregnancy test alerts
+                      if (hcgValor < 1500 && tvus === "saco_gestacional") {
+                        alertas.push("⚠️ Prueba de embarazo: β-hCG < 1500 con saco gestacional")
                       }
-                      if (hcgValor >= 1500 && tvus === "liquido_libre") {
-                        alertas.push("⚠️ Prueba de embarazo: β-hCG ≥ 1500 con líquido libre")
+                      if (hcgValor >= 1500 && tvus === "saco_gestacional") {
+                        alertas.push("⚠️ Prueba de embarazo: β-hCG ≥ 1500 con saco gestacional")
                       }
-
-                      // Check ultrasound alerts
-                      if (tvus === "liquido_libre") {
+                      if (tvus === "libre") {
                         alertas.push("⚠️ Ecografía: Líquido libre detectado")
                       }
 
@@ -2863,182 +2861,266 @@ export default function CalculadoraEctopico() {
           {/* SECCION 2: Signos Vitales */}
           {seccionActual === 2 && (
             <div className="space-y-6">
-              <div className="bg-pink-50 rounded-2xl p-8">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center shadow-md">
-                    <Activity className="w-8 h-8 text-white" strokeWidth={2.5} />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Signos Vitales</h2>
-                    <p className="text-sm text-gray-600 mt-1">Evaluación hemodinámica de la paciente</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Frecuencia Cardíaca */}
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Frecuencia Cardíaca</span>
-                  </Label>
-                  <Input
-                    type="number"
-                    value={frecuenciaCardiaca}
-                    onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
-                    placeholder="60-100"
-                    className="w-full text-lg font-medium border-gray-200 focus:border-green-400 focus:ring-green-400 rounded-lg mb-2"
-                  />
-                  <p className="text-xs text-gray-500">lpm</p>
-                </div>
-
-                {/* Presión Sistólica */}
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Presión Sistólica</span>
-                  </Label>
-                  <Input
-                    type="number"
-                    value={presionSistolica}
-                    onChange={(e) => setPresionSistolica(e.target.value)}
-                    placeholder="90-140"
-                    className="w-full text-lg font-medium border-gray-200 focus:border-green-400 focus:ring-green-400 rounded-lg mb-2"
-                  />
-                  <p className="text-xs text-gray-500">mmHg</p>
-                </div>
-
-                {/* Presión Diastólica */}
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Presión Diastólica</span>
-                  </Label>
-                  <Input
-                    type="number"
-                    value={presionDiastolica}
-                    onChange={(e) => setPresionDiastolica(e.target.value)}
-                    placeholder="60-90"
-                    className="w-full text-lg font-medium border-gray-200 focus:border-green-400 focus:ring-green-400 rounded-lg mb-2"
-                  />
-                  <p className="text-xs text-gray-500">mmHg</p>
-                </div>
-
-                {/* PAM */}
-                <div className="bg-blue-50 p-6 rounded-xl border border-blue-200 shadow-sm">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span>PAM</span>
-                  </Label>
-                  {/* CHANGE: Show calculated PAM value instead of -- */}
-                  <div className="w-full text-lg font-medium text-gray-900 border border-gray-200 rounded-lg mb-2 px-3 py-2 bg-white">
-                    {pam || "--"}
-                  </div>
-                  <p className="text-xs text-blue-600 font-medium">mmHg (65-100)</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <Label className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Estado de Conciencia</span>
-                </Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label
-                    className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      estadoConciencia === "alerta"
-                        ? "border-green-400 bg-green-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        estadoConciencia === "alerta" ? "border-green-500" : "border-gray-300"
-                      }`}
-                    >
-                      {/* CHANGE: Changed radio button fill color to green */}
-                      {estadoConciencia === "alerta" && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}
+              {alertaSignosVitalesPendiente ? (
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-red-50 to-rose-50 rounded-2xl p-8 border-2 border-red-200 shadow-lg">
+                    <div className="flex items-start gap-4 mb-6">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-rose-500 flex items-center justify-center shadow-lg">
+                        <AlertTriangle className="h-7 w-7 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-2xl font-bold text-red-900 mb-2">⚠️ Advertencia: Signos Vitales Fuera de Rango</h3>
+                        <p className="text-red-700 font-medium">
+                          Se han detectado valores anormales que requieren atención médica inmediata.
+                        </p>
+                      </div>
                     </div>
-                    <input
-                      type="radio"
-                      name="estadoConciencia"
-                      value="alerta"
-                      checked={estadoConciencia === "alerta"}
-                      onChange={(e) => setEstadoConciencia(e.target.value)}
-                      className="sr-only"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Alerta</span>
-                  </label>
 
-                  <label
-                    className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
-                      estadoConciencia === "no_alerta"
-                        ? "border-red-400 bg-red-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        estadoConciencia === "no_alerta" ? "border-red-500" : "border-gray-300"
-                      }`}
-                    >
-                      {/* CHANGE: Changed radio button fill color to red */}
-                      {estadoConciencia === "no_alerta" && <div className="w-3 h-3 bg-red-500 rounded-full"></div>}
+                    <div className="space-y-4">
+                      <div className="bg-white rounded-xl p-5 border border-red-200">
+                        <h4 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                          <Activity className="h-5 w-5 text-red-600" />
+                          Valores Detectados
+                        </h4>
+                        <div className="text-slate-700 whitespace-pre-line leading-relaxed">
+                          {mensajeAlertaSignosVitales}
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-xl p-5 border border-red-200">
+                        <h4 className="font-semibold text-slate-800 mb-3">Recomendaciones</h4>
+                        <ul className="space-y-2 text-slate-700">
+                          <li className="flex items-start gap-2">
+                            <span className="text-red-500 mt-1">•</span>
+                            <span>Evaluación médica inmediata</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-red-500 mt-1">•</span>
+                            <span>Monitoreo continuo de signos vitales</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-red-500 mt-1">•</span>
+                            <span>Considerar atención en urgencias si es necesario</span>
+                          </li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-orange-50 rounded-xl p-5 border border-orange-200">
+                        <p className="text-slate-700 leading-relaxed">
+                          Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
+                          emergencia.
+                        </p>
+                      </div>
                     </div>
-                    <input
-                      type="radio"
-                      name="estadoConciencia"
-                      value="no_alerta"
-                      checked={estadoConciencia === "no_alerta"}
-                      onChange={(e) => setEstadoConciencia(e.target.value)}
-                      className="sr-only"
-                    />
-                    <span className="text-sm font-medium text-gray-700">
-                      No alerta (estuporosa, comatosa, somnolienta)
-                    </span>
-                  </label>
-                </div>
-              </div>
 
-              {errorSeccion && (
-                <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                  <div className="flex items-center space-x-2">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
-                    <p className="text-red-700 font-medium">{errorSeccion}</p>
+                    <div className="flex justify-between pt-4">
+                      <Button
+                        onClick={() => {
+                          resetCalculadora()
+                          setPantalla("bienvenida")
+                          setAlertaSignosVitalesPendiente(false)
+                        }}
+                        variant="outline"
+                        className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                      >
+                        <Home className="h-5 w-5" />
+                        Regresar al Inicio
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setAlertaSignosVitalesPendiente(false)
+                        }}
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium"
+                      >
+                        Continuar con la Evaluación
+                        <ChevronRight className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    <CMGFooter />
                   </div>
                 </div>
-              )}
+              ) : (
+                <div className="space-y-6">
+                  {/* </CHANGE> End of vital signs warning alert */}
 
-              {/* Botones de navegación */}
-              <div className="flex justify-between">
-                <Button
-                  onClick={() => setSeccion(1)}
-                  variant="outline"
-                  className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                >
-                  <ChevronLeft className="mr-2 h-4 w-4" />
-                  Anterior
-                </Button>
-                <Button
-                  onClick={() => {
-                    if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
-                      setErrorSeccion("Por favor complete todos los campos de signos vitales")
-                      return
-                    }
-                    setErrorSeccion("")
-                    if (validarSignosVitales()) {
-                      setSeccionesCompletadas([...seccionesCompletadas, 2])
-                      setSeccion(3)
-                    }
-                  }}
-                  className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 transition-all shadow-lg font-medium"
-                >
-                  Continuar
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
+                  <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-2xl p-8 border border-red-100 shadow-sm">
+                    <div className="flex items-start gap-4 mb-6">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center shadow-lg">
+                        <Activity className="w-8 h-8 text-white" strokeWidth={2.5} />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900">Signos Vitales</h2>
+                        <p className="text-sm text-gray-600 mt-1">Evaluación hemodinámica de la paciente</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Frecuencia Cardíaca */}
+                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                      <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Frecuencia Cardíaca</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        value={frecuenciaCardiaca}
+                        onChange={(e) => setFrecuenciaCardiaca(e.target.value)}
+                        placeholder="60-100"
+                        className="w-full text-lg font-medium border-gray-200 focus:border-green-400 focus:ring-green-400 rounded-lg mb-2"
+                      />
+                      <p className="text-xs text-gray-500">lpm</p>
+                    </div>
+
+                    {/* Presión Sistólica */}
+                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                      <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Presión Sistólica</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        value={presionSistolica}
+                        onChange={(e) => setPresionSistolica(e.target.value)}
+                        placeholder="90-140"
+                        className="w-full text-lg font-medium border-gray-200 focus:border-green-400 focus:ring-green-400 rounded-lg mb-2"
+                      />
+                      <p className="text-xs text-gray-500">mmHg</p>
+                    </div>
+
+                    {/* Presión Diastólica */}
+                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                      <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Presión Diastólica</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        value={presionDiastolica}
+                        onChange={(e) => setPresionDiastolica(e.target.value)}
+                        placeholder="60-90"
+                        className="w-full text-lg font-medium border-gray-200 focus:border-green-400 focus:ring-green-400 rounded-lg mb-2"
+                      />
+                      <p className="text-xs text-gray-500">mmHg</p>
+                    </div>
+
+                    {/* PAM */}
+                    <div className="bg-blue-50 p-6 rounded-xl border border-blue-200 shadow-sm">
+                      <Label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span>PAM</span>
+                      </Label>
+                      {/* CHANGE: Show calculated PAM value instead of -- */}
+                      <div className="w-full text-lg font-medium text-gray-900 border border-gray-200 rounded-lg mb-2 px-3 py-2 bg-white">
+                        {pam || "--"}
+                      </div>
+                      <p className="text-xs text-blue-600 font-medium">mmHg (65-100)</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <Label className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span>Estado de Conciencia</span>
+                    </Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <label
+                        className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
+                          estadoConciencia === "alerta"
+                            ? "border-green-400 bg-green-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            estadoConciencia === "alerta" ? "border-green-500" : "border-gray-300"
+                          }`}
+                        >
+                          {/* CHANGE: Changed radio button fill color to green */}
+                          {estadoConciencia === "alerta" && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}
+                        </div>
+                        <input
+                          type="radio"
+                          name="estadoConciencia"
+                          value="alerta"
+                          checked={estadoConciencia === "alerta"}
+                          onChange={(e) => setEstadoConciencia(e.target.value)}
+                          className="sr-only"
+                        />
+                        <span className="text-sm font-medium text-gray-700">Alerta</span>
+                      </label>
+
+                      <label
+                        className={`flex items-center gap-3 p-5 border-2 rounded-xl cursor-pointer transition-all ${
+                          estadoConciencia === "no_alerta"
+                            ? "border-red-400 bg-red-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            estadoConciencia === "no_alerta" ? "border-red-500" : "border-gray-300"
+                          }`}
+                        >
+                          {/* CHANGE: Changed radio button fill color to red */}
+                          {estadoConciencia === "no_alerta" && <div className="w-3 h-3 bg-red-500 rounded-full"></div>}
+                        </div>
+                        <input
+                          type="radio"
+                          name="estadoConciencia"
+                          value="no_alerta"
+                          checked={estadoConciencia === "no_alerta"}
+                          onChange={(e) => setEstadoConciencia(e.target.value)}
+                          className="sr-only"
+                        />
+                        <span className="text-sm font-medium text-gray-700">
+                          No alerta (estuporosa, comatosa, somnolienta)
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {errorSeccion && (
+                  <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                    <div className="flex items-center space-x-2">
+                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                      <p className="text-red-700 font-medium">{errorSeccion}</p>
+                    </div>
+                  </div>\
+                )}
+
+                {/* Botones de navegación */}
+                <div className="flex justify-between">
+                  <Button
+                    onClick={() => setSeccion(1)}
+                    variant="outline"
+                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                  >
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Anterior
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      if (!frecuenciaCardiaca || !presionSistolica || !presionDiastolica || !estadoConciencia) {
+                        setErrorSeccion("Por favor complete todos los campos de signos vitales")
+                        return
+                      }
+                      setErrorSeccion("")
+                      if (validarSignosVitales()) {
+                        setSeccionesCompletadas([...seccionesCompletadas, 2])
+                        setSeccion(3)
+                      }
+                    }}
+                    className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 transition-all shadow-lg font-medium"
+                  >
+                    Continuar
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                </div>
+
+                <CMGFooter />
               </div>
-
-              <CMGFooter />
             </div>
           )}
 
@@ -3308,9 +3390,7 @@ export default function CalculadoraEctopico() {
                         />
                         <div
                           className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                            tienePruebaEmbarazoDisponible === opcion
-                              ? "border-purple-500 bg-purple-500"
-                              : "border-gray-300"
+                            tienePruebaEmbarazoDisponible === opcion ? "border-purple-500 bg-purple-500" : "border-gray-300"
                           }`}
                         >
                           {tienePruebaEmbarazoDisponible === opcion && (
@@ -3588,17 +3668,10 @@ export default function CalculadoraEctopico() {
                         </Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {[
-                            { value: "saco_gestacional", label: "Saco gestacional" },
-                            { value: "saco_gestacional_vitelino", label: "Saco gestacional con saco vitelino" },
-                            {
-                              value: "saco_gestacional_vitelino_embrion_sin_fc",
-                              label: "Saco gestacional con saco vitelino con embrión sin frecuencia cardíaca",
-                            },
-                            {
-                              value: "saco_gestacional_vitelino_embrion_con_fc",
-                              label: "Saco gestacional con saco vitelino y embrión con frecuencia cardíaca",
-                            },
-                            { value: "ausencia_saco_gestacional", label: "Ausencia de saco gestacional" },
+                            { value: "normal", label: "Normal (Sin evidencia de embarazo intrauterino)" },
+                            { value: "libre", label: "Líquido libre" },
+                            { value: "masa", label: "Masa anexial" },
+                            { value: "masa_libre", label: "Masa anexial + Líquido libre" },
                           ].map((opcion) => (
                             <label
                               key={opcion.value}
@@ -4080,8 +4153,11 @@ export default function CalculadoraEctopico() {
               )}
 
               {errorSeccion && (
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
-                  <p className="text-sm text-red-700">{errorSeccion}</p>
+                <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                    <p className="text-red-700 font-medium">{errorSeccion}</p>
+                  </div>
                 </div>
               )}
 
@@ -4103,7 +4179,7 @@ export default function CalculadoraEctopico() {
                     setSeccion(8)
                     completarSeccion(7)
                   }}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                 >
                   Continuar
                   <ChevronRight className="ml-2 h-4 w-4" />
@@ -4183,7 +4259,8 @@ export default function CalculadoraEctopico() {
             </div>
           )}
         </div>
-      )}
-    </div>
+      )
+}
+</div>
   )
 }

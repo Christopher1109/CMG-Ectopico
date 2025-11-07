@@ -527,23 +527,23 @@ export default function CalculadoraEctopico() {
       let mensajeAnormal = "Se detectaron los siguientes valores que requieren atención:\n\n"
 
       if (!fcNormal) {
-        mensajeAnormal += "• Frecuencia Cardíaca: " + fc + " lpm (Normal: 60-100 lpm)\n"
+        mensajeAnormal += `• Frecuencia Cardíaca: ${fc} lpm (Normal: 60-100 lpm)\n`
       }
       if (!psNormal) {
-        mensajeAnormal += "• Presión Sistólica: " + ps + " mmHg (Normal: 90-140 mmHg)\n"
+        mensajeAnormal += `• Presión Sistólica: ${ps} mmHg (Normal: 90-140 mmHg)\n`
       }
       if (!pdNormal) {
-        mensajeAnormal += "• Presión Diastólica: " + pd + " mmHg (Normal: 60-90 mmHg)\n"
+        mensajeAnormal += `• Presión Diastólica: ${pd} mmHg (Normal: 60-90 mmHg)\n`
       }
       if (!pamNormal) {
-        mensajeAnormal += "• PAM: " + pamValor + " mmHg (Normal: 65-100 mmHg)\n"
+        mensajeAnormal += `• PAM: ${pamValor} mmHg (Normal: 65-100 mmHg)\n`
       }
       if (!concienciaNormal) {
-        mensajeAnormal += "• Estado de Conciencia: " + estadoConciencia + "\n"
+        mensajeAnormal += `• Estado de Conciencia: ${estadoConciencia}\n`
       }
 
       setMensajeAlertaSignosVitales(mensajeAnormal)
-      setAlertaSignosVitalesPendiente(true)
+      setAlertaSignosVitalesPendiente(true) // Set flag to show alert block
       setRecomendaciones((prev) => [
         ...prev,
         `Signos Vitales Anormales: ${mensajeAnormal.split("\n").filter(Boolean).slice(1).join(", ")}`,
@@ -3287,7 +3287,7 @@ export default function CalculadoraEctopico() {
                         }
                         completarSeccion(3)
                       }}
-                      className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-600 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                      className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                     >
                       Continuar
                       <ChevronRight className="ml-2 h-4 w-4" />
@@ -3333,7 +3333,7 @@ export default function CalculadoraEctopico() {
                           tienePruebaEmbarazoDisponible === opcion
                             ? "border-purple-500 bg-purple-50 shadow-md"
                             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                        }
+                        }`}
                       >
                         <input
                           type="radio"
@@ -3377,7 +3377,7 @@ export default function CalculadoraEctopico() {
                             resultadoPIE === resultado
                               ? "border-purple-500 bg-purple-50 shadow-md"
                               : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                          }
+                          }`}
                         >
                           <input
                             type="radio"

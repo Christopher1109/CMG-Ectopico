@@ -3333,7 +3333,7 @@ export default function CalculadoraEctopico() {
                           tienePruebaEmbarazoDisponible === opcion
                             ? "border-purple-500 bg-purple-50 shadow-md"
                             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                        }`}
+                        }
                       >
                         <input
                           type="radio"
@@ -3377,7 +3377,7 @@ export default function CalculadoraEctopico() {
                             resultadoPIE === resultado
                               ? "border-purple-500 bg-purple-50 shadow-md"
                               : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                          }`}
+                          }
                         >
                           <input
                             type="radio"

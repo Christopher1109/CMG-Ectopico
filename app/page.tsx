@@ -3581,7 +3581,6 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    {/* Tarjeta informativa inferior con colores naranja */}
                     <div className="bg-orange-50 rounded-xl p-5 border border-orange-200 mt-6">
                       <p className="text-slate-700 leading-relaxed">
                         Puede continuar con la evaluación o regresar al inicio para terminar la consulta.
@@ -3589,7 +3588,6 @@ export default function CalculadoraEctopico() {
                     </div>
                   </div>
 
-                  {/* Ajustar separación y reutilizar colores de botones para todas las alertas */}
                   <div className="flex justify-between pt-4 mt-6">
                     <Button
                       onClick={() => {

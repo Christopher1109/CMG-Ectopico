@@ -1374,22 +1374,6 @@ export default function CalculadoraEctopico() {
       }
       y += 3
 
-      // Completed studies
-      addTitle("ESTUDIOS REALIZADOS")
-      // Placeholder for where to get the 'prueba' variable (PIE result) if needed.
-      // Assuming 'resultadoPruebaEmbarazo' is the relevant state.
-      const prueba = resultadoPruebaEmbarazo
-      if (prueba !== null && prueba !== "") {
-        addInfoBox("Prueba de Embarazo", prueba === "positivo" ? "Positivo" : "Negativo", [254, 226, 226])
-      }
-      if (tvus !== null && tvus !== "") {
-        addInfoBox("Ecografía Transvaginal", obtenerNombreTVUS(tvus), [254, 226, 226])
-      }
-      if (nivelBetaHCG) {
-        addInfoBox("β-hCG en sangre", `${nivelBetaHCG} mUI/mL`, [254, 226, 226])
-      }
-      y += 3
-
       // Missing studies
       addTitle("ESTUDIOS PENDIENTES")
       doc.setFillColor(254, 226, 226)
@@ -3689,10 +3673,17 @@ export default function CalculadoraEctopico() {
                         </Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {[
+                            { value: "saco_gestacional", label: "Saco gestacional" },
+                            { value: "saco_vitelino", label: "Saco gestacional con saco vitelino" },
+                            {
+                              value: "embrion_sin_fc",
+                              label: "Saco gestacional con saco vitelino con embrión sin frecuencia cardíaca",
+                            },
+                            {
+                              value: "embrion_con_fc",
+                              label: "Saco gestacional con saco vitelino y embrión con frecuencia cardiaca",
+                            },
                             { value: "ausencia_saco_gestacional", label: "Ausencia de saco gestacional" },
-                            { value: "liquido_libre", label: "Líquido libre" },
-                            { value: "masa", label: "Masa anexial" },
-                            { value: "masa_libre", label: "Masa anexial + Líquido libre" },
                           ].map((opcion) => (
                             <label
                               key={opcion.value}

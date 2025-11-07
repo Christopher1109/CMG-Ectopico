@@ -1069,29 +1069,40 @@ export default function CalculadoraEctopico() {
     setIdSeguimiento(consultaCargada.id_publico || consultaCargada.folio || consultaCargada.id?.toString())
 
     // CHANGE: Clear vital signs for Consulta 2
+    // Prefill basic patient information from the previous consultation
     setNombrePaciente(consultaCargada.nombre_paciente || "")
     setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
 
+    // For a new follow‑up visit we always reset vital signs so they can be re‑entered
     setFrecuenciaCardiaca("")
     setPresionSistolica("")
     setPresionDiastolica("")
     setPam("")
     setEstadoConciencia("")
 
-    // CHANGE: Preselect symptoms and risk factors from Consulta 1
+    // Preselect symptoms and factors from the first consultation
     setSintomasSeleccionados(consultaCargada.sintomas_seleccionados || [])
     setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
 
-    // CHANGE: Prefill eco transabdominal from Consulta 1
+    // Prefill eco transabdominal and TVUS values from the previous consultation for context
     setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
     setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
-
-    // CHANGE: Prefill TVUS from Consulta 1
     setTvus(consultaCargada.tvus || "")
+
+    // Reset any lingering alert flags from the previous visit so they do not block the new flow
+    setAlertaSignosVitalesPendiente(false)
+    setMensajeAlertaSignosVitales("")
+    setAlertaPruebaEmbarazoPendiente(false)
+    setMensajeAlertaPruebaEmbarazo("")
+    setAlertaEcografiaPendiente(false)
+    setMensajeAlertaEcografia("")
+
+    // Clear any previous recommendations so the new evaluation starts fresh
+    setRecomendaciones([])
 
     setEsConsultaSeguimiento(true)
     setPantalla("formulario")
-    // CHANGE: Start from Section 2 (Signos Vitales) for Consulta 2
+    // Always begin a follow‑up at the Signos Vitales section
     setSeccion(2)
   }
 
@@ -4183,11 +4194,12 @@ export default function CalculadoraEctopico() {
               <div className="flex justify-between pt-4">
                 <Button
                   onClick={() => {
-                    // CHANGE: For Consulta 2, go back to section 3 (skip section 4)
+                    // Al regresar desde TVUS se vuelve a la sección previa de Ecografía Transabdominal para visitas de seguimiento.
+                    // Para la primera consulta se vuelve a Estudios Complementarios.
                     if (numeroConsultaActual > 1) {
-                      setSeccion(3)
+                      setSeccion(5)
                     } else {
-                      setSeccion(4)
+                      setSeccion(6)
                     }
                   }}
                   variant="outline"

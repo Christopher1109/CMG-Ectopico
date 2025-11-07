@@ -3287,7 +3287,7 @@ export default function CalculadoraEctopico() {
                         }
                         completarSeccion(3)
                       }}
-                      className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                      className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-600 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                     >
                       Continuar
                       <ChevronRight className="ml-2 h-4 w-4" />
@@ -3482,6 +3482,7 @@ export default function CalculadoraEctopico() {
           {/* SECCION 5: Eco Transabdominal */}
           {seccionActual === 5 && (
             <div className="space-y-6">
+              {/* Move console.log outside JSX */}
               {console.log(
                 "[v0] Rendering section 5, numeroConsultaActual:",
                 numeroConsultaActual,
@@ -3491,7 +3492,7 @@ export default function CalculadoraEctopico() {
                 alertaPruebaEmbarazoPendiente,
               )}
 
-              {alertaPruebaEmbarazoPendiente ? (
+              {alertaPruebaEmbarazoPendiente && numeroConsultaActual === 1 ? (
                 <div className="space-y-6">
                   <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
@@ -3563,21 +3564,22 @@ export default function CalculadoraEctopico() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {alertaPruebaEmbarazoPendiente && numeroConsultaActual > 1 && (
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                  {/* Show informational alert for Consulta 2 if there was an issue in C1 */}
+                  {numeroConsultaActual > 1 && alertaPruebaEmbarazoPendiente && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                       <div className="flex items-start space-x-3">
                         <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="font-semibold text-yellow-800 mb-1">Alerta de Consulta Previa</h4>
-                          <p className="text-sm text-yellow-700">{mensajeAlertaPruebaEmbarazo}</p>
+                        <div className="text-sm text-yellow-800">
+                          <p className="font-semibold mb-1">Información de Consulta Anterior</p>
+                          <p>{mensajeAlerta}</p>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl border border-cyan-100">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
                     <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
                         <Stethoscope className="h-6 w-6 text-white" />
                       </div>
                       <div>
@@ -3588,9 +3590,9 @@ export default function CalculadoraEctopico() {
                   </div>
 
                   <div className="space-y-5">
-                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-cyan-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
                       <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                         <span>Hallazgos de Exploración Física</span>
                       </Label>
                       <textarea
@@ -3598,13 +3600,13 @@ export default function CalculadoraEctopico() {
                         value={hallazgosExploracion}
                         onChange={(e) => setHallazgosExploracion(e.target.value)}
                         rows={4}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 transition-all duration-200 resize-none"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 resize-none"
                       />
                     </div>
 
                     <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
                       <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                         <span>¿Tiene ecografía transabdominal?</span>
                       </Label>
                       <div className="grid grid-cols-2 gap-3">
@@ -3613,7 +3615,7 @@ export default function CalculadoraEctopico() {
                             key={opcion}
                             className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
                               tieneEcoTransabdominal === opcion
-                                ? "border-cyan-500 bg-cyan-50 shadow-md"
+                                ? "border-blue-500 bg-blue-50 shadow-md"
                                 : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                             }`}
                           >
@@ -3627,7 +3629,7 @@ export default function CalculadoraEctopico() {
                             />
                             <div
                               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                tieneEcoTransabdominal === opcion ? "border-cyan-500 bg-cyan-500" : "border-gray-300"
+                                tieneEcoTransabdominal === opcion ? "border-blue-500 bg-blue-500" : "border-gray-300"
                               }`}
                             >
                               {tieneEcoTransabdominal === opcion && (

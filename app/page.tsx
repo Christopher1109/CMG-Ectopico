@@ -1055,7 +1055,53 @@ export default function CalculadoraEctopico() {
   const continuarConsultaCargada = async () => {
     console.log("🔄 Continuing consulta cargada:", consultaCargada)
 
-    // CHANGE: Clear vital signs for Consulta 2
+    
+// Determinar cuál consulta de seguimiento corresponde (2ª o 3ª) consultando la visita previa.
+try {
+  // Convertir el identificador público (ID-00001) o folio en un número para la consulta al backend.
+  const folioString = (consultaCargada.id_publico || consultaCargada.folio || consultaCargada.id || "").toString();
+  const folioNumeric = Number(folioString.replace(/^ID-0*/, ""));
+  console.log("[v0] 🔍 Fetching previous visit from backend...");
+  const prevResponse = await fetch(`/api/consultas/${folioNumeric}?scope=previous`);
+  const prev = await prevResponse.json();
+
+  // Si no existe visita previa, no se puede continuar.
+  if (!prev || prev.error || !prev.visit_number) {
+    alert("No existe consulta previa para continuar.");
+    return;
+  }
+
+  // Determinar el número de la siguiente visita (máximo 3).
+  const nextVisit = Math.min((prev.visit_number ?? 1) + 1, 3) as 2 | 3;
+  if (nextVisit > 3) {
+    alert("Esta consulta ya tiene 3 evaluaciones completadas.");
+    setPantalla("resumen");
+    return;
+  }
+  // Si en la visita previa hubo un resultado definitivo (≥0.95 o <0.01), no se permite continuar.
+  if (prev.resultado != null && (prev.resultado >= 0.95 || prev.resultado < 0.01)) {
+    alert("La última consulta ya tiene una decisión final (confirmar o descartar). No se puede continuar.");
+    setPantalla("resumen");
+    return;
+  }
+
+  // Actualizar el estado con la visita que corresponde y almacenar información de la visita anterior.
+  setNumeroConsultaActual(nextVisit);
+  setConsultaAnteriorParaMostrar(prev.visit_number as 1 | 2 | 3);
+  setHcgAnterior((prev.hcg ?? "").toString());
+  console.log(`[v0] ➡️ Será consulta ${nextVisit}, usando C${prev.visit_number} como anterior`);
+  console.log(`[v0] 📊 hCG anterior: ${prev.hcg}`);
+  console.log(`[v0] 📊 Resultado anterior: ${prev.resultado}`);
+
+  // Guardar el identificador de seguimiento (público o interno) para mostrarlo al usuario.
+  setIdSeguimiento(consultaCargada.id_publico || consultaCargada.folio || consultaCargada.id?.toString());
+} catch (error) {
+  console.error("[v0] ❌ Error fetching previous visit:", error);
+  alert("Error al obtener la consulta anterior. Por favor intente de nuevo.");
+  return;
+}
+
+// CHANGE: Clear vital signs for Consulta 2
     setNombrePaciente(consultaCargada.nombre_paciente || "")
     setEdadPaciente(consultaCargada.edad_paciente?.toString() || "")
 

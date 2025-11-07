@@ -6,12 +6,12 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    // Si no cumple, enviamos null para evitar error de constraint
     let curpValido = null
     if (body.curp && typeof body.curp === "string") {
       const curpLimpio = body.curp.trim().toUpperCase()
-      // CURP debe tener 18 caracteres y ser alfanumérico
-      if (curpLimpio.length === 18 && /^[A-Z0-9]{18}$/.test(curpLimpio)) {
+      // Formato CURP: 4 letras + 6 dígitos + 1 letra (H/M) + 2 letras + 3 letras + 2 alfanuméricos
+      const curpRegex = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]{2}$/
+      if (curpLimpio.length === 18 && curpRegex.test(curpLimpio)) {
         curpValido = curpLimpio
       }
     }
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       // NO incluimos id - se genera automáticamente
       Dr: body.usuario_creador ?? null,
       Px: body.nombre_paciente ?? null,
-      CURP: curpValido,
+      CURP: curpValido, // Solo se guarda si cumple formato válido, sino NULL
       Edad_Px: body.edad_paciente ?? null,
       FC: body.frecuencia_cardiaca ?? null,
       PS: body.presion_sistolica ?? null,

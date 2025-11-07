@@ -3138,9 +3138,9 @@ export default function CalculadoraEctopico() {
                 <div className="space-y-6">
                   {/* CHANGE START: Removed the yellow card for Vital Signs Alert in Follow-up Consultations */}
                   {/* This section will now only contain the Symptom and Risk Factor inputs */}
-                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
+                  <div className="bg-gradient-to-r from-blue-50 to-amber-50 rounded-2xl p-8 border border-indigo-100 shadow-sm">
                     <div className="flex items-start gap-4 mb-6">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
                         <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path
                             strokeLinecap="round"
@@ -3168,8 +3168,8 @@ export default function CalculadoraEctopico() {
 
                     {/* Síntomas Presentes */}
                     <div className="space-y-4 mb-8">
-                      <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
-                        <div className="h-2 w-2 rounded-full bg-orange-500"></div>
+                      <label className="flex items-center gap-2 text-sm font-medium text-blue-700">
+                        <div className="h-2 w-2 rounded-full bg-blue-500"></div>
                         Síntomas Presentes
                       </label>
                       <div className="grid gap-3 sm:grid-cols-2">
@@ -3188,8 +3188,8 @@ export default function CalculadoraEctopico() {
                               key={s.id}
                               className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
                                 isChecked
-                                  ? "border-orange-500 bg-orange-50"
-                                  : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
+                                  ? "border-blue-500 bg-blue-50"
+                                  : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50"
                               } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
                             >
                               <input
@@ -3216,7 +3216,7 @@ export default function CalculadoraEctopico() {
                                     setSintomasSeleccionados(sintomasSeleccionados.filter((id) => id !== s.id))
                                   }
                                 }}
-                                className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
+                                className="h-4 w-4 rounded-md border-gray-300 text-blue-500 focus:ring-blue-500"
                               />
                               <span className="text-sm font-medium text-gray-700">{s.label}</span>
                             </label>
@@ -3227,8 +3227,8 @@ export default function CalculadoraEctopico() {
 
                     {/* Factores de Riesgo */}
                     <div className="space-y-4">
-                      <label className="flex items-center gap-2 text-sm font-medium text-orange-700">
-                        <div className="h-2 w-2 rounded-full bg-orange-500"></div>
+                      <label className="flex items-center gap-2 text-sm font-medium text-blue-700">
+                        <div className="h-2 w-2 rounded-full bg-blue-500"></div>
                         Factores de Riesgo
                       </label>
                       <div className="grid gap-3 sm:grid-cols-2">
@@ -3245,8 +3245,8 @@ export default function CalculadoraEctopico() {
                               key={f.id}
                               className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-all ${
                                 isChecked
-                                  ? "border-orange-500 bg-orange-50"
-                                  : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/50"
+                                  ? "border-blue-500 bg-blue-50"
+                                  : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50"
                               } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
                             >
                               <input
@@ -3273,7 +3273,7 @@ export default function CalculadoraEctopico() {
                                     setFactoresSeleccionados(factoresSeleccionados.filter((id) => id !== f.id))
                                   }
                                 }}
-                                className="h-4 w-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-500"
+                                className="h-4 w-4 rounded-md border-gray-300 text-blue-500 focus:ring-blue-500"
                               />
                               <span className="text-sm font-medium text-gray-700">{f.label}</span>
                             </label>

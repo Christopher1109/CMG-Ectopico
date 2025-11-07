@@ -115,6 +115,31 @@ export async function obtenerConsulta(folioOrId: string | number) {
 }
 
 /**
+ * Obtiene una consulta por CURP (detalle completo del caso).
+ * El parámetro `curp` debe ser la clave CURP de 18 caracteres. La función la normaliza a mayúsculas
+ * y realiza una petición GET al endpoint `/api/consultas/{CURP}`. Devuelve el JSON con la consulta
+ * normalizada o un objeto con `error` si la petición falla.
+ */
+export async function obtenerConsultaPorCurp(curp: string) {
+  try {
+    // Normalizar el CURP a mayúsculas y trim
+    const curpUpper = String(curp || "").trim().toUpperCase()
+    const url = `/api/consultas/${encodeURIComponent(curpUpper)}`
+    console.log("[fix] obtenerConsultaPorCurp:", { curp: curpUpper, url })
+    const res = await fetch(url, { method: "GET" })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      console.error("[fix] obtenerConsultaPorCurp error response:", { status: res.status, json })
+      throw new Error(json?.error || `HTTP ${res.status}`)
+    }
+    return json
+  } catch (error: any) {
+    console.error("[fix] obtenerConsultaPorCurp error:", error)
+    return { error: error?.message ?? "Error al obtener consulta por CURP" }
+  }
+}
+
+/**
  * 🔥 NUEVA: Obtiene SOLO la consulta anterior (última visita existente) por folio/id.
  * Requiere que exista el endpoint GET /api/consultas/:id?scope=previous
  * que haga SELECT desde public.consultas_visitas ORDER BY visit_number DESC LIMIT 1

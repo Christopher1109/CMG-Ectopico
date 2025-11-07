@@ -1358,7 +1358,7 @@ export default function CalculadoraEctopico() {
       y += 18
 
       if (typeof mensajeFinal === "string") {
-        if (mensajeFinal.includes("prueba de embarazo")) {
+        if (mensajeFinal.includes("tres estudios")) {
           addBullet("Prueba de embarazo cualitativa (PIE)")
         }
         if (mensajeFinal.includes("ecografía transvaginal")) {
@@ -1803,20 +1803,6 @@ export default function CalculadoraEctopico() {
     resetCalculadora()
   }
 
-  const CMGFooter = () => (
-    <div className="text-center mt-8 pt-4 border-t border-gray-200">
-      <p className="text-sm text-gray-500 mb-2">
-        Desarrollado por <span className="font-semibold text-blue-600">CMG Health Solutions</span> - Herramienta de
-        Apoyo Clínico
-      </p>
-      <p className="text-xs text-gray-400">
-        Esta herramienta es únicamente una herramienta de apoyo y no constituye un dispositivo médico de diagnóstico.
-        <br />
-        El diagnóstico y tratamiento final siempre debe ser determinado por el médico tratante.
-      </p>
-    </div>
-  )
-
   // IMPROVED PROGRESS BAR COMPONENT
   const ProgressBar = () => {
     // Ajustar dinámicamente el número total de secciones según el tipo de consulta.
@@ -1956,15 +1942,11 @@ export default function CalculadoraEctopico() {
                 </Button>
               </form>
 
-              <div className="text-center pt-4 border-t border-slate-200">
-                <p className="text-xs text-slate-500">¿Problemas para acceder? Contacte al administrador del sistema</p>
-                <p className="text-xs text-slate-400 mt-2">
-                  <span className="font-semibold text-blue-600">CMG Health Solutions</span> - Herramienta de Apoyo
-                  Clínico
-                </p>
-              </div>
-
-              <CMGFooter />
+              <p className="text-xs text-gray-500 mt-6">
+                ¿Problemas para acceder? Contacta al administrador del sistema
+                <br />
+                <span className="text-blue-600 font-medium">CMG Health Solutions</span> - Herramienta de Apoyo Clínico
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -2057,7 +2039,7 @@ export default function CalculadoraEctopico() {
                     </div>
                   </Button>
                 </div>
-                <CMGFooter />
+                {/* CMGFooter se elimina de aquí */}
               </div>
             </CardContent>
           </Card>
@@ -2093,7 +2075,9 @@ export default function CalculadoraEctopico() {
                       onChange={(e) => setIdBusqueda(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 uppercase"
                     />
-                    <p className="text-xs text-slate-500">Formato: ID-NNNNN (Ej: ID-00001) o CURP de 18 caracteres</p>
+                    <p className="text-xs text-slate-500 mt-1 block">
+                      Formato: ID-NNNNN (Ej: ID-00001) o CURP de 18 caracteres
+                    </p>
                   </div>
                   <div className="flex space-x-4">
                     <Button
@@ -2114,7 +2098,7 @@ export default function CalculadoraEctopico() {
                     </Button>
                   </div>
                 </div>
-                <CMGFooter />
+                {/* CMGFooter se elimina de aquí */}
               </div>
             </CardContent>
           </Card>
@@ -2410,7 +2394,7 @@ export default function CalculadoraEctopico() {
                   ) : null
                 })()}
 
-                <CMGFooter />
+                {/* CMGFooter se elimina de aquí */}
               </div>
             </CardContent>
           </Card>
@@ -2531,7 +2515,7 @@ export default function CalculadoraEctopico() {
                   </div>
                 </div>
 
-                <CMGFooter />
+                {/* CMGFooter se elimina de aquí */}
               </div>
             </CardContent>
           </Card>
@@ -2702,7 +2686,7 @@ export default function CalculadoraEctopico() {
                   </Button>
                 </div>
 
-                <CMGFooter />
+                {/* CMGFooter se elimina de aquí */}
               </div>
             </CardContent>
           </Card>
@@ -2808,7 +2792,7 @@ export default function CalculadoraEctopico() {
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
-              <CMGFooter />
+              {/* CMGFooter se elimina de aquí */}
             </div>
           )}
 
@@ -3024,7 +3008,7 @@ export default function CalculadoraEctopico() {
                 </Button>
               </div>
 
-              <CMGFooter />
+              {/* CMGFooter se elimina de aquí */}
             </div>
           )}
 
@@ -3100,7 +3084,7 @@ export default function CalculadoraEctopico() {
                         <ChevronRight className="h-5 w-5" />
                       </Button>
                     </div>
-                    <CMGFooter />
+                    {/* CMGFooter se elimina de aquí */}
                   </div>
                 </div>
               ) : (
@@ -3287,7 +3271,7 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
-                  <CMGFooter />
+                  {/* CMGFooter se elimina de aquí */}
                 </div>
               )}
             </div>
@@ -3397,11 +3381,8 @@ export default function CalculadoraEctopico() {
               </div>
 
               {errorSeccion && (
-                <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                  <div className="flex items-center space-x-2">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
-                    <p className="text-red-700 font-medium">{errorSeccion}</p>
-                  </div>
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                  <p className="text-sm text-red-700">{errorSeccion}</p>
                 </div>
               )}
 
@@ -3469,7 +3450,7 @@ export default function CalculadoraEctopico() {
                 </Button>
               </div>
 
-              <CMGFooter />
+              {/* CMGFooter se elimina de aquí */}
             </div>
           )}
 
@@ -3553,7 +3534,7 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="h-5 w-5" />
                     </Button>
                   </div>
-                  {/* Eliminado: footer duplicado dentro de la alerta de prueba de embarazo.  El pie de página se mostrará una única vez al final de la sección */}
+                  {/* CMGFooter se elimina de aquí */}
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -3690,11 +3671,8 @@ export default function CalculadoraEctopico() {
                   </div>
 
                   {errorSeccion && (
-                    <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                      <div className="flex items-center space-x-2">
-                        <AlertTriangle className="h-5 w-5 text-red-600" />
-                        <p className="text-red-700 font-medium">{errorSeccion}</p>
-                      </div>
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                      <p className="text-sm text-red-700">{errorSeccion}</p>
                     </div>
                   )}
 
@@ -3767,7 +3745,7 @@ export default function CalculadoraEctopico() {
                     </Button>
                   </div>
 
-                  <CMGFooter />
+                  {/* CMGFooter se elimina de aquí */}
                 </div>
               )}
             </div>
@@ -3845,7 +3823,7 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="h-5 w-5" />
                     </Button>
                   </div>
-                  {/* Eliminado: se retiró el footer duplicado dentro de la alerta de ecografía para evitar múltiples pies de página */}
+                  {/* CMGFooter se elimina de aquí */}
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -3958,11 +3936,8 @@ export default function CalculadoraEctopico() {
                   </div>
 
                   {errorSeccion && (
-                    <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                      <div className="flex items-center space-x-2">
-                        <AlertTriangle className="h-5 w-5 text-red-600" />
-                        <p className="text-red-700 font-medium">{errorSeccion}</p>
-                      </div>
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                      <p className="text-sm text-red-700">{errorSeccion}</p>
                     </div>
                   )}
 
@@ -4021,7 +3996,8 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
-                  <CMGFooter />
+
+                  {/* CMGFooter se elimina de aquí */}
                 </div>
               )}
             </div>
@@ -4098,7 +4074,7 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="h-5 w-5" />
                     </Button>
                   </div>
-                  {/* Eliminado: se retiró el footer duplicado dentro de la alerta de ecografía para evitar múltiples pies de página */}
+                  {/* CMGFooter se elimina de aquí */}
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -4213,7 +4189,7 @@ export default function CalculadoraEctopico() {
                     </Button>
                   </div>
 
-                  <CMGFooter />
+                  {/* CMGFooter se elimina de aquí */}
                 </>
               )}
             </div>
@@ -4256,11 +4232,8 @@ export default function CalculadoraEctopico() {
               </div>
 
               {errorSeccion && (
-                <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                  <div className="flex items-center space-x-2">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
-                    <p className="text-red-700 font-medium">{errorSeccion}</p>
-                  </div>
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                  <p className="text-sm text-red-700">{errorSeccion}</p>
                 </div>
               )}
 
@@ -4288,7 +4261,7 @@ export default function CalculadoraEctopico() {
                 </Button>
               </div>
 
-              <CMGFooter />
+              {/* CMGFooter se elimina de aquí */}
             </div>
           )}
         </div>

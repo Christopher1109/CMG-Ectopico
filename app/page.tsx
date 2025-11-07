@@ -1838,6 +1838,21 @@ export default function CalculadoraEctopico() {
     )
   }
 
+  const CMGFooter = () => {
+    return (
+      <div className="text-center py-6 text-sm text-gray-500 space-y-2">
+        <p>
+          Desarrollado por <span className="text-blue-600 font-medium">CMG Health Solutions</span> - Herramienta de
+          Apoyo Clínico
+        </p>
+        <p className="text-xs text-gray-400 max-w-2xl mx-auto">
+          Esta herramienta es únicamente una herramienta de apoyo y no constituye un dispositivo médico de diagnóstico.
+          El diagnóstico y tratamiento final siempre debe ser determinado por el médico tratante.
+        </p>
+      </div>
+    )
+  }
+
   // ==================== UI ====================
   if (!estaAutenticado) {
     return (
@@ -2039,7 +2054,7 @@ export default function CalculadoraEctopico() {
                     </div>
                   </Button>
                 </div>
-                {/* CMGFooter se elimina de aquí */}
+                <CMGFooter />
               </div>
             </CardContent>
           </Card>
@@ -2098,7 +2113,7 @@ export default function CalculadoraEctopico() {
                     </Button>
                   </div>
                 </div>
-                {/* CMGFooter se elimina de aquí */}
+                <CMGFooter />
               </div>
             </CardContent>
           </Card>
@@ -2394,7 +2409,8 @@ export default function CalculadoraEctopico() {
                   ) : null
                 })()}
 
-                {/* CMGFooter se elimina de aquí */}
+                {/* Agregar footer en pantalla de resumen */}
+                <CMGFooter />
               </div>
             </CardContent>
           </Card>
@@ -2505,17 +2521,15 @@ export default function CalculadoraEctopico() {
                       <FileText className="h-4 w-4 mr-2" />
                       Generar Reporte
                     </Button>
-                    <Button
-                      onClick={volverAInicio}
-                      className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 text-lg"
-                    >
+                    <Button onClick={volverAInicio} className="bg-green-600 hover:bg-green-700 text-white">
                       <User className="h-4 w-4 mr-2" />
                       Nueva Evaluación
                     </Button>
                   </div>
                 </div>
 
-                {/* CMGFooter se elimina de aquí */}
+                {/* Agregar footer en pantalla de completada */}
+                <CMGFooter />
               </div>
             </CardContent>
           </Card>
@@ -2686,7 +2700,8 @@ export default function CalculadoraEctopico() {
                   </Button>
                 </div>
 
-                {/* CMGFooter se elimina de aquí */}
+                {/* Agregar footer en pantalla de resultados */}
+                <CMGFooter />
               </div>
             </CardContent>
           </Card>
@@ -2792,7 +2807,8 @@ export default function CalculadoraEctopico() {
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
-              {/* CMGFooter se elimina de aquí */}
+              {/* Agregar footer en pantalla de datos del paciente */}
+              <CMGFooter />
             </div>
           )}
 
@@ -3008,7 +3024,8 @@ export default function CalculadoraEctopico() {
                 </Button>
               </div>
 
-              {/* CMGFooter se elimina de aquí */}
+              {/* Agregar footer en pantalla de signos vitales */}
+              <CMGFooter />
             </div>
           )}
 
@@ -3084,7 +3101,8 @@ export default function CalculadoraEctopico() {
                         <ChevronRight className="h-5 w-5" />
                       </Button>
                     </div>
-                    {/* CMGFooter se elimina de aquí */}
+                    {/* Agregar footer en pantalla de alerta de signos vitales */}
+                    <CMGFooter />
                   </div>
                 </div>
               ) : (
@@ -3271,7 +3289,8 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
-                  {/* CMGFooter se elimina de aquí */}
+                  {/* Agregar footer en pantalla de síntomas y factores de riesgo */}
+                  <CMGFooter />
                 </div>
               )}
             </div>
@@ -3450,7 +3469,8 @@ export default function CalculadoraEctopico() {
                 </Button>
               </div>
 
-              {/* CMGFooter se elimina de aquí */}
+              {/* Agregar footer en pantalla de prueba de embarazo */}
+              <CMGFooter />
             </div>
           )}
 
@@ -3534,7 +3554,8 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="h-5 w-5" />
                     </Button>
                   </div>
-                  {/* CMGFooter se elimina de aquí */}
+                  {/* Agregar footer en pantalla de alerta de prueba de embarazo */}
+                  <CMGFooter />
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -3623,17 +3644,10 @@ export default function CalculadoraEctopico() {
                         </Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {[
-                            { value: "saco_gestacional", label: "Saco gestacional" },
-                            { value: "saco_gestacional_vitelino", label: "Saco gestacional con saco vitelino" },
-                            {
-                              value: "saco_gestacional_vitelino_embrion_sin_fc",
-                              label: "Saco gestacional con saco vitelino con embrión sin frecuencia cardíaca",
-                            },
-                            {
-                              value: "saco_gestacional_vitelino_embrion_con_fc",
-                              label: "Saco gestacional con saco vitelino y embrión con frecuencia cardíaca",
-                            },
-                            { value: "ausencia_saco_gestacional", label: "Ausencia de saco gestacional" },
+                            { value: "normal", label: "Normal (Sin evidencia de embarazo intrauterino)" },
+                            { value: "libre", label: "Líquido libre" },
+                            { value: "masa", label: "Masa anexial" },
+                            { value: "masa_libre", label: "Masa anexial + Líquido libre" },
                           ].map((opcion) => (
                             <label
                               key={opcion.value}
@@ -3745,7 +3759,8 @@ export default function CalculadoraEctopico() {
                     </Button>
                   </div>
 
-                  {/* CMGFooter se elimina de aquí */}
+                  {/* Agregar footer en pantalla de ecografía transabdominal */}
+                  <CMGFooter />
                 </div>
               )}
             </div>
@@ -3823,7 +3838,8 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="h-5 w-5" />
                     </Button>
                   </div>
-                  {/* CMGFooter se elimina de aquí */}
+                  {/* Agregar footer en pantalla de alerta de ecografía */}
+                  <CMGFooter />
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -3997,7 +4013,8 @@ export default function CalculadoraEctopico() {
                     </Button>
                   </div>
 
-                  {/* CMGFooter se elimina de aquí */}
+                  {/* Agregar footer en pantalla de estudios complementarios */}
+                  <CMGFooter />
                 </div>
               )}
             </div>
@@ -4074,7 +4091,8 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="h-5 w-5" />
                     </Button>
                   </div>
-                  {/* CMGFooter se elimina de aquí */}
+                  {/* Agregar footer en pantalla de alerta de ecografía */}
+                  <CMGFooter />
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -4189,7 +4207,8 @@ export default function CalculadoraEctopico() {
                     </Button>
                   </div>
 
-                  {/* CMGFooter se elimina de aquí */}
+                  {/* Agregar footer en pantalla de TVUS */}
+                  <CMGFooter />
                 </>
               )}
             </div>
@@ -4261,7 +4280,8 @@ export default function CalculadoraEctopico() {
                 </Button>
               </div>
 
-              {/* CMGFooter se elimina de aquí */}
+              {/* Agregar footer en pantalla de beta-hCG */}
+              <CMGFooter />
             </div>
           )}
         </div>

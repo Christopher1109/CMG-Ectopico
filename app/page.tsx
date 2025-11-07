@@ -27,7 +27,7 @@ import {
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type React from "react"
-import { crearConsulta, actualizarConsulta, obtenerConsulta } from "@/lib/api/consultas"
+import { crearConsulta, actualizarConsulta } from "@/lib/api/consultas"
 
 // ==================== SOLO CONFIGURACIÓN UI - SIN LÓGICA SENSIBLE ====================
 // Síncope/mareo es solo informativo (no afecta cálculo)
@@ -409,14 +409,14 @@ export default function CalculadoraEctopico() {
 
     try {
       const fechaActual = new Date().toISOString()
-        const datosIncompletos = {
+      const datosIncompletos = {
         fechaCreacion: fechaActual,
         fechaUltimaActualizacion: fechaActual,
         usuarioCreador: usuarioActual || "anon",
         nombrePaciente: nombrePaciente || null,
         edadPaciente: edadPaciente ? Number.parseInt(edadPaciente) : null,
-          // Guardar el CURP (mayúsculas). Si no se ingresa, se envía null.
-          curpPaciente: curpPaciente ? curpPaciente.toUpperCase() : null,
+        // Guardar el CURP (mayúsculas). Si no se ingresa, se envía null.
+        curpPaciente: curpPaciente ? curpPaciente.toUpperCase() : null,
         frecuenciaCardiaca: frecuenciaCardiaca ? Number.parseInt(frecuenciaCardiaca) : null,
         presionSistolica: presionSistolica ? Number.parseInt(presionSistolica) : null,
         presionDiastolica: presionDiastolica ? Number.parseInt(presionDiastolica) : null,
@@ -986,28 +986,46 @@ export default function CalculadoraEctopico() {
   }
 
   const buscarConsulta = async () => {
-    const id = idBusqueda.trim().toUpperCase()
-    if (!/^ID-\d{5}$/.test(id)) {
-      alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)")
+    const busqueda = idBusqueda.trim().toUpperCase()
+
+    const esFormatoId = /^ID-\d{5}$/.test(busqueda)
+    const esFormatoCurp = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/.test(busqueda)
+
+    if (!esFormatoId && !esFormatoCurp && busqueda.length !== 18) {
+      alert(
+        "Formato incorrecto. Debe ser:\n- ID: ID-NNNNN (ejemplo: ID-00001)\n- CURP: 18 caracteres (ejemplo: CURP850101HDFXXX00)",
+      )
       return
     }
 
     let consultaEncontrada: any = null
-    const folioNumerico = Number.parseInt(id.replace(/^ID-0*/, ""), 10)
 
     try {
-      const res = await leerDatosDesdeBackend(folioNumerico.toString())
+      let res = null
+
+      if (esFormatoId) {
+        // Buscar por ID/folio
+        const folioNumerico = Number.parseInt(busqueda.replace(/^ID-0*/, ""), 10)
+        res = await leerDatosDesdeBackend(folioNumerico.toString())
+      } else {
+        // Buscar por CURP
+        res = await leerDatosDesdeBackend(busqueda)
+      }
+
       if (res) {
         consultaEncontrada = res
         console.log("[v0] ✅ Consulta loaded from backend:", consultaEncontrada)
         // Update localStorage cache
-        localStorage.setItem(`ectopico_folio_${res.folio}`, JSON.stringify(res))
+        if (res.folio) {
+          localStorage.setItem(`ectopico_folio_${res.folio}`, JSON.stringify(res))
+        }
       }
     } catch (error) {
       console.error("[v0] ❌ Error al buscar en backend:", error)
     }
 
-    if (!consultaEncontrada) {
+    if (!consultaEncontrada && esFormatoId) {
+      const folioNumerico = Number.parseInt(busqueda.replace(/^ID-0*/, ""), 10)
       const datosLocal = localStorage.getItem(`ectopico_folio_${folioNumerico}`)
       if (datosLocal) {
         try {
@@ -1030,58 +1048,12 @@ export default function CalculadoraEctopico() {
       setPantalla("resumen")
       setModoCargarConsulta(false)
     } else {
-      alert("No se encontró ninguna consulta con ese ID")
+      alert(`No se encontró ninguna consulta con ${esFormatoId ? "ese ID" : "ese CURP"}`)
     }
   }
 
   const continuarConsultaCargada = async () => {
     console.log("🔄 Continuing consulta cargada:", consultaCargada)
-
-    // CHANGE REMOVED: Remove all blocking for Consulta 2 - no emergency checks
-    const folioNumeric = Number(
-      (consultaCargada.id_publico || consultaCargada.folio || "").toString().replace(/^ID-0*/, ""),
-    )
-
-    console.log("[v0] 🔍 Fetching previous visit from backend...")
-    try {
-      const prevResponse = await fetch(`/api/consultas/${folioNumeric}?scope=previous`)
-      const prev = await prevResponse.json()
-
-      if (!prev || prev.error || !prev.visit_number) {
-        alert("No existe consulta previa para continuar.")
-        return
-      }
-
-      console.log("[v0] 📥 Previous visit data:", prev)
-
-      const nextVisit = Math.min((prev.visit_number ?? 1) + 1, 3) as 2 | 3
-
-      if (nextVisit > 3) {
-        alert("Esta consulta ya tiene 3 evaluaciones completadas.")
-        setPantalla("resumen")
-        return
-      }
-
-      if (prev.resultado != null && (prev.resultado >= 0.95 || prev.resultado < 0.01)) {
-        alert("La última consulta ya tiene una decisión final (confirmar o descartar). No se puede continuar.")
-        setPantalla("resumen")
-        return
-      }
-
-      setNumeroConsultaActual(nextVisit)
-      setConsultaAnteriorParaMostrar(prev.visit_number as 1 | 2 | 3)
-      setHcgAnterior((prev.hcg ?? "").toString())
-
-      console.log(`[v0] ➡️ Será consulta ${nextVisit}, usando C${prev.visit_number} como anterior`)
-      console.log(`[v0] 📊 hCG anterior: ${prev.hcg}`)
-      console.log(`[v0] 📊 Resultado anterior: ${prev.resultado}`)
-    } catch (error) {
-      console.error("[v0] ❌ Error fetching previous visit:", error)
-      alert("Error al obtener la consulta anterior. Por favor intente de nuevo.")
-      return
-    }
-
-    setIdSeguimiento(consultaCargada.id_publico || consultaCargada.folio || consultaCargada.id?.toString())
 
     // CHANGE: Clear vital signs for Consulta 2
     setNombrePaciente(consultaCargada.nombre_paciente || "")
@@ -2113,15 +2085,15 @@ export default function CalculadoraEctopico() {
                 </div>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-base font-medium text-slate-700">ID de Seguimiento:</Label>
+                    <Label className="text-base font-medium text-slate-700">ID de Seguimiento o CURP:</Label>
                     <input
                       type="text"
-                      placeholder="Ej: ID-00001"
+                      placeholder="Ej: ID-00001 o CURP850101HDFXXX00"
                       value={idBusqueda}
                       onChange={(e) => setIdBusqueda(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 uppercase"
                     />
-                    <p className="text-xs text-slate-500">Formato: ID-NNNNN (Ej: ID-00001)</p>
+                    <p className="text-xs text-slate-500">Formato: ID-NNNNN (Ej: ID-00001) o CURP de 18 caracteres</p>
                   </div>
                   <div className="flex space-x-4">
                     <Button
@@ -3133,8 +3105,8 @@ export default function CalculadoraEctopico() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* Eliminado: no mostrar tarjeta amarilla de signos vitales en consultas de seguimiento */}
-
+                  {/* CHANGE START: Removed the yellow card for Vital Signs Alert in Follow-up Consultations */}
+                  {/* This section will now only contain the Symptom and Risk Factor inputs */}
                   <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
                     <div className="flex items-start gap-4 mb-6">
                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
@@ -3161,7 +3133,7 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    {/* Eliminado: cuadro informativo de protocolo de seguimiento en consultas de seguimiento */}
+                    {/* CHANGE START: Removed the informational card about follow-up protocol */}
 
                     {/* Síntomas Presentes */}
                     <div className="space-y-4 mb-8">
@@ -3513,7 +3485,7 @@ export default function CalculadoraEctopico() {
                 alertaPruebaEmbarazoPendiente,
               )}
 
-          {alertaPruebaEmbarazoPendiente ? (
+              {alertaPruebaEmbarazoPendiente ? (
                 <div className="space-y-6">
                   <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
@@ -3798,8 +3770,6 @@ export default function CalculadoraEctopico() {
                   <CMGFooter />
                 </div>
               )}
-          {/* Mostrar el pie de página solo una vez al finalizar la sección 5.  Esto evita duplicados cuando se muestra la alerta. */}
-          {!alertaPruebaEmbarazoPendiente && null}
             </div>
           )}
 
@@ -4156,7 +4126,7 @@ export default function CalculadoraEctopico() {
                     </div>
                   </div>
 
-                    <div className="space-y-4">
+                  <div className="space-y-4">
                     <label className="flex items-center gap-2 text-sm font-medium text-purple-900">
                       <div className="h-2 w-2 rounded-full bg-purple-500"></div>
                       Hallazgos en TVUS
@@ -4195,9 +4165,7 @@ export default function CalculadoraEctopico() {
                       ))}
                       {/* Mostrar hallazgo de la consulta previa para referencia en consultas de seguimiento */}
                       {numeroConsultaActual > 1 && prevTvus && (
-                        <p className="text-sm text-gray-500 mt-2">
-                          Hallazgo anterior: {obtenerNombreTVUS(prevTvus)}
-                        </p>
+                        <p className="text-sm text-gray-500 mt-2">Hallazgo anterior: {obtenerNombreTVUS(prevTvus)}</p>
                       )}
                     </div>
                   </div>
@@ -4280,12 +4248,10 @@ export default function CalculadoraEctopico() {
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all duration-200"
                   />
                   <span className="text-xs text-slate-500 mt-1 block">mUI/mL</span>
-                {/* Mostrar valor de β-hCG de la consulta previa como referencia */}
-                {numeroConsultaActual > 1 && hcgAnterior && (
-                  <p className="text-sm text-gray-500 mt-2">
-                    Valor de la consulta previa: {hcgAnterior} mUI/mL
-                  </p>
-                )}
+                  {/* Mostrar valor de β-hCG de la consulta previa como referencia */}
+                  {numeroConsultaActual > 1 && hcgAnterior && (
+                    <p className="text-sm text-gray-500 mt-2">Valor de la consulta previa: {hcgAnterior} mUI/mL</p>
+                  )}
                 </div>
               </div>
 

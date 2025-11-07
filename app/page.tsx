@@ -3070,7 +3070,7 @@ export default function CalculadoraEctopico() {
                   <div className="bg-gradient-to-br from-orange-50 via-orange-50 to-orange-50 p-8 rounded-2xl border-2 border-orange-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
                       <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-                        <AlertTriangle className="h-7 w-7 text-red-500" />
+                        <AlertTriangle className="h-7 w-7 text-white" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Signos Vitales</h2>
@@ -3104,7 +3104,7 @@ export default function CalculadoraEctopico() {
                         </div>
                       </div>
 
-                    <div className="bg-orange-50 rounded-xl p-5 border border-orange-200 mt-6">
+                      <div className="bg-orange-50 rounded-xl p-5 border border-orange-200 mt-6">
                         <p className="text-slate-700 leading-relaxed">
                           Puede continuar con la evaluación o regresar al inicio para terminar la consulta y atender la
                           emergencia.
@@ -3112,7 +3112,8 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    <div className="flex justify-between pt-4 mt-4">
+                    {/* Ajustar separación de botones: aumentar margen superior para separarlos de la línea divisoria */}
+                    <div className="flex justify-between pt-4 mt-6">
                       <Button
                         onClick={() => {
                           resetCalculadora()
@@ -3521,20 +3522,22 @@ export default function CalculadoraEctopico() {
 
               {alertaPruebaEmbarazoPendiente ? (
                 <div className="space-y-6">
+                  {/* Cambiar esquema de colores a naranja para alertas de prueba de embarazo */}
                   <div className="bg-gradient-to-br from-orange-50 via-orange-50 to-orange-50 p-8 rounded-2xl border-2 border-orange-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
+                      {/* Ícono rojo con triángulo blanco */}
                       <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-                        <AlertTriangle className="h-7 w-7 text-red-500" />
+                        <AlertTriangle className="h-7 w-7 text-white" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Prueba de Embarazo</h2>
-                        <p className="text-orange-700 font-medium">Se detectaron problemas con la prueba de embarazo</p>
+                        <p className="text-orange-700 font-medium">Se detectaron hallazgos que requieren atención</p>
                       </div>
                     </div>
 
                     <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
                       <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
+                        <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
                           <p className="text-slate-700 leading-relaxed">{mensajeAlertaPruebaEmbarazo}</p>
@@ -3557,6 +3560,7 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
+                    {/* Tarjeta informativa inferior con colores naranja */}
                     <div className="bg-orange-50 rounded-xl p-5 border border-orange-200 mt-6">
                       <p className="text-slate-700 leading-relaxed">
                         Puede continuar con la evaluación o regresar al inicio para terminar la consulta.
@@ -3564,7 +3568,8 @@ export default function CalculadoraEctopico() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-4 mt-4">
+                  {/* Ajustar separación y reutilizar colores de botones para todas las alertas */}
+                  <div className="flex justify-between pt-4 mt-6">
                     <Button
                       onClick={() => {
                         resetCalculadora()
@@ -3812,10 +3817,12 @@ export default function CalculadoraEctopico() {
             <div className="space-y-6">
               {alertaEcografiaPendiente ? (
                 <div className="space-y-6">
+                  {/* Cambiar esquema de colores a naranja para advertencia de ecografía */}
                   <div className="bg-gradient-to-br from-orange-50 via-orange-50 to-orange-50 p-8 rounded-2xl border-2 border-orange-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
+                      {/* Ícono rojo con triángulo blanco para ecografía */}
                       <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-                        <AlertTriangle className="h-7 w-7 text-red-500" />
+                        <AlertTriangle className="h-7 w-7 text-white" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Ecografía</h2>
@@ -3825,7 +3832,7 @@ export default function CalculadoraEctopico() {
 
                     <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
                       <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
+                        <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
                           <p className="text-slate-700 leading-relaxed">{mensajeAlertaEcografia}</p>
@@ -3855,7 +3862,7 @@ export default function CalculadoraEctopico() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-4 mt-4">
+                  <div className="flex justify-between pt-4 mt-6">
                     <Button
                       onClick={() => {
                         resetCalculadora()
@@ -4065,10 +4072,12 @@ export default function CalculadoraEctopico() {
             <div className="space-y-6">
               {alertaEcografiaPendiente ? (
                 <div className="space-y-6">
+                  {/* Cambiar esquema de colores a naranja para advertencia de ecografía (consulta de seguimiento) */}
                   <div className="bg-gradient-to-br from-orange-50 via-orange-50 to-orange-50 p-8 rounded-2xl border-2 border-orange-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
+                      {/* Ícono rojo con triángulo blanco para ecografía */}
                       <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-                        <AlertTriangle className="h-7 w-7 text-red-500" />
+                        <AlertTriangle className="h-7 w-7 text-white" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Ecografía</h2>
@@ -4078,7 +4087,7 @@ export default function CalculadoraEctopico() {
 
                     <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
                       <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
+                        <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
                           <p className="text-slate-700 leading-relaxed">{mensajeAlertaEcografia}</p>
@@ -4108,7 +4117,7 @@ export default function CalculadoraEctopico() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-4 mt-4">
+                  <div className="flex justify-between pt-4 mt-6">
                     <Button
                       onClick={() => {
                         resetCalculadora()

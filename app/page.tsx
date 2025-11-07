@@ -298,11 +298,15 @@ export default function CalculadoraEctopico() {
   const [consultaAnteriorParaMostrar, setConsultaAnteriorParaMostrar] = useState<1 | 2 | 3 | null>(null)
 
   // Navegación y secciones
-  const [pantalla, setPantalla] = useState<
-    "bienvenida" | "cargar" | "resumen" | "formulario" | "finalizado" | "resultados" | "completada"
-  >("bienvenida")
   const [seccionActual, setSeccion] = useState(1) // Renamed from seccionActual for clarity in the new flow
   const [seccionesCompletadas, setSeccionesCompletadas] = useState<number[]>([])
+
+  // <CHANGE START> Add debug effect to track seccionActual changes
+  useEffect(() => {
+    console.log("[v0] seccionActual changed to:", seccionActual, "numeroConsultaActual:", numeroConsultaActual)
+  }, [seccionActual, numeroConsultaActual])
+  // </CHANGE END>
+
   const [errorSeccion, setErrorSeccion] = useState("")
 
   // Consultas
@@ -358,6 +362,11 @@ export default function CalculadoraEctopico() {
 
   // Added state to track when to show the "Incomplete Evaluation" screen
   const [mostrarMensajeFinal, setMostrarMensajeFinal] = useState(false)
+
+  // Page state for routing
+  const [pantalla, setPantalla] = useState<
+    "bienvenida" | "cargar" | "resumen" | "completada" | "resultados" | "formulario"
+  >("bienvenida")
 
   // ✅ Verificar autenticación al cargar
   useEffect(() => {
@@ -472,6 +481,7 @@ export default function CalculadoraEctopico() {
         </div>,
       )
       setProtocoloFinalizado(true)
+      setPantalla("completada") // Fixed: undeclared variable `pantalla`
       return false
     }
   }
@@ -556,7 +566,7 @@ export default function CalculadoraEctopico() {
       //   await guardarDatosIncompletos("signos_vitales_criticos", 2);
       //   setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>);
       //   setProtocoloFinalizado(true);
-      //   setPantalla("completada");
+      //   setPantalla("completada"); // Fixed: undeclared variable `pantalla`
       //   return false;
       // }
 
@@ -573,7 +583,7 @@ export default function CalculadoraEctopico() {
         </div>,
       )
       setProtocoloFinalizado(true)
-      setPantalla("completada")
+      setPantalla("completada") // Fixed: undeclared variable `pantalla`
       return false
     }
   }
@@ -591,6 +601,7 @@ export default function CalculadoraEctopico() {
         await guardarDatosIncompletos(respuesta.motivo, 3)
         setMensajeFinal(<div className="text-center">{respuesta.mensaje}</div>)
         setProtocoloFinalizado(true)
+        setPantalla("completada") // Fixed: undeclared variable `pantalla`
         return false
       }
 
@@ -602,6 +613,7 @@ export default function CalculadoraEctopico() {
         </div>,
       )
       setProtocoloFinalizado(true)
+      setPantalla("completada") // Fixed: undeclared variable `pantalla`
       return false
     }
   }
@@ -634,6 +646,7 @@ export default function CalculadoraEctopico() {
         </div>,
       )
       setProtocoloFinalizado(true)
+      setPantalla("completada") // Fixed: undeclared variable `pantalla`
       return false
     }
   }
@@ -3267,6 +3280,7 @@ export default function CalculadoraEctopico() {
                         if (numeroConsultaActual > 1) {
                           console.log("[v0] Setting section to 5 for Consulta 2")
                           setSeccion(5)
+                          console.log("[v0] setSeccion(5) called")
                         } else {
                           console.log("[v0] Setting section to 4 for Consulta 1")
                           setSeccion(4)
@@ -3473,37 +3487,39 @@ export default function CalculadoraEctopico() {
                 numeroConsultaActual,
                 "seccionActual:",
                 seccionActual,
+                "alertaPruebaEmbarazoPendiente:",
+                alertaPruebaEmbarazoPendiente,
               )}
-              {/* CHANGE START: For Consulta 2, show alerts as informational only */}
-              {alertaPruebaEmbarazoPendiente && numeroConsultaActual === 1 ? (
+
+              {alertaPruebaEmbarazoPendiente ? (
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-8 rounded-2xl border-2 border-purple-200 shadow-xl">
+                  <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
-                      <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
                         <AlertTriangle className="h-7 w-7 text-white" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-slate-800 mb-2">Advertencia de Prueba de Embarazo</h2>
-                        <p className="text-purple-700 font-medium">Se detectó un problema con la prueba de embarazo</p>
+                        <p className="text-blue-700 font-medium">Se detectaron problemas con la prueba de embarazo</p>
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-purple-100 mb-6">
+                    <div className="bg-white rounded-xl p-6 shadow-md border border-blue-100 mb-6">
                       <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-purple-600 flex-shrink-0 mt-1" />
+                        <AlertTriangle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                         <div>
                           <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
                           <p className="text-slate-700 leading-relaxed">{mensajeAlertaPruebaEmbarazo}</p>
                         </div>
                       </div>
 
-                      <div className="mt-6 pt-6 border-t border-purple-100">
+                      <div className="mt-6 pt-6 border-t border-blue-100">
                         <div className="flex items-start space-x-3">
-                          <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-purple-600 text-sm font-bold">!</span>
+                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span className="text-blue-600 text-sm font-bold">!</span>
                           </div>
                           <div>
-                            <h4 className="text-xl font-bold text-slate-800 mb-2">Recomendación Médica</h4>
+                            <h4 className="font-semibold text-slate-800 mb-2">Recomendación Médica</h4>
                             <p className="text-lg front-medium text-slate-700 leading-relaxed">
                               Es necesario contar con una prueba de embarazo válida para continuar con la evaluación de
                               embarazo ectópico.
@@ -3511,38 +3527,39 @@ export default function CalculadoraEctopico() {
                           </div>
                         </div>
                       </div>
-
-                      <div className="bg-purple-50 rounded-xl p-5 border border-purple-200">
-                        <p className="text-slate-700 leading-relaxed">
-                          Puede continuar con la evaluación o regresar al inicio para terminar la consulta.
-                        </p>
-                      </div>
                     </div>
 
-                    <div className="flex justify-between pt-4">
-                      <Button
-                        onClick={() => {
-                          resetCalculadora()
-                          setPantalla("bienvenida")
-                        }}
-                        variant="outline"
-                        className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-                      >
-                        <Home className="h-5 w-5" />
-                        Regresar al Inicio
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setAlertaPruebaEmbarazoPendiente(false)
-                        }}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium"
-                      >
-                        Continuar con la Evaluación
-                        <ChevronRight className="h-5 w-5" />
-                      </Button>
+                    <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
+                      <p className="text-slate-700 leading-relaxed">
+                        Puede continuar con la evaluación o regresar al inicio para terminar la consulta.
+                      </p>
                     </div>
-                    <CMGFooter />
                   </div>
+
+                  <div className="flex justify-between pt-4">
+                    <Button
+                      onClick={() => {
+                        resetCalculadora()
+                        setPantalla("bienvenida")
+                        setAlertaPruebaEmbarazoPendiente(false)
+                      }}
+                      variant="outline"
+                      className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                    >
+                      <Home className="h-5 w-5" />
+                      Regresar al Inicio
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setAlertaPruebaEmbarazoPendiente(false)
+                      }}
+                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium"
+                    >
+                      Continuar con la Evaluación
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </div>
+                  <CMGFooter />
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -3624,9 +3641,9 @@ export default function CalculadoraEctopico() {
                     </div>
 
                     {tieneEcoTransabdominal === "si" && (
-                      <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
+                      <div className="bg-white p-5 rounded-xl border-2 border-purple-200 transition-all duration-200 shadow-sm">
                         <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                           <span>Resultado de la ecografía</span>
                         </Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -3647,7 +3664,7 @@ export default function CalculadoraEctopico() {
                               key={opcion.value}
                               className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
                                 resultadoEcoTransabdominal === opcion.value
-                                  ? "border-cyan-500 bg-cyan-50 shadow-md"
+                                  ? "border-purple-500 bg-purple-50 shadow-md"
                                   : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                               }`}
                             >
@@ -3662,7 +3679,7 @@ export default function CalculadoraEctopico() {
                               <div
                                 className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
                                   resultadoEcoTransabdominal === opcion.value
-                                    ? "border-cyan-500 bg-cyan-500"
+                                    ? "border-purple-500 bg-purple-500"
                                     : "border-gray-300"
                                 }`}
                               >
@@ -3868,9 +3885,9 @@ export default function CalculadoraEctopico() {
 
                   <div className="space-y-4">
                     {/* Eco TVUS */}
-                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-teal-200 transition-all duration-200 shadow-sm hover:shadow-md">
                       <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
                         <span>¿Cuenta con ecografía transvaginal (TVUS)?</span>
                       </Label>
                       <div className="grid grid-cols-2 gap-3">
@@ -3879,7 +3896,7 @@ export default function CalculadoraEctopico() {
                             key={opcion}
                             className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
                               tieneEcoDisponible === opcion
-                                ? "border-purple-500 bg-purple-50 shadow-md"
+                                ? "border-teal-500 bg-teal-50 shadow-md"
                                 : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                             }`}
                           >
@@ -3893,7 +3910,7 @@ export default function CalculadoraEctopico() {
                             />
                             <div
                               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                tieneEcoDisponible === opcion ? "border-purple-500 bg-purple-500" : "border-gray-300"
+                                tieneEcoDisponible === opcion ? "border-teal-500 bg-teal-500" : "border-gray-300"
                               }`}
                             >
                               {tieneEcoDisponible === opcion && (
@@ -3907,9 +3924,9 @@ export default function CalculadoraEctopico() {
                     </div>
 
                     {/* Beta hCG */}
-                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-teal-200 transition-all duration-200 shadow-sm hover:shadow-md">
                       <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
                         <span>¿Cuenta con resultado de β-hCG en sangre?</span>
                       </Label>
                       <div className="grid grid-cols-2 gap-3">
@@ -3918,7 +3935,7 @@ export default function CalculadoraEctopico() {
                             key={opcion}
                             className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
                               tieneBetaDisponible === opcion
-                                ? "border-purple-500 bg-purple-50 shadow-md"
+                                ? "border-teal-500 bg-teal-50 shadow-md"
                                 : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                             }`}
                           >
@@ -3932,7 +3949,7 @@ export default function CalculadoraEctopico() {
                             />
                             <div
                               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                tieneBetaDisponible === opcion ? "border-purple-500 bg-purple-500" : "border-gray-300"
+                                tieneBetaDisponible === opcion ? "border-teal-500 bg-teal-500" : "border-gray-300"
                               }`}
                             >
                               {tieneBetaDisponible === opcion && (
@@ -4166,11 +4183,11 @@ export default function CalculadoraEctopico() {
               <div className="flex justify-between pt-4">
                 <Button
                   onClick={() => {
-                    // CHANGE: For Consulta 2, go back to section 5 (skip section 6)
+                    // CHANGE: For Consulta 2, go back to section 3 (skip section 4)
                     if (numeroConsultaActual > 1) {
-                      setSeccion(5)
+                      setSeccion(3)
                     } else {
-                      setSeccion(6)
+                      setSeccion(4)
                     }
                   }}
                   variant="outline"

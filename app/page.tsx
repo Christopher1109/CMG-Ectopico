@@ -1290,8 +1290,8 @@ export default function CalculadoraEctopico() {
         })
       }
 
-      // Header with red color for incomplete evaluation
-      doc.setFillColor(220, 38, 38)
+      // Header with dark grey color for incomplete evaluation (more formal)
+      doc.setFillColor(44, 62, 80)
       doc.rect(0, 0, pageWidth, 35, "F")
       doc.setTextColor(255, 255, 255)
       doc.setFontSize(16)
@@ -1309,7 +1309,8 @@ export default function CalculadoraEctopico() {
       y = 45
 
       // Header info boxes
-      doc.setFillColor(254, 226, 226)
+      // Use light grey boxes for header information
+      doc.setFillColor(245, 245, 245)
       doc.roundedRect(margin, y, (pageWidth - 2 * margin - 5) / 2, 25, 2, 2, "F")
       doc.setFontSize(9)
       doc.setTextColor(100, 100, 100)
@@ -1323,7 +1324,8 @@ export default function CalculadoraEctopico() {
       doc.setTextColor(100, 100, 100)
       doc.text("Fecha: " + new Date().toLocaleDateString(), margin + 5, y + 19)
 
-      doc.setFillColor(254, 226, 226)
+      // Use light grey boxes for header information
+      doc.setFillColor(245, 245, 245)
       doc.roundedRect(margin + (pageWidth - 2 * margin + 5) / 2, y, (pageWidth - 2 * margin - 5) / 2, 25, 2, 2, "F")
       doc.setFontSize(9)
       doc.text("Médico responsable:", margin + (pageWidth - 2 * margin + 5) / 2 + 5, y + 6)
@@ -1336,8 +1338,8 @@ export default function CalculadoraEctopico() {
 
       // Patient data
       addTitle("DATOS DEL PACIENTE")
-      addInfoBox("Nombre", nombrePaciente, [254, 226, 226])
-      addInfoBox("Edad", `${edadPaciente} años`, [254, 226, 226])
+      addInfoBox("Nombre", nombrePaciente, [245, 245, 245])
+      addInfoBox("Edad", `${edadPaciente} años`, [245, 245, 245])
       y += 3
 
       // Vital signs
@@ -1347,9 +1349,9 @@ export default function CalculadoraEctopico() {
         `${frecuenciaCardiaca} lpm`,
         "Presión Arterial",
         `${presionSistolica}/${presionDiastolica} mmHg`,
-        [254, 226, 226],
+        [245, 245, 245],
       )
-      addInfoBoxTwoColumns("PAM", `${pam} mmHg`, "Estado de Conciencia", estadoConciencia, [254, 226, 226])
+      addInfoBoxTwoColumns("PAM", `${pam} mmHg`, "Estado de Conciencia", estadoConciencia, [245, 245, 245])
       y += 3
 
       // Symptoms
@@ -1376,7 +1378,8 @@ export default function CalculadoraEctopico() {
 
       // Missing studies
       addTitle("ESTUDIOS PENDIENTES")
-      doc.setFillColor(254, 226, 226)
+      // Use a soft yellow background for studies pending section
+      doc.setFillColor(255, 243, 224)
       doc.roundedRect(margin, y, pageWidth - 2 * margin, 15, 2, 2, "F")
       doc.setFontSize(11)
       doc.setFont("helvetica", "bold")
@@ -1414,7 +1417,8 @@ export default function CalculadoraEctopico() {
 
       // Recommendations
       addTitle("RECOMENDACIONES CLÍNICAS")
-      doc.setFillColor(224, 247, 250)
+      // Use neutral light grey for recommendation box
+      doc.setFillColor(245, 245, 245)
       const recText =
         "Se recomienda completar los estudios pendientes lo antes posible para poder realizar una evaluación completa del riesgo de embarazo ectópico. Guarde el código de consulta para continuar con la evaluación una vez tenga los resultados."
       const recLines = doc.splitTextToSize(recText, pageWidth - 2 * margin - 10)
@@ -1456,9 +1460,10 @@ export default function CalculadoraEctopico() {
       doc.setTextColor(0, 0, 0)
 
       // Footer
-      doc.setFillColor(220, 38, 38)
+      // Footer: dark grey to match header
+      doc.setFillColor(44, 62, 80)
       doc.rect(0, pageHeight - 15, pageWidth, 15, "F")
-      doc.setTextColor(200, 200, 200)
+      doc.setTextColor(235, 235, 235)
       doc.setFontSize(9)
       doc.setFont("helvetica", "normal")
       doc.text("Desarrollado por CMG Health Solutions – Herramienta de Apoyo Clínico", pageWidth / 2, pageHeight - 7, {
@@ -1607,7 +1612,8 @@ export default function CalculadoraEctopico() {
         y += 8
       }
 
-      doc.setFillColor(41, 98, 255)
+      // Use a dark grey header for a more formal report instead of bright blue
+      doc.setFillColor(44, 62, 80)
       doc.rect(0, 0, pageWidth, 35, "F")
       doc.setTextColor(255, 255, 255)
       doc.setFontSize(16) // 16px as specified
@@ -1624,7 +1630,8 @@ export default function CalculadoraEctopico() {
       doc.setTextColor(0, 0, 0)
       y = 45
 
-      doc.setFillColor(232, 245, 233)
+      // Use light neutral background for ID/fecha box
+      doc.setFillColor(245, 245, 245)
       doc.roundedRect(margin, y, (pageWidth - 2 * margin - 5) / 2, 25, 2, 2, "F")
       doc.setFontSize(9)
       doc.setTextColor(100, 100, 100)
@@ -1638,7 +1645,8 @@ export default function CalculadoraEctopico() {
       doc.setTextColor(100, 100, 100)
       doc.text("Fecha: " + new Date().toLocaleDateString(), margin + 5, y + 19)
 
-      doc.setFillColor(227, 242, 253)
+      // Use light neutral background for doctor responsible box
+      doc.setFillColor(245, 245, 245)
       doc.roundedRect(margin + (pageWidth - 2 * margin + 5) / 2, y, (pageWidth - 2 * margin - 5) / 2, 25, 2, 2, "F")
       doc.setFontSize(9)
       doc.text("Médico responsable:", margin + (pageWidth - 2 * margin + 5) / 2 + 5, y + 6)
@@ -1650,8 +1658,9 @@ export default function CalculadoraEctopico() {
       y += 33
 
       addTitle("DATOS DEL PACIENTE")
-      addInfoBox("Nombre", nombrePaciente, [232, 245, 233])
-      addInfoBox("Edad", `${edadPaciente} años`, [232, 245, 233])
+      // Use light neutral background for patient information
+      addInfoBox("Nombre", nombrePaciente, [245, 245, 245])
+      addInfoBox("Edad", `${edadPaciente} años`, [245, 245, 245])
       y += 3
 
       addTitle("SIGNOS VITALES")
@@ -1660,16 +1669,17 @@ export default function CalculadoraEctopico() {
         `${frecuenciaCardiaca} lpm`,
         "Presión Arterial",
         `${presionSistolica}/${presionDiastolica} mmHg`,
-        [227, 242, 253],
+        [245, 245, 245],
       )
-      addInfoBoxTwoColumns("PAM", `${pam} mmHg`, "Estado de Conciencia", estadoConciencia, [227, 242, 253])
+      addInfoBoxTwoColumns("PAM", `${pam} mmHg`, "Estado de Conciencia", estadoConciencia, [245, 245, 245])
       y += 3
 
       addTitle("ESTUDIOS COMPLEMENTARIOS")
-      addInfoBox("Ecografía Transvaginal", obtenerNombreTVUS(tvus), [243, 229, 245])
-      addInfoBox("β-hCG en sangre", nivelBetaHCG ? `${nivelBetaHCG} mUI/mL` : "No disponible", [243, 229, 245])
+      // Use neutral backgrounds for study results
+      addInfoBox("Ecografía Transvaginal", obtenerNombreTVUS(tvus), [245, 245, 245])
+      addInfoBox("β-hCG en sangre", nivelBetaHCG ? `${nivelBetaHCG} mUI/mL` : "No disponible", [245, 245, 245])
       if (hcgAnterior) {
-        addInfoBox("β-hCG Anterior", `${hcgAnterior} mUI/mL`, [243, 229, 245])
+        addInfoBox("β-hCG Anterior", `${hcgAnterior} mUI/mL`, [245, 245, 245])
       }
       y += 3
 
@@ -1719,8 +1729,18 @@ export default function CalculadoraEctopico() {
         y += 28
       }
 
+      // Insert section for any alerts triggered during the evaluation
+      if (recomendaciones && recomendaciones.length > 0) {
+        addTitle("ALERTAS DETECTADAS")
+        recomendaciones.forEach((rec) => {
+          addBullet(rec)
+        })
+        y += 3
+      }
+
       addTitle("RECOMENDACIONES CLÍNICAS")
-      doc.setFillColor(224, 247, 250)
+      // Use neutral light grey for recommendation box
+      doc.setFillColor(245, 245, 245)
       const recomendacion =
         resultado != null
           ? resultado >= 0.95
@@ -1730,7 +1750,7 @@ export default function CalculadoraEctopico() {
               : "Se recomienda guardar el código de consulta y regresar en 48-72 horas con nueva ecografía transvaginal y nueva prueba de beta-hCG para seguimiento."
           : "Evaluación en proceso"
 
-      doc.setFillColor(224, 247, 250)
+      doc.setFillColor(245, 245, 245)
       const recLines = doc.splitTextToSize(recomendacion, pageWidth - 2 * margin - 10)
       const recHeight = recLines.length * 6.9 + 8
       checkPageBreak(recHeight)
@@ -1769,9 +1789,10 @@ export default function CalculadoraEctopico() {
       doc.setTextColor(0, 0, 0)
 
       // Footer
-      doc.setFillColor(41, 98, 255)
+      // Footer: dark grey to match header
+      doc.setFillColor(44, 62, 80)
       doc.rect(0, pageHeight - 15, pageWidth, 15, "F")
-      doc.setTextColor(200, 200, 200) // Light gray text
+      doc.setTextColor(235, 235, 235) // Lighter text for dark footer
       doc.setFontSize(9)
       doc.setFont("helvetica", "normal")
       doc.text("Desarrollado por CMG Health Solutions – Herramienta de Apoyo Clínico", pageWidth / 2, pageHeight - 7, {

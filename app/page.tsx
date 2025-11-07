@@ -363,6 +363,10 @@ export default function CalculadoraEctopico() {
   // Added state to track when to show the "Incomplete Evaluation" screen
   const [mostrarMensajeFinal, setMostrarMensajeFinal] = useState(false)
 
+  // Estados para almacenar valores previos de TVUS y ecografía transabdominal en consultas de seguimiento.
+  const [prevTvus, setPrevTvus] = useState<string>("")
+  const [prevEcoTransabdominal, setPrevEcoTransabdominal] = useState<string>("")
+
   // Page state for routing
   const [pantalla, setPantalla] = useState<
     "bienvenida" | "cargar" | "resumen" | "completada" | "resultados" | "formulario"
@@ -1078,16 +1082,29 @@ export default function CalculadoraEctopico() {
     setPam("")
     setEstadoConciencia("")
 
-    // CHANGE: Preselect symptoms and risk factors from Consulta 1
-    setSintomasSeleccionados(consultaCargada.sintomas_seleccionados || [])
+    // Preseleccionar solo los factores de riesgo de la consulta previa. Los síntomas deben ingresarse nuevamente.
+    setSintomasSeleccionados([])
     setFactoresSeleccionados(consultaCargada.factores_seleccionados || [])
 
-    // CHANGE: Prefill eco transabdominal from Consulta 1
-    setTieneEcoTransabdominal(consultaCargada.tiene_eco_transabdominal || "")
-    setResultadoEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
+    // Almacenar los valores previos de ecografía y TVUS para mostrarlos como referencia,
+    // pero limpiar los campos para que el usuario los capture nuevamente en la segunda consulta.
+    setPrevEcoTransabdominal(consultaCargada.resultado_eco_transabdominal || "")
+    setPrevTvus(consultaCargada.tvus || "")
 
-    // CHANGE: Prefill TVUS from Consulta 1
-    setTvus(consultaCargada.tvus || "")
+    setTieneEcoTransabdominal("")
+    setResultadoEcoTransabdominal("")
+    setTvus("")
+
+    // Reiniciar hallazgos de exploración física para consultas de seguimiento
+    setHallazgosExploracion("")
+
+    // Reiniciar el progreso de secciones completadas. Para consultas de seguimiento
+    // necesitamos comenzar desde cero; de lo contrario el progreso de la
+    // evaluación mostrará números de secciones de la consulta previa y no
+    // reflejará las 4 secciones de seguimiento.  Al limpiar este arreglo
+    // el componente ProgressBar recalculará el total y mostrará "0 de 4"
+    // al iniciar la consulta 2.
+    setSeccionesCompletadas([])
 
     setEsConsultaSeguimiento(true)
     setPantalla("formulario")
@@ -1819,7 +1836,10 @@ export default function CalculadoraEctopico() {
 
   // IMPROVED PROGRESS BAR COMPONENT
   const ProgressBar = () => {
-    const totalSecciones = 8 // Updated to 8 sections
+    // Ajustar dinámicamente el número total de secciones según el tipo de consulta.
+    // Para consultas de seguimiento (consulta 2 o 3) se omiten las secciones de PIE y estudios complementarios,
+    // resultando en 4 secciones totales. Para la primera consulta se mantienen las 8 secciones.
+    const totalSecciones = numeroConsultaActual > 1 ? 4 : 8
     const progreso = (seccionesCompletadas.length / totalSecciones) * 100
 
     return (
@@ -2973,12 +2993,13 @@ export default function CalculadoraEctopico() {
                     if (estadoConciencia === "No alerta (estuporosa, comatosa, somnoliente)")
                       alertas.push("Estado de conciencia alterado")
 
-                    // CHANGE: For Consulta 2, alerts are informational only, not blocking
+                    // Si se detectan valores anormales de signos vitales, mostrar alerta en todas las consultas.
                     if (alertas.length > 0) {
                       setMensajeAlertaSignosVitales(alertas.join("\n"))
-                      if (numeroConsultaActual === 1) {
-                        setAlertaSignosVitalesPendiente(true)
-                      }
+                      // En cualquier consulta (1, 2 o 3) se activa la bandera de alerta para
+                      // mostrar la tarjeta de advertencia. En consultas de seguimiento la tarjeta
+                      // será informativa y no bloqueará el flujo.
+                      setAlertaSignosVitalesPendiente(true)
                     }
 
                     setErrorSeccion("")
@@ -2999,7 +3020,7 @@ export default function CalculadoraEctopico() {
           {/* SECCION 3: Síntomas y Factores de Riesgo */}
           {seccionActual === 3 && (
             <div className="space-y-6">
-              {alertaSignosVitalesPendiente && numeroConsultaActual === 1 ? (
+              {alertaSignosVitalesPendiente ? (
                 <div className="space-y-6">
                   <div className="bg-gradient-to-br from-orange-50 via-orange-50 to-blue-50 p-8 rounded-2xl border-2 border-orange-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
@@ -3073,17 +3094,7 @@ export default function CalculadoraEctopico() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {alertaSignosVitalesPendiente && numeroConsultaActual > 1 && (
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
-                      <div className="flex items-start space-x-3">
-                        <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="font-semibold text-yellow-800 mb-1">Alerta de Signos Vitales</h4>
-                          <p className="text-sm text-yellow-700">{mensajeAlertaSignosVitales}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* Eliminado: no mostrar tarjeta amarilla de signos vitales en consultas de seguimiento */}
 
                   <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-8 border border-orange-100 shadow-sm">
                     <div className="flex items-start gap-4 mb-6">
@@ -3111,39 +3122,7 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    {numeroConsultaActual > 1 && (
-                      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <svg
-                            className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          <div className="text-sm text-blue-800">
-                            <p className="font-semibold mb-1">
-                              Protocolo de seguimiento (Day {numeroConsultaActual}, Visit {numeroConsultaActual})
-                            </p>
-                            <p>
-                              Según el paper, debe identificar nuevamente los signos, síntomas y factores de riesgo
-                              presentes en esta consulta. El sistema calculará automáticamente la probabilidad pretest
-                              ajustada usando la fórmula:{" "}
-                              <span className="font-mono text-xs">
-                                [(1-v{numeroConsultaActual - 1}b)(v{numeroConsultaActual}a)] + v
-                                {numeroConsultaActual - 1}b
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    {/* Eliminado: cuadro informativo de protocolo de seguimiento en consultas de seguimiento */}
 
                     {/* Síntomas Presentes */}
                     <div className="space-y-4 mb-8">
@@ -3495,7 +3474,7 @@ export default function CalculadoraEctopico() {
                 alertaPruebaEmbarazoPendiente,
               )}
 
-              {alertaPruebaEmbarazoPendiente ? (
+          {alertaPruebaEmbarazoPendiente ? (
                 <div className="space-y-6">
                   <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200 shadow-xl">
                     <div className="flex items-start space-x-4 mb-6">
@@ -3563,7 +3542,7 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="h-5 w-5" />
                     </Button>
                   </div>
-                  <CMGFooter />
+                  {/* Eliminado: footer duplicado dentro de la alerta de prueba de embarazo.  El pie de página se mostrará una única vez al final de la sección */}
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -3780,6 +3759,8 @@ export default function CalculadoraEctopico() {
                   <CMGFooter />
                 </div>
               )}
+          {/* Mostrar el pie de página solo una vez al finalizar la sección 5.  Esto evita duplicados cuando se muestra la alerta. */}
+          {!alertaPruebaEmbarazoPendiente && null}
             </div>
           )}
 
@@ -3855,7 +3836,7 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="h-5 w-5" />
                     </Button>
                   </div>
-                  <CMGFooter />
+                  {/* Eliminado: se retiró el footer duplicado dentro de la alerta de ecografía para evitar múltiples pies de página */}
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -4108,7 +4089,7 @@ export default function CalculadoraEctopico() {
                       <ChevronRight className="h-5 w-5" />
                     </Button>
                   </div>
-                  <CMGFooter />
+                  {/* Eliminado: se retiró el footer duplicado dentro de la alerta de ecografía para evitar múltiples pies de página */}
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -4136,7 +4117,7 @@ export default function CalculadoraEctopico() {
                     </div>
                   </div>
 
-                  <div className="space-y-4">
+                    <div className="space-y-4">
                     <label className="flex items-center gap-2 text-sm font-medium text-purple-900">
                       <div className="h-2 w-2 rounded-full bg-purple-500"></div>
                       Hallazgos en TVUS
@@ -4173,50 +4154,61 @@ export default function CalculadoraEctopico() {
                           <span className="text-sm font-medium text-gray-700">{opcion.label}</span>
                         </button>
                       ))}
+                      {/* Mostrar hallazgo de la consulta previa para referencia en consultas de seguimiento */}
+                      {numeroConsultaActual > 1 && prevTvus && (
+                        <p className="text-sm text-gray-500 mt-2">
+                          Hallazgo anterior: {obtenerNombreTVUS(prevTvus)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
               )}
 
-              {errorSeccion && (
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
-                  <p className="text-sm text-red-700">{errorSeccion}</p>
-                </div>
+              {/* Mostrar navegación y pie de página solo cuando no haya alerta de ecografía en consultas de seguimiento */}
+              {!alertaEcografiaPendiente && (
+                <>
+                  {errorSeccion && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                      <p className="text-sm text-red-700">{errorSeccion}</p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between pt-4">
+                    <Button
+                      onClick={() => {
+                        // CHANGE: For Consulta 2, go back to section 3 (skip section 4)
+                        if (numeroConsultaActual > 1) {
+                          setSeccion(3)
+                        } else {
+                          setSeccion(4)
+                        }
+                      }}
+                      variant="outline"
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (!tvus) {
+                          setErrorSeccion("Por favor seleccione los hallazgos en TVUS.")
+                          return
+                        }
+                        setSeccion(8)
+                        completarSeccion(7)
+                      }}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      Continuar
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <CMGFooter />
+                </>
               )}
-
-              <div className="flex justify-between pt-4">
-                <Button
-                  onClick={() => {
-                    // CHANGE: For Consulta 2, go back to section 3 (skip section 4)
-                    if (numeroConsultaActual > 1) {
-                      setSeccion(3)
-                    } else {
-                      setSeccion(4)
-                    }
-                  }}
-                  variant="outline"
-                  className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                >
-                  <ChevronLeft className="mr-2 h-4 w-4" />
-                  Anterior
-                </Button>
-                <Button
-                  onClick={async () => {
-                    if (!tvus) {
-                      setErrorSeccion("Por favor seleccione los hallazgos en TVUS.")
-                      return
-                    }
-                    setSeccion(8)
-                    completarSeccion(7)
-                  }}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  Continuar
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-
-              <CMGFooter />
             </div>
           )}
 
@@ -4249,6 +4241,12 @@ export default function CalculadoraEctopico() {
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all duration-200"
                   />
                   <span className="text-xs text-slate-500 mt-1 block">mUI/mL</span>
+                {/* Mostrar valor de β-hCG de la consulta previa como referencia */}
+                {numeroConsultaActual > 1 && hcgAnterior && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Valor de la consulta previa: {hcgAnterior} mUI/mL
+                  </p>
+                )}
                 </div>
               </div>
 

@@ -145,19 +145,18 @@ async function actualizarDatosEnBackend(
 
 async function leerDatosDesdeBackend(folioOrId: string): Promise<any | null> {
   try {
-    console.log(`[v0] 📥 Cargando datos para folio/ID:`, folioOrId)
-
-    const res = await obtenerConsulta(folioOrId)
-
+    console.log(`[v0] 📥 Cargando datos para folio/ID/CURP:`, folioOrId)
+    // Encodificar folio o CURP para pasarlo en la ruta
+    const url = `/api/consultas/${encodeURIComponent(folioOrId)}`
+    const response = await fetch(url)
+    const res = await response.json()
     console.log(`[v0] 📨 Respuesta GET del servidor:`, JSON.stringify(res, null, 2))
 
     const payload = res?.data ?? res
-
     if (!payload || payload.error) {
       console.error("[v0] ❌ Error al cargar:", payload?.error)
       return null
     }
-
     console.log("[v0] 📥 Datos cargados desde backend:", {
       folio: payload?.folio,
       tvus: payload?.tvus,
@@ -170,7 +169,6 @@ async function leerDatosDesdeBackend(folioOrId: string): Promise<any | null> {
       hcg_valor_3: payload?.hcg_valor_3,
       resultado_3: payload?.resultado_3,
     })
-
     return payload
   } catch (e) {
     console.error("[v0] ❌ Error llamando GET /api/consultas/:id:", e)
@@ -325,10 +323,6 @@ export default function CalculadoraEctopico() {
 
   // Búsqueda y carga
   const [idBusqueda, setIdBusqueda] = useState("")
-  // Modo de búsqueda: "id" para buscar por ID de seguimiento o "curp" para buscar por CURP
-  const [modoBusqueda, setModoBusqueda] = useState<"id" | "curp">("id")
-  // Estado para capturar el CURP cuando el usuario busca por CURP
-  const [curpBusqueda, setCurpBusqueda] = useState("")
   const [consultaCargada, setConsultaCargada] = useState<any>(null)
   const [modoCargarConsulta, setModoCargarConsulta] = useState(false)
   const [mostrarResumenConsulta, setMostrarResumenConsulta] = useState(false)
@@ -939,9 +933,6 @@ export default function CalculadoraEctopico() {
     setTieneHCG("") // This state seems unused, but kept for consistency
     setBetaHcg("") // Reset betaHcg state
     setIdBusqueda("")
-    // Reset búsqueda por CURP/ID
-    setModoBusqueda("id")
-    setCurpBusqueda("")
     setConsultaAnteriorParaMostrar(null) // Reset state to null
     setNumeroConsultaActual(1) // Reset to 1
     setEsConsultaSeguimiento(false) // Reset to false
@@ -995,85 +986,51 @@ export default function CalculadoraEctopico() {
   }
 
   const buscarConsulta = async () => {
-    // Si el modo de búsqueda es por ID
-    if (modoBusqueda === "id") {
-      const id = idBusqueda.trim().toUpperCase()
-      // Validar formato ID (ID-00001)
-      if (!/^ID-\d{5}$/.test(id)) {
-        alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)")
-        return
+    const id = idBusqueda.trim().toUpperCase()
+    if (!/^ID-\d{5}$/.test(id)) {
+      alert("Formato de ID incorrecto. Debe ser ID-NNNNN (ejemplo: ID-00001)")
+      return
+    }
+
+    let consultaEncontrada: any = null
+    const folioNumerico = Number.parseInt(id.replace(/^ID-0*/, ""), 10)
+
+    try {
+      const res = await leerDatosDesdeBackend(folioNumerico.toString())
+      if (res) {
+        consultaEncontrada = res
+        console.log("[v0] ✅ Consulta loaded from backend:", consultaEncontrada)
+        // Update localStorage cache
+        localStorage.setItem(`ectopico_folio_${res.folio}`, JSON.stringify(res))
       }
-      let consultaEncontrada: any = null
-      const folioNumerico = Number.parseInt(id.replace(/^ID-0*/, ""), 10)
-      try {
-        // Buscar en backend por folio
-        const res = await leerDatosDesdeBackend(folioNumerico.toString())
-        if (res) {
-          consultaEncontrada = res
-          console.log("[v0] ✅ Consulta loaded from backend:", consultaEncontrada)
-          // Guardar en localStorage para fallback futuro
-          localStorage.setItem(`ectopico_folio_${res.folio}`, JSON.stringify(res))
-        }
-      } catch (error) {
-        console.error("[v0] ❌ Error al buscar en backend:", error)
-      }
-      if (!consultaEncontrada) {
-        const datosLocal = localStorage.getItem(`ectopico_folio_${folioNumerico}`)
-        if (datosLocal) {
-          try {
-            consultaEncontrada = normalizarDesdeLocal(JSON.parse(datosLocal))
-            console.log("[v0] ⚠️ Consulta loaded from localStorage (fallback):", consultaEncontrada)
-          } catch (error) {
-            console.warn("[v0] Error al parsear datos de localStorage:", error)
-          }
+    } catch (error) {
+      console.error("[v0] ❌ Error al buscar en backend:", error)
+    }
+
+    if (!consultaEncontrada) {
+      const datosLocal = localStorage.getItem(`ectopico_folio_${folioNumerico}`)
+      if (datosLocal) {
+        try {
+          consultaEncontrada = normalizarDesdeLocal(JSON.parse(datosLocal))
+          console.log("[v0] ⚠️ Consulta loaded from localStorage (fallback):", consultaEncontrada)
+        } catch (error) {
+          console.warn("[v0] Error al parsear datos de localStorage:", error)
         }
       }
-      if (consultaEncontrada) {
-        console.log("✅ Consulta encontrada y cargada:", consultaEncontrada)
-        console.log("[v0] Checking consultations after load:")
-        console.log("[v0] C1 exists:", existeConsulta(consultaEncontrada, 1))
-        console.log("[v0] C2 exists:", existeConsulta(consultaEncontrada, 2))
-        console.log("[v0] C3 exists:", existeConsulta(consultaEncontrada, 3))
-        setConsultaCargada(consultaEncontrada)
-        setPantalla("resumen")
-        setModoCargarConsulta(false)
-      } else {
-        alert("No se encontró ninguna consulta con ese ID")
-      }
+    }
+
+    if (consultaEncontrada) {
+      console.log("✅ Consulta encontrada y cargada:", consultaEncontrada)
+      console.log("[v0] Checking consultations after load:")
+      console.log("[v0] C1 exists:", existeConsulta(consultaEncontrada, 1))
+      console.log("[v0] C2 exists:", existeConsulta(consultaEncontrada, 2))
+      console.log("[v0] C3 exists:", existeConsulta(consultaEncontrada, 3))
+
+      setConsultaCargada(consultaEncontrada)
+      setPantalla("resumen")
+      setModoCargarConsulta(false)
     } else {
-      // Modo de búsqueda por CURP
-      const curp = curpBusqueda.trim().toUpperCase()
-      if (!curp || curp.length < 18) {
-        alert("CURP incompleto. Debe contener 18 caracteres")
-        return
-      }
-      let consultaEncontrada: any = null
-      try {
-        const res = await leerDatosDesdeBackend(curp)
-        if (res) {
-          consultaEncontrada = res
-          console.log("[v0] ✅ Consulta loaded from backend (CURP):", consultaEncontrada)
-          // Guardar en localStorage para referencia futura usando folio si existe
-          if (res?.folio) {
-            localStorage.setItem(`ectopico_folio_${res.folio}`, JSON.stringify(res))
-          }
-        }
-      } catch (error) {
-        console.error("[v0] ❌ Error al buscar en backend por CURP:", error)
-      }
-      // No hay búsqueda en localStorage por CURP, ya que el folio es desconocido hasta obtener el resultado
-      if (consultaEncontrada) {
-        console.log("✅ Consulta encontrada y cargada (CURP):", consultaEncontrada)
-        console.log("[v0] Checking consultations after load:")
-        console.log("[v0] C1 exists:", existeConsulta(consultaEncontrada, 1))
-        console.log("[v0] C2 exists:", existeConsulta(consultaEncontrada, 2))
-        console.log("[v0] C3 exists:", existeConsulta(consultaEncontrada, 3))
-        setConsultaCargada(consultaEncontrada)
-        setPantalla("resumen")
-        setModoCargarConsulta(false)
-      } else {
-        alert("No se encontró ninguna consulta con ese CURP")
-      }
+      alert("No se encontró ninguna consulta con ese ID")
     }
   }
 
@@ -2151,62 +2108,21 @@ export default function CalculadoraEctopico() {
                   </div>
                   <p className="text-blue-800 text-sm">
                     Las consultas de seguimiento se sugiere realizarlas entre 48-72 horas después de la consulta
-                    inicial. Ingrese el ID de seguimiento o CURP.
+                    inicial. Ingrese el ID de seguimiento.
                   </p>
                 </div>
                 <div className="space-y-4">
-                  {/* Selector de modo de búsqueda: ID o CURP */}
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-1">
-                      <input
-                        type="radio"
-                        name="buscarModo"
-                        value="id"
-                        checked={modoBusqueda === "id"}
-                        onChange={() => setModoBusqueda("id")}
-                        className="form-radio text-blue-600"
-                      />
-                      <span className="text-slate-700 text-sm">Buscar por ID</span>
-                    </label>
-                    <label className="flex items-center space-x-1">
-                      <input
-                        type="radio"
-                        name="buscarModo"
-                        value="curp"
-                        checked={modoBusqueda === "curp"}
-                        onChange={() => setModoBusqueda("curp")}
-                        className="form-radio text-blue-600"
-                      />
-                      <span className="text-slate-700 text-sm">Buscar por CURP</span>
-                    </label>
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium text-slate-700">ID de Seguimiento:</Label>
+                    <input
+                      type="text"
+                      placeholder="Ej: ID-00001"
+                      value={idBusqueda}
+                      onChange={(e) => setIdBusqueda(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-slate-500">Formato: ID-NNNNN (Ej: ID-00001)</p>
                   </div>
-                  {/* Campo de entrada dependiendo del modo de búsqueda */}
-                  {modoBusqueda === "id" ? (
-                    <div className="space-y-2">
-                      <Label className="text-base font-medium text-slate-700">ID de Seguimiento:</Label>
-                      <input
-                        type="text"
-                        placeholder="Ej: ID-00001"
-                        value={idBusqueda}
-                        onChange={(e) => setIdBusqueda(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      />
-                      <p className="text-xs text-slate-500">Formato: ID-NNNNN (Ej: ID-00001)</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label className="text-base font-medium text-slate-700">CURP:</Label>
-                      <input
-                        type="text"
-                        placeholder="Ej: AAAA001122HMCLNS09"
-                        value={curpBusqueda}
-                        onChange={(e) => setCurpBusqueda(e.target.value.toUpperCase())}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        maxLength={18}
-                      />
-                      <p className="text-xs text-slate-500">Debe contener exactamente 18 caracteres</p>
-                    </div>
-                  )}
                   <div className="flex space-x-4">
                     <Button
                       onClick={buscarConsulta}

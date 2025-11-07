@@ -35,52 +35,66 @@ function asNumOrNull(x: unknown): number | null {
 // ==================================================
 export async function GET(_req: Request, { params }: Params) {
   try {
-    const idNum = toNumericId(params.id)
-    if (idNum === null) {
-      return NextResponse.json({ error: "ID inválido" }, { status: 400 })
-    }
+    // Determinar si el parámetro es numérico (ID/folio) o un CURP
+    const idOrCurp = params.id?.trim() || ""
+    const idNum = toNumericId(idOrCurp)
 
     const { searchParams } = new URL(_req.url)
     const scope = searchParams.get("scope")
 
-    console.log("[v0 API] GET /api/consultas/[id] - Buscando consulta:", { idNum, scope })
+    console.log("[v0 API] GET /api/consultas/[id] - Buscando consulta:", { idOrCurp, idNum, scope })
 
-    // Buscar por folio primero, luego por id si no se encuentra
-    let data = null
-    let error = null
+    let data: any = null
+    let error: any = null
 
-    // Intentar buscar por folio
-    const folioResult = await supabaseAdmin.from("consultas").select("*").eq("folio", idNum).single()
+    if (idNum === null) {
+      // Tratar como CURP (convertir a mayúsculas) y buscar directamente en la columna CURP
+      const curp = idOrCurp.toUpperCase()
+      const curpResult = await supabaseAdmin.from("consultas").select("*").eq("CURP", curp).single()
 
-    console.log("[v0 API] Búsqueda por folio:", { folio: idNum, found: !!folioResult.data, error: folioResult.error })
+      console.log("[v0 API] Búsqueda por CURP:", { curp, found: !!curpResult.data, error: curpResult.error })
 
-    if (folioResult.data) {
-      data = folioResult.data
-      console.log("[v0 API] Datos encontrados por folio:", {
-        folio: data.folio,
-        TVUS_1: data.TVUS_1,
-        hCG_1: data.hCG_1,
-        Pronostico_1: data.Pronostico_1,
-        TVUS_2: data.TVUS_2,
-        hCG_2: data.hCG_2,
-        Pronostico_2: data.Pronostico_2,
-        TVUS_3: data.TVUS_3,
-        hCG_3: data.hCG_3,
-        Pronostico_3: data.Pronostico_3,
-      })
+      data = curpResult.data
+      error = curpResult.error
+
+      if (error || !data) {
+        console.log("[v0 API] No se encontró consulta por CURP:", { error: error?.message })
+        return NextResponse.json({ error: error?.message || "Consulta no encontrada" }, { status: 404 })
+      }
     } else {
-      // Si no se encuentra por folio, buscar por id
-      const idResult = await supabaseAdmin.from("consultas").select("*").eq("id", idNum).single()
+      // Buscar por folio primero, luego por id si no se encuentra
+      const folioResult = await supabaseAdmin.from("consultas").select("*").eq("folio", idNum).single()
 
-      console.log("[v0 API] Búsqueda por id:", { id: idNum, found: !!idResult.data, error: idResult.error })
+      console.log("[v0 API] Búsqueda por folio:", { folio: idNum, found: !!folioResult.data, error: folioResult.error })
 
-      data = idResult.data
-      error = idResult.error
-    }
+      if (folioResult.data) {
+        data = folioResult.data
+        console.log("[v0 API] Datos encontrados por folio:", {
+          folio: data.folio,
+          TVUS_1: data.TVUS_1,
+          hCG_1: data.hCG_1,
+          Pronostico_1: data.Pronostico_1,
+          TVUS_2: data.TVUS_2,
+          hCG_2: data.hCG_2,
+          Pronostico_2: data.Pronostico_2,
+          TVUS_3: data.TVUS_3,
+          hCG_3: data.hCG_3,
+          Pronostico_3: data.Pronostico_3,
+        })
+      } else {
+        // Si no se encuentra por folio, buscar por id
+        const idResult = await supabaseAdmin.from("consultas").select("*").eq("id", idNum).single()
 
-    if (error || !data) {
-      console.log("[v0 API] No se encontró consulta:", { error: error?.message })
-      return NextResponse.json({ error: error?.message || "Consulta no encontrada" }, { status: 404 })
+        console.log("[v0 API] Búsqueda por id:", { id: idNum, found: !!idResult.data, error: idResult.error })
+
+        data = idResult.data
+        error = idResult.error
+      }
+
+      if (error || !data) {
+        console.log("[v0 API] No se encontró consulta:", { error: error?.message })
+        return NextResponse.json({ error: error?.message || "Consulta no encontrada" }, { status: 404 })
+      }
     }
 
     if (scope === "previous") {

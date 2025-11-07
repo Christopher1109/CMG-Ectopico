@@ -54,6 +54,8 @@ async function enviarDatosAlBackend(datos: any): Promise<{ success: boolean; dat
       usuario_creador: datos.usuarioCreador || null,
       nombre_paciente: datos.nombrePaciente || "N/A",
       edad_paciente: Number.isFinite(+datos.edadPaciente) ? +datos.edadPaciente : null,
+      // Guardar CURP (en mayúsculas). Utiliza la propiedad curpPaciente del frontend
+      curp: datos.curpPaciente ? datos.curpPaciente.toUpperCase() : null,
       frecuencia_cardiaca: datos.frecuenciaCardiaca ? +datos.frecuenciaCardiaca : null,
       presion_sistolica: datos.presionSistolica ? +datos.presionSistolica : null,
       presion_diastolica: datos.presionDiastolica ? +datos.presionDiastolica : null,
@@ -273,6 +275,10 @@ export default function CalculadoraEctopico() {
   // Estados principales
   const [nombrePaciente, setNombrePaciente] = useState("")
   const [edadPaciente, setEdadPaciente] = useState("")
+
+  // CURP del paciente
+  // Se captura en la primera sección y se usa tanto para crear la consulta como para futuras búsquedas.
+  const [curpPaciente, setCurpPaciente] = useState("")
   const [frecuenciaCardiaca, setFrecuenciaCardiaca] = useState("")
   const [presionSistolica, setPresionSistolica] = useState("")
   const [presionDiastolica, setPresionDiastolica] = useState("")
@@ -405,12 +411,14 @@ export default function CalculadoraEctopico() {
 
     try {
       const fechaActual = new Date().toISOString()
-      const datosIncompletos = {
+        const datosIncompletos = {
         fechaCreacion: fechaActual,
         fechaUltimaActualizacion: fechaActual,
         usuarioCreador: usuarioActual || "anon",
         nombrePaciente: nombrePaciente || null,
         edadPaciente: edadPaciente ? Number.parseInt(edadPaciente) : null,
+          // Guardar el CURP (mayúsculas). Si no se ingresa, se envía null.
+          curpPaciente: curpPaciente ? curpPaciente.toUpperCase() : null,
         frecuenciaCardiaca: frecuenciaCardiaca ? Number.parseInt(frecuenciaCardiaca) : null,
         presionSistolica: presionSistolica ? Number.parseInt(presionSistolica) : null,
         presionDiastolica: presionDiastolica ? Number.parseInt(presionDiastolica) : null,
@@ -733,6 +741,8 @@ export default function CalculadoraEctopico() {
         usuarioCreador: usuarioActual || "anon",
         nombrePaciente,
         edadPaciente: Number.parseInt(edadPaciente),
+        // Incluye el CURP de la paciente en el objeto de datos completos
+        curpPaciente: curpPaciente ? curpPaciente.toUpperCase() : null,
         frecuenciaCardiaca: Number.parseInt(frecuenciaCardiaca),
         presionSistolica: Number.parseInt(presionSistolica),
         presionDiastolica: Number.parseInt(presionDiastolica),
@@ -900,6 +910,9 @@ export default function CalculadoraEctopico() {
     setIdSeguimiento("")
     setNombrePaciente("")
     setEdadPaciente("")
+
+    // Resetear CURP
+    setCurpPaciente("")
     setFrecuenciaCardiaca("")
     setPresionSistolica("")
     setPresionDiastolica("")
@@ -2742,6 +2755,7 @@ export default function CalculadoraEctopico() {
               </div>
 
               <div className="space-y-5">
+                {/* Nombre de la paciente */}
                 <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
                   <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -2756,6 +2770,7 @@ export default function CalculadoraEctopico() {
                   />
                 </div>
 
+                {/* Edad de la paciente */}
                 <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
                   <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -2769,6 +2784,23 @@ export default function CalculadoraEctopico() {
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200"
                   />
                   <span className="text-xs text-slate-500 mt-1 block">años</span>
+                </div>
+
+                {/* CURP de la paciente */}
+                <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>CURP</span>
+                  </Label>
+                  <input
+                    type="text"
+                    placeholder="Ingrese CURP (18 caracteres)"
+                    value={curpPaciente}
+                    onChange={(e) => setCurpPaciente(e.target.value.toUpperCase())}
+                    maxLength={18}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 uppercase"
+                  />
+                  <span className="text-xs text-slate-500 mt-1 block">18 caracteres</span>
                 </div>
               </div>
 
@@ -2784,10 +2816,19 @@ export default function CalculadoraEctopico() {
               <div className="flex justify-end pt-4">
                 <Button
                   onClick={() => {
+                    // Validación de campos obligatorios
                     if (!nombrePaciente || !edadPaciente) {
                       setErrorSeccion("Por favor, complete todos los campos.")
                       return
                     }
+                    // Validación de CURP: si se ingresa, debe tener 18 caracteres
+                    if (curpPaciente && curpPaciente.length < 18) {
+                      setErrorSeccion("El CURP está incompleto. Debe contener 18 caracteres.")
+                      return
+                    }
+                    // Limpiar mensaje de error antes de avanzar
+                    setErrorSeccion("")
+                    // Avanzar a la siguiente sección
                     setSeccion(2)
                     completarSeccion(1)
                   }}

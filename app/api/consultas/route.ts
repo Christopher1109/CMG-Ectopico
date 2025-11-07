@@ -11,6 +11,8 @@ export async function POST(req: Request) {
       // NO incluimos id - se genera automáticamente
       Dr: body.usuario_creador ?? null,
       Px: body.nombre_paciente ?? null,
+      // Guardamos el CURP recibido desde el frontend (o null si no viene)
+      CURP: body.curp ?? null,
       Edad_Px: body.edad_paciente ?? null,
       FC: body.frecuencia_cardiaca ?? null,
       PS: body.presion_sistolica ?? null,
@@ -27,15 +29,26 @@ export async function POST(req: Request) {
       Fac_Riesg: Array.isArray(body.factores_seleccionados) ? body.factores_seleccionados.join(", ") : null,
       TVUS_1: body.tvus ?? null,
       hCG_1: body.hcg_valor ?? null,
-      Pronostico_1: typeof body.resultado === "number" ? `${(body.resultado * 100).toFixed(1)}%` : null,
+      Pronostico_1: typeof body.resultado === "number"
+        ? `${(body.resultado * 100).toFixed(1)}%`
+        : null,
       Consulta_1_Date: new Date().toISOString(),
     }
 
-    const { data, error } = await supabaseAdmin.from("consultas").insert(insertData).select("*").single()
+    const { data, error } = await supabaseAdmin
+      .from("consultas")
+      .insert(insertData)
+      .select("*")
+      .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
     return NextResponse.json({ data })
   } catch (e: any) {
-    return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 })
+    return NextResponse.json(
+      { error: String(e?.message ?? e) },
+      { status: 500 }
+    )
   }
 }

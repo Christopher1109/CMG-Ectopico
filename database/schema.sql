@@ -9,6 +9,8 @@ CREATE TABLE public.consultas (
   -- Doctor y paciente
   Dr varchar(200),
   Px varchar(200),
+  -- Clave Única de Registro de Población (CURP) de la paciente
+  CURP varchar(18),
   Edad_Px integer,
 
   -- Signos vitales
@@ -73,3 +75,6 @@ EXECUTE FUNCTION update_updated_at_column();
 
 -- 4. Activar Row Level Security (opcional)
 ALTER TABLE public.consultas ENABLE ROW LEVEL SECURITY;
+
+-- Index to speed up searches by CURP (optional but recommended)
+CREATE INDEX IF NOT EXISTS idx_consultas_curp ON public.consultas (CURP);

@@ -2279,7 +2279,7 @@ export default function CalculadoraEctopico() {
                               : "Ninguno"}
                           </div>
                         </div>
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-full">
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
                           <span className="font-semibold text-slate-700 block mb-1">Factores de Riesgo</span>
                           <div className="text-slate-600">
                             {consultaCargada.factores_seleccionados && consultaCargada.factores_seleccionados.length > 0
@@ -2292,16 +2292,16 @@ export default function CalculadoraEctopico() {
                       </div>
 
                       <div className="space-y-3">
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-full">
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
                           <span className="font-semibold text-slate-700 block mb-1">TVUS</span>
                           <div className="text-slate-600">{obtenerNombreTVUS(consultaCargada.tvus)}</div>
                         </div>
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-full">
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
                           <span className="font-semibold text-slate-700 block mb-1">β-hCG</span>
                           <div className="text-slate-600">{consultaCargada.hcg_valor || "N/A"} mUI/mL</div>
                         </div>
                         {consultaCargada.resultado != null && (
-                          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-full border border-blue-200">
+                          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
                             <span className="font-semibold text-blue-700 block mb-1">Resultado</span>
                             <div className="text-blue-900 font-bold text-lg">
                               {(consultaCargada.resultado * 100).toFixed(1)}%
@@ -2325,7 +2325,7 @@ export default function CalculadoraEctopico() {
 
                     <div className="grid md:grid-cols-2 gap-4 text-sm">
                       <div className="space-y-3">
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-full">
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
                           <span className="font-semibold text-slate-700 block mb-1">Síntomas Presentes</span>
                           <div className="text-slate-600">
                             {consultaCargada.sintomas_seleccionados_2 &&
@@ -2336,7 +2336,7 @@ export default function CalculadoraEctopico() {
                               : "Ninguno"}
                           </div>
                         </div>
-                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-full">
+                        <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-3 rounded-lg">
                           <span className="font-semibold text-slate-700 block mb-1">Factores de Riesgo</span>
                           <div className="text-slate-600">
                             {consultaCargada.factores_seleccionados_2 &&

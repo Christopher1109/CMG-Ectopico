@@ -2765,8 +2765,10 @@ export default function CalculadoraEctopico() {
           {/* SECCION 1: Datos del Paciente */}
           {seccionActual === 1 && (
             <div className="space-y-6">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
-                <div className="flex items-center space-x-3">
+              {/* Contenedor de color que envuelve encabezado y campos */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-2xl border border-blue-100 shadow-xl space-y-6">
+                {/* Encabezado */}
+                <div className="flex items-center space-x-3 mb-6">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
                     <User className="h-6 w-6 text-white" />
                   </div>
@@ -2775,58 +2777,60 @@ export default function CalculadoraEctopico() {
                     <p className="text-sm text-slate-600">Información básica de la paciente</p>
                   </div>
                 </div>
+
+                {/* Campos del paciente */}
+                <div className="space-y-5">
+                  {/* Nombre de la paciente */}
+                  <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span>Nombre Completo</span>
+                    </Label>
+                    <input
+                      type="text"
+                      placeholder="Ingrese el nombre de la paciente"
+                      value={nombrePaciente}
+                      onChange={(e) => setNombrePaciente(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200"
+                    />
+                  </div>
+
+                  {/* Edad de la paciente */}
+                  <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span>Edad</span>
+                    </Label>
+                    <input
+                      type="number"
+                      placeholder="Edad en años"
+                      value={edadPaciente}
+                      onChange={(e) => setEdadPaciente(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200"
+                    />
+                    <span className="text-xs text-slate-500 mt-1 block">años</span>
+                  </div>
+
+                  {/* CURP de la paciente */}
+                  <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span>CURP</span>
+                    </Label>
+                    <input
+                      type="text"
+                      placeholder="Ingrese CURP (18 caracteres)"
+                      value={curpPaciente}
+                      onChange={(e) => setCurpPaciente(e.target.value.toUpperCase())}
+                      maxLength={18}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 uppercase"
+                    />
+                    <span className="text-xs text-slate-500 mt-1 block">18 caracteres</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-5">
-                {/* Nombre de la paciente */}
-                <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                  <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span>Nombre Completo</span>
-                  </Label>
-                  <input
-                    type="text"
-                    placeholder="Ingrese el nombre de la paciente"
-                    value={nombrePaciente}
-                    onChange={(e) => setNombrePaciente(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200"
-                  />
-                </div>
-
-                {/* Edad de la paciente */}
-                <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                  <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span>Edad</span>
-                  </Label>
-                  <input
-                    type="number"
-                    placeholder="Edad en años"
-                    value={edadPaciente}
-                    onChange={(e) => setEdadPaciente(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200"
-                  />
-                  <span className="text-xs text-slate-500 mt-1 block">años</span>
-                </div>
-
-                {/* CURP de la paciente */}
-                <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                  <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span>CURP</span>
-                  </Label>
-                  <input
-                    type="text"
-                    placeholder="Ingrese CURP (18 caracteres)"
-                    value={curpPaciente}
-                    onChange={(e) => setCurpPaciente(e.target.value.toUpperCase())}
-                    maxLength={18}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 uppercase"
-                  />
-                  <span className="text-xs text-slate-500 mt-1 block">18 caracteres</span>
-                </div>
-              </div>
-
+              {/* Mensaje de error */}
               {errorSeccion && (
                 <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
                   <div className="flex items-center space-x-2">
@@ -2836,6 +2840,7 @@ export default function CalculadoraEctopico() {
                 </div>
               )}
 
+              {/* Navegación */}
               <div className="flex justify-end pt-4">
                 <Button
                   onClick={() => {
@@ -3376,23 +3381,25 @@ export default function CalculadoraEctopico() {
           {/* CHANGE: Only show PIE section for Consulta 1 */}
           {seccionActual === 4 && numeroConsultaActual === 1 && (
             <div className="space-y-6">
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100">
+              {/* Contenedor de color para encabezado y campos de la prueba de embarazo */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-8 rounded-2xl border border-purple-100 shadow-xl space-y-6">
+                {/* Encabezado de la sección de prueba de embarazo */}
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
-                    <ClipboardList className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo</h2>
-                    <p className="text-sm text-slate-600">Verificación de prueba cualitativa</p>
-                  </div>
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
+                  <ClipboardList className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-800">Prueba de Embarazo</h2>
+                  <p className="text-sm text-slate-600">Verificación de prueba cualitativa</p>
                 </div>
               </div>
 
-              <p className="text-slate-600 bg-blue-50 p-4 rounded-lg border border-blue-100">
-                Por favor, indique si la paciente cuenta con el siguiente estudio:
-              </p>
+                {/* Texto de instrucción */}
+                <p className="text-slate-600 bg-purple-50 p-4 rounded-lg border border-purple-100">
+                  Por favor, indique si la paciente cuenta con el siguiente estudio:
+                </p>
 
-              <div className="space-y-4">
+                <div className="space-y-4">
                 <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
                   <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
                     <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
@@ -3473,7 +3480,9 @@ export default function CalculadoraEctopico() {
                     </div>
                   </div>
                 )}
-              </div>
+                </div>
+
+              </div> {/* Fin del contenedor de color para prueba de embarazo */}
 
               {errorSeccion && (
                 <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
@@ -3649,8 +3658,10 @@ export default function CalculadoraEctopico() {
                     </div>
                   )}
 
-                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border border-purple-100">
-                    <div className="flex items-center space-x-3">
+                  {/* Contenedor de color que envuelve encabezado y campos de ecografía transabdominal y exploración */}
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-8 rounded-2xl border border-purple-100 shadow-xl space-y-6">
+                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border border-purple-100">
+                      <div className="flex items-center space-x-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
                         <Stethoscope className="h-6 w-6 text-white" />
                       </div>
@@ -3658,10 +3669,10 @@ export default function CalculadoraEctopico() {
                         <h2 className="text-2xl font-bold text-slate-800">Evaluación Previa</h2>
                         <p className="text-sm text-slate-600">Ecografía transabdominal y exploración física</p>
                       </div>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-5">
+                    <div className="space-y-5">
                     <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
                       <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
                         <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
@@ -3767,6 +3778,8 @@ export default function CalculadoraEctopico() {
                         </div>
                       </div>
                     )}
+                  </div>
+                    {/* Cierre del contenedor de color para ecografía transabdominal y exploración */}
                   </div>
 
                   {errorSeccion && (
@@ -3942,7 +3955,9 @@ export default function CalculadoraEctopico() {
                     </div>
                   )}
 
-                  <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
+                  {/* Contenedor de color que envuelve encabezado y campos de estudios complementarios */}
+                  <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-8 rounded-2xl border border-teal-100 shadow-xl space-y-6">
+                    {/* Encabezado */}
                     <div className="flex items-center space-x-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
                         <Droplet className="h-6 w-6 text-white" />
@@ -3952,13 +3967,13 @@ export default function CalculadoraEctopico() {
                         <p className="text-sm text-slate-600">Verificación de estudios realizados</p>
                       </div>
                     </div>
-                  </div>
 
-                  <p className="text-slate-600 bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    Por favor, indique si la paciente cuenta con los siguientes estudios realizados:
-                  </p>
+                    {/* Texto de instrucción */}
+                    <p className="text-slate-600 bg-teal-50 p-4 rounded-lg border border-teal-100">
+                      Por favor, indique si la paciente cuenta con los siguientes estudios realizados:
+                    </p>
 
-                  <div className="space-y-4">
+                    <div className="space-y-4">
                     {/* Eco TVUS */}
                     <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-teal-200 transition-all duration-200 shadow-sm hover:shadow-md">
                       <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
@@ -4036,7 +4051,9 @@ export default function CalculadoraEctopico() {
                         ))}
                       </div>
                     </div>
-                  </div>
+                    </div>
+
+                  </div> {/* Fin del contenedor de color para estudios complementarios */}
 
                   {errorSeccion && (
                     <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
@@ -4197,8 +4214,10 @@ export default function CalculadoraEctopico() {
                     </div>
                   )}
 
-                  <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
-                    <div className="flex items-center space-x-3">
+                  {/* Contenedor de color que envuelve encabezado y campos de TVUS */}
+                  <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-8 rounded-2xl border border-teal-100 shadow-xl space-y-6">
+                    <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
+                      <div className="flex items-center space-x-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
                         <Droplet className="h-6 w-6 text-white" />
                       </div>
@@ -4207,9 +4226,9 @@ export default function CalculadoraEctopico() {
                         <p className="text-sm text-slate-600">Hallazgos ecográficos</p>
                       </div>
                     </div>
-                  </div>
+                    </div>
 
-                  <div className="space-y-4">
+                    <div className="space-y-4">
                     <label className="flex items-center gap-2 text-sm font-medium text-purple-900">
                       <div className="h-2 w-2 rounded-full bg-purple-500"></div>
                       Hallazgos en TVUS
@@ -4251,6 +4270,8 @@ export default function CalculadoraEctopico() {
                         <p className="text-sm text-gray-500 mt-2">Hallazgo anterior: {obtenerNombreTVUS(prevTvus)}</p>
                       )}
                     </div>
+                  </div>
+                    {/* Cierre del contenedor de color para TVUS */}
                   </div>
                 </div>
               )}
@@ -4306,8 +4327,10 @@ export default function CalculadoraEctopico() {
           {/* SECCION 8: β-hCG */}
           {seccionActual === 8 && (
             <div className="space-y-6">
-              <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
-                <div className="flex items-center space-x-3">
+              {/* Contenedor de color que envuelve encabezado y campos de beta-hCG */}
+              <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-8 rounded-2xl border border-teal-100 shadow-xl space-y-6">
+                <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
+                  <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
                     <Droplet className="h-6 w-6 text-white" />
                   </div>
@@ -4316,9 +4339,9 @@ export default function CalculadoraEctopico() {
                     <p className="text-sm text-slate-600">Nivel cuantitativo de β-hCG</p>
                   </div>
                 </div>
-              </div>
+                </div>
 
-              <div className="space-y-5">
+                <div className="space-y-5">
                 <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-teal-200 transition-all duration-200 shadow-sm hover:shadow-md">
                   <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
                     <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
@@ -4337,6 +4360,8 @@ export default function CalculadoraEctopico() {
                     <p className="text-sm text-gray-500 mt-2">Valor de la consulta previa: {hcgAnterior} mUI/mL</p>
                   )}
                 </div>
+                </div>
+                {/* Fin del contenedor de color para beta-hCG */}
               </div>
 
               {errorSeccion && (

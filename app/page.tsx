@@ -3058,13 +3058,34 @@ export default function CalculadoraEctopico() {
                     if (estadoConciencia === "No alerta (estuporosa, comatosa, somnoliente)")
                       alertas.push("Estado de conciencia alterado")
 
-                    // Si se detectan valores anormales de signos vitales, mostrar alerta en todas las consultas.
+                    // Si se detectan valores anormales de signos vitales o estado de conciencia,
+                    // se muestra la alerta en pantalla y además se registra un resumen en
+                    // el arreglo de recomendaciones para que se muestre en la sección de
+                    // "Alertas Detectadas Durante la Consulta" de la evaluación incompleta.
                     if (alertas.length > 0) {
+                      // Mostrar el detalle de las anomalías en la tarjeta de advertencia
                       setMensajeAlertaSignosVitales(alertas.join("\n"))
-                      // En cualquier consulta (1, 2 o 3) se activa la bandera de alerta para
-                      // mostrar la tarjeta de advertencia. En consultas de seguimiento la tarjeta
-                      // será informativa y no bloqueará el flujo.
+                      // Activar la bandera para mostrar la tarjeta de alerta en pantalla. En
+                      // consultas de seguimiento la tarjeta será informativa y no bloqueará el flujo.
                       setAlertaSignosVitalesPendiente(true)
+
+                      // Construir un resumen separado por comas para registrar en las
+                      // recomendaciones. Esto permitirá que las alertas se muestren en la
+                      // sección de resumen de la evaluación incompleta. El resumen no debe
+                      // contener saltos de línea para evitar problemas de formato en las
+                      // listas.
+                      const resumenAlertas = alertas.join(", ")
+                      const nuevaRecomendacion = `Signos Vitales Anormales: ${resumenAlertas}`
+
+                      // Agregar la recomendación al estado sólo si aún no existe. Utilizamos
+                      // la función de actualización basada en el estado previo para evitar
+                      // problemas con cierres y valores obsoletos.
+                      setRecomendaciones((prev) => {
+                        if (prev.includes(nuevaRecomendacion)) {
+                          return prev
+                        }
+                        return [...prev, nuevaRecomendacion]
+                      })
                     }
 
                     setErrorSeccion("")
@@ -3694,9 +3715,9 @@ export default function CalculadoraEctopico() {
                     </div>
 
                     {tieneEcoTransabdominal === "si" && (
-                      <div className="bg-white p-5 rounded-xl border-2 border-cyan-200 transition-all duration-200 shadow-sm">
+                      <div className="bg-white p-5 rounded-xl border-2 border-purple-200 transition-all duration-200 shadow-sm">
                         <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                           <span>Resultado de la ecografía</span>
                         </Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -3717,7 +3738,7 @@ export default function CalculadoraEctopico() {
                               key={opcion.value}
                               className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
                                 resultadoEcoTransabdominal === opcion.value
-                                  ? "border-cyan-500 bg-cyan-50 shadow-md"
+                                  ? "border-purple-500 bg-purple-50 shadow-md"
                                   : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                               }`}
                             >
@@ -3732,7 +3753,7 @@ export default function CalculadoraEctopico() {
                               <div
                                 className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
                                   resultadoEcoTransabdominal === opcion.value
-                                    ? "border-cyan-500 bg-cyan-500"
+                                    ? "border-purple-500 bg-purple-500"
                                     : "border-gray-300"
                                 }`}
                               >

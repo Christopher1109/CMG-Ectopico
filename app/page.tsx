@@ -29,6 +29,11 @@ import { useState, useEffect } from "react"
 import type React from "react"
 import { crearConsulta, actualizarConsulta } from "@/lib/api/consultas"
 
+// Base64 encoded logo of Secretaría de Salud extracted from provided form
+// This logo will be embedded in generated PDF reports for a professional header.
+const LOGO_SALUD =
+  "data:image/png;base64,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"
+
 // ==================== SOLO CONFIGURACIÓN UI - SIN LÓGICA SENSIBLE ====================
 // Síncope/mareo es solo informativo (no afecta cálculo)
 const sintomas = [
@@ -1226,13 +1231,16 @@ export default function CalculadoraEctopico() {
       }
 
       const addTitle = (text: string) => {
+        // Encabezado de sección: barra clara con texto en negrita
         checkPageBreak(15)
-        doc.setFillColor(245, 245, 245)
-        doc.rect(margin, y - 5, pageWidth - 2 * margin, 12, "F")
-        doc.setTextColor(0, 0, 0)
-        doc.setFontSize(14)
+        // Fondo ligeramente gris para diferenciar la sección
+        doc.setFillColor(240, 243, 247)
+        doc.setDrawColor(230, 230, 230)
+        doc.roundedRect(margin, y - 5, pageWidth - 2 * margin, 12, 2, 2, "FD")
+        doc.setTextColor(33, 33, 33)
+        doc.setFontSize(13)
         doc.setFont("helvetica", "bold")
-        doc.text(text, margin + 5, y + 2)
+        doc.text(text.toUpperCase(), margin + 5, y + 2)
         y += 15
       }
 
@@ -1290,51 +1298,64 @@ export default function CalculadoraEctopico() {
         })
       }
 
-      // Header with dark grey color for incomplete evaluation (more formal)
-      doc.setFillColor(44, 62, 80)
-      doc.rect(0, 0, pageWidth, 35, "F")
-      doc.setTextColor(255, 255, 255)
+      // === Encabezado profesional ===
+      // Inserta el logotipo de la Secretaría de Salud en la esquina superior izquierda.
+      // El tamaño se ajusta para mantener la proporción del logotipo recortado (aprox. 2.5:1).
+      const logoWidth = 30
+      const logoHeight = 12
+      doc.addImage(LOGO_SALUD, "PNG", margin, 10, logoWidth, logoHeight)
+
+      // Título principal del reporte en el centro
       doc.setFontSize(16)
       doc.setFont("helvetica", "bold")
-      doc.text("REPORTE DE EVALUACIÓN INCOMPLETA", pageWidth / 2, 15, { align: "center" })
-      doc.setFontSize(12)
-      doc.setFont("helvetica", "normal")
-      doc.text("Herramienta de Apoyo – Embarazo Ectópico", pageWidth / 2, 25, { align: "center" })
-
-      doc.setDrawColor(255, 255, 255)
-      doc.setLineWidth(0.3)
-      doc.line(margin, 30, pageWidth - margin, 30)
-
       doc.setTextColor(0, 0, 0)
-      y = 45
+      doc.text("REPORTE DE EVALUACIÓN INCOMPLETA", pageWidth / 2, 16, { align: "center" })
+      // Subtítulo o lema bajo el título
+      doc.setFontSize(11)
+      doc.setFont("helvetica", "normal")
+      doc.text("Herramienta de Apoyo – Embarazo Ectópico", pageWidth / 2, 22, { align: "center" })
 
-      // Header info boxes
-      // Use light grey boxes for header information
-      doc.setFillColor(245, 245, 245)
-      doc.roundedRect(margin, y, (pageWidth - 2 * margin - 5) / 2, 25, 2, 2, "F")
+      // Línea divisoria bajo el encabezado para separar del contenido
+      doc.setDrawColor(180, 180, 180)
+      doc.setLineWidth(0.5)
+      doc.line(margin, 26, pageWidth - margin, 26)
+      y = 32
+
+      // === Información general de la consulta ===
+      // Se colocan dos cajas con marco y fondo claro para mostrar el ID, fecha y médico responsable.
+      const infoBoxHeight = 25
+      const colWidth = (pageWidth - 2 * margin - 5) / 2
+
+      // Caja izquierda: ID y fecha
+      doc.setFillColor(250, 250, 250)
+      doc.setDrawColor(220, 220, 220)
+      doc.roundedRect(margin, y, colWidth, infoBoxHeight, 2, 2, "FD")
       doc.setFontSize(9)
-      doc.setTextColor(100, 100, 100)
-      doc.text("ID de consulta:", margin + 5, y + 6)
+      doc.setTextColor(90, 90, 90)
+      doc.text("ID de consulta:", margin + 4, y + 6)
       doc.setFontSize(12)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(0, 0, 0)
-      doc.text(idSeguimiento, margin + 5, y + 13)
+      doc.text(idSeguimiento, margin + 4, y + 13)
+      doc.setFontSize(8)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(90, 90, 90)
+      doc.text("Fecha: " + new Date().toLocaleDateString(), margin + 4, y + 20)
+
+      // Caja derecha: Médico responsable
+      doc.setFillColor(250, 250, 250)
+      doc.setDrawColor(220, 220, 220)
+      doc.roundedRect(margin + colWidth + 5, y, colWidth, infoBoxHeight, 2, 2, "FD")
       doc.setFontSize(9)
       doc.setFont("helvetica", "normal")
-      doc.setTextColor(100, 100, 100)
-      doc.text("Fecha: " + new Date().toLocaleDateString(), margin + 5, y + 19)
-
-      // Use light grey boxes for header information
-      doc.setFillColor(245, 245, 245)
-      doc.roundedRect(margin + (pageWidth - 2 * margin + 5) / 2, y, (pageWidth - 2 * margin - 5) / 2, 25, 2, 2, "F")
-      doc.setFontSize(9)
-      doc.text("Médico responsable:", margin + (pageWidth - 2 * margin + 5) / 2 + 5, y + 6)
+      doc.setTextColor(90, 90, 90)
+      doc.text("Médico responsable:", margin + colWidth + 5 + 4, y + 6)
       doc.setFontSize(12)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(0, 0, 0)
-      doc.text(nombreUsuario, margin + (pageWidth - 2 * margin + 5) / 2 + 5, y + 13)
-      doc.setTextColor(0, 0, 0)
-      y += 33
+      doc.text(nombreUsuario, margin + colWidth + 5 + 4, y + 13)
+
+      y += infoBoxHeight + 7
 
       // Patient data
       addTitle("DATOS DEL PACIENTE")
@@ -1376,22 +1397,23 @@ export default function CalculadoraEctopico() {
       }
       y += 3
 
-      // Missing studies
+      // Estudios pendientes
       addTitle("ESTUDIOS PENDIENTES")
-      // Use a soft yellow background for studies pending section
-      doc.setFillColor(255, 243, 224)
-      doc.roundedRect(margin, y, pageWidth - 2 * margin, 15, 2, 2, "F")
-      doc.setFontSize(11)
+      // Sección con un tono suave para resaltar pero de manera elegante
+      doc.setFillColor(255, 248, 235)
+      doc.setDrawColor(230, 230, 230)
+      doc.roundedRect(margin, y, pageWidth - 2 * margin, 16, 2, 2, "FD")
+      doc.setFontSize(10)
       doc.setFont("helvetica", "bold")
-      doc.setTextColor(220, 38, 38)
+      doc.setTextColor(160, 50, 50)
       doc.text(
-        "Se recomienda completar los siguientes estudios para poder continuar con la evaluación:",
+        "Para completar la evaluación se requieren los siguientes estudios:",
         margin + 5,
         y + 6,
       )
       doc.setFont("helvetica", "normal")
       doc.setTextColor(0, 0, 0)
-      y += 18
+      y += 20
 
       if (typeof mensajeFinal === "string") {
         if (mensajeFinal.includes("tres estudios")) {
@@ -1417,8 +1439,8 @@ export default function CalculadoraEctopico() {
 
       // Recommendations
       addTitle("RECOMENDACIONES CLÍNICAS")
-      // Use neutral light grey for recommendation box
-      doc.setFillColor(245, 245, 245)
+      // Cuadro claro para las recomendaciones
+      doc.setFillColor(247, 248, 250)
       const recText =
         "Se recomienda completar los estudios pendientes lo antes posible para poder realizar una evaluación completa del riesgo de embarazo ectópico. Guarde el código de consulta para continuar con la evaluación una vez tenga los resultados."
       const recLines = doc.splitTextToSize(recText, pageWidth - 2 * margin - 10)
@@ -1516,13 +1538,15 @@ export default function CalculadoraEctopico() {
       }
 
       const addTitle = (text: string) => {
+        // Encabezado de sección para el reporte completo
         checkPageBreak(15)
-        doc.setFillColor(245, 245, 245) // Gray #f5f5f5
-        doc.rect(margin, y - 5, pageWidth - 2 * margin, 12, "F")
-        doc.setTextColor(0, 0, 0)
-        doc.setFontSize(14) // 14px as specified
+        doc.setFillColor(240, 243, 247)
+        doc.setDrawColor(230, 230, 230)
+        doc.roundedRect(margin, y - 5, pageWidth - 2 * margin, 12, 2, 2, "FD")
+        doc.setTextColor(33, 33, 33)
+        doc.setFontSize(13)
         doc.setFont("helvetica", "bold")
-        doc.text(text, margin + 5, y + 2)
+        doc.text(text.toUpperCase(), margin + 5, y + 2)
         y += 15
       }
 
@@ -1612,50 +1636,64 @@ export default function CalculadoraEctopico() {
         y += 8
       }
 
-      // Use a dark grey header for a more formal report instead of bright blue
-      doc.setFillColor(44, 62, 80)
-      doc.rect(0, 0, pageWidth, 35, "F")
-      doc.setTextColor(255, 255, 255)
-      doc.setFontSize(16) // 16px as specified
+      // === Encabezado profesional para el reporte completo ===
+      // Inserta el logotipo de la Secretaría de Salud en la esquina superior izquierda
+      const logoWidthFull = 30
+      const logoHeightFull = 12
+      doc.addImage(LOGO_SALUD, "PNG", margin, 10, logoWidthFull, logoHeightFull)
+
+      // Título principal y subtítulo centrados
+      doc.setFontSize(16)
       doc.setFont("helvetica", "bold")
-      doc.text("REPORTE DE APOYO CLÍNICO", pageWidth / 2, 15, { align: "center" })
-      doc.setFontSize(12)
+      doc.setTextColor(0, 0, 0)
+      doc.text("REPORTE DE APOYO CLÍNICO", pageWidth / 2, 16, { align: "center" })
+      doc.setFontSize(11)
       doc.setFont("helvetica", "normal")
-      doc.text("Herramienta de Apoyo – Embarazo Ectópico", pageWidth / 2, 25, { align: "center" })
+      doc.text("Herramienta de Apoyo – Embarazo Ectópico", pageWidth / 2, 22, { align: "center" })
 
-      doc.setDrawColor(255, 255, 255)
-      doc.setLineWidth(0.3)
-      doc.line(margin, 30, pageWidth - margin, 30)
+      // Línea divisoria bajo el encabezado
+      doc.setDrawColor(180, 180, 180)
+      doc.setLineWidth(0.5)
+      doc.line(margin, 26, pageWidth - margin, 26)
 
-      doc.setTextColor(0, 0, 0)
-      y = 45
+      y = 32
 
-      // Use light neutral background for ID/fecha box
-      doc.setFillColor(245, 245, 245)
-      doc.roundedRect(margin, y, (pageWidth - 2 * margin - 5) / 2, 25, 2, 2, "F")
-      doc.setFontSize(9)
-      doc.setTextColor(100, 100, 100)
-      doc.text("ID de seguimiento:", margin + 5, y + 6)
-      doc.setFontSize(12)
-      doc.setFont("helvetica", "bold")
-      doc.setTextColor(0, 0, 0)
-      doc.text(idSeguimiento, margin + 5, y + 13)
+      // === Información general del reporte ===
+      // Cajas con borde y fondo claro para mostrar ID/fecha y médico responsable
+      const infoHeight = 25
+      const columnWidth = (pageWidth - 2 * margin - 5) / 2
+
+      // Caja izquierda: ID y fecha
+      doc.setFillColor(250, 250, 250)
+      doc.setDrawColor(220, 220, 220)
+      doc.roundedRect(margin, y, columnWidth, infoHeight, 2, 2, "FD")
       doc.setFontSize(9)
       doc.setFont("helvetica", "normal")
-      doc.setTextColor(100, 100, 100)
-      doc.text("Fecha: " + new Date().toLocaleDateString(), margin + 5, y + 19)
-
-      // Use light neutral background for doctor responsible box
-      doc.setFillColor(245, 245, 245)
-      doc.roundedRect(margin + (pageWidth - 2 * margin + 5) / 2, y, (pageWidth - 2 * margin - 5) / 2, 25, 2, 2, "F")
-      doc.setFontSize(9)
-      doc.text("Médico responsable:", margin + (pageWidth - 2 * margin + 5) / 2 + 5, y + 6)
+      doc.setTextColor(90, 90, 90)
+      doc.text("ID de seguimiento:", margin + 4, y + 6)
       doc.setFontSize(12)
       doc.setFont("helvetica", "bold")
       doc.setTextColor(0, 0, 0)
-      doc.text(nombreUsuario, margin + (pageWidth - 2 * margin + 5) / 2 + 5, y + 13)
+      doc.text(idSeguimiento, margin + 4, y + 13)
+      doc.setFontSize(8)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(90, 90, 90)
+      doc.text("Fecha: " + new Date().toLocaleDateString(), margin + 4, y + 20)
+
+      // Caja derecha: Médico responsable
+      doc.setFillColor(250, 250, 250)
+      doc.setDrawColor(220, 220, 220)
+      doc.roundedRect(margin + columnWidth + 5, y, columnWidth, infoHeight, 2, 2, "FD")
+      doc.setFontSize(9)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(90, 90, 90)
+      doc.text("Médico responsable:", margin + columnWidth + 5 + 4, y + 6)
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "bold")
       doc.setTextColor(0, 0, 0)
-      y += 33
+      doc.text(nombreUsuario, margin + columnWidth + 5 + 4, y + 13)
+
+      y += infoHeight + 7
 
       addTitle("DATOS DEL PACIENTE")
       // Use light neutral background for patient information
@@ -1739,8 +1777,8 @@ export default function CalculadoraEctopico() {
       }
 
       addTitle("RECOMENDACIONES CLÍNICAS")
-      // Use neutral light grey for recommendation box
-      doc.setFillColor(245, 245, 245)
+      // Cuadro claro para las recomendaciones
+      doc.setFillColor(247, 248, 250)
       const recomendacion =
         resultado != null
           ? resultado >= 0.95
@@ -1750,7 +1788,7 @@ export default function CalculadoraEctopico() {
               : "Se recomienda guardar el código de consulta y regresar en 48-72 horas con nueva ecografía transvaginal y nueva prueba de beta-hCG para seguimiento."
           : "Evaluación en proceso"
 
-      doc.setFillColor(245, 245, 245)
+      doc.setFillColor(247, 248, 250)
       const recLines = doc.splitTextToSize(recomendacion, pageWidth - 2 * margin - 10)
       const recHeight = recLines.length * 6.9 + 8
       checkPageBreak(recHeight)

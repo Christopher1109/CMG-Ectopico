@@ -3625,7 +3625,7 @@ export default function CalculadoraEctopico() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-4 mt-6">
+                  <div className="flex justify-between pt-4 mt-8">
                     <Button
                       onClick={() => {
                         resetCalculadora()
@@ -3922,7 +3922,7 @@ export default function CalculadoraEctopico() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-4 mt-6">
+                  <div className="flex justify-between pt-4 mt-8">
                     <Button
                       onClick={() => {
                         resetCalculadora()
@@ -4181,7 +4181,7 @@ export default function CalculadoraEctopico() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-4 mt-6">
+                  <div className="flex justify-between pt-4 mt-8">
                     <Button
                       onClick={() => {
                         resetCalculadora()

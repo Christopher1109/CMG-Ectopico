@@ -4229,8 +4229,8 @@ export default function CalculadoraEctopico() {
                     </div>
 
                     <div className="space-y-4">
-                    <label className="flex items-center gap-2 text-sm font-medium text-purple-900">
-                      <div className="h-2 w-2 rounded-full bg-purple-500"></div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-cyan-900">
+                      <div className="h-2 w-2 rounded-full bg-cyan-500"></div>
                       Hallazgos en TVUS
                     </label>
                     <div className="space-y-3">
@@ -4249,15 +4249,15 @@ export default function CalculadoraEctopico() {
                             flex items-center gap-3 text-left
                             ${
                               tvus === opcion.value
-                                ? "border-purple-500 bg-purple-50 shadow-md"
-                                : "border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50"
+                                ? "border-cyan-500 bg-cyan-50 shadow-md"
+                                : "border-gray-200 bg-white hover:border-cyan-300 hover:bg-cyan-50/50"
                             }
                           `}
                         >
                           <div
                             className={`
                               w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
-                              ${tvus === opcion.value ? "border-purple-500 bg-purple-500" : "border-gray-300"}
+                              ${tvus === opcion.value ? "border-cyan-500 bg-cyan-500" : "border-gray-300"}
                             `}
                           >
                             {tvus === opcion.value && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
@@ -4310,7 +4310,7 @@ export default function CalculadoraEctopico() {
                         setSeccion(8)
                         completarSeccion(7)
                       }}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                      className="bg-gradient-to-r from-cyan-500 to-pink-500 hover:from-cyan-600 hover:to-pink-600 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                     >
                       Continuar
                       <ChevronRight className="ml-2 h-4 w-4" />

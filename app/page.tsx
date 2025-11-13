@@ -3649,9 +3649,9 @@ export default function CalculadoraEctopico() {
                     </div>
                   )}
 
-                  <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl border border-cyan-100">
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border border-purple-100">
                     <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
                         <Stethoscope className="h-6 w-6 text-white" />
                       </div>
                       <div>
@@ -3662,9 +3662,9 @@ export default function CalculadoraEctopico() {
                   </div>
 
                   <div className="space-y-5">
-                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-cyan-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-200 shadow-sm hover:shadow-md">
                       <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                         <span>Hallazgos de Exploración Física</span>
                       </Label>
                       <textarea
@@ -3672,13 +3672,13 @@ export default function CalculadoraEctopico() {
                         value={hallazgosExploracion}
                         onChange={(e) => setHallazgosExploracion(e.target.value)}
                         rows={4}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 transition-all duration-200 resize-none"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-200 resize-none"
                       />
                     </div>
 
                     <div className="bg-white p-5 rounded-xl border-2 border-gray-100 shadow-sm">
                       <Label className="text-base font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                         <span>¿Tiene ecografía transabdominal?</span>
                       </Label>
                       <div className="grid grid-cols-2 gap-3">
@@ -3687,7 +3687,7 @@ export default function CalculadoraEctopico() {
                             key={opcion}
                             className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
                               tieneEcoTransabdominal === opcion
-                                ? "border-cyan-500 bg-cyan-50 shadow-md"
+                                ? "border-purple-500 bg-purple-50 shadow-md"
                                 : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                             }`}
                           >
@@ -3701,7 +3701,7 @@ export default function CalculadoraEctopico() {
                             />
                             <div
                               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                tieneEcoTransabdominal === opcion ? "border-cyan-500 bg-cyan-500" : "border-gray-300"
+                                tieneEcoTransabdominal === opcion ? "border-purple-500 bg-purple-500" : "border-gray-300"
                               }`}
                             >
                               {tieneEcoTransabdominal === opcion && (

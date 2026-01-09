@@ -3132,29 +3132,19 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
-                      <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
-                        <div>
-                          <h3 className="font-semibold text-slate-800 text-lg mb-3">Valores Anormales</h3>
-                          <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
-                            {mensajeAlertaSignosVitales}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-6 pt-6 border-t border-orange-100">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-orange-600 text-sm font-bold">!</span>
-                          </div>
-                          <div>
-                            <h4 className="text-xl font-bold text-slate-800 mb-2">Recomendación Médica</h4>
-                            <p className="text-lg font-medium text-slate-700 leading-relaxed">
-                              La paciente requiere atención médica inmediata. Los signos vitales fuera de rango pueden
-                              indicar inestabilidad hemodinámica que requiere evaluación urgente.
-                            </p>
-                          </div>
+                    
+<div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
+  <div className="flex items-start space-x-4">
+    <AlertTriangle className="h-8 w-8 text-red-600 flex-shrink-0 mt-1" />
+    <div>
+      <h3 className="text-2xl font-extrabold text-red-700 mb-3">Advertencia importante</h3>
+      <p className="text-lg font-semibold text-slate-800 leading-relaxed">
+        Se detectó un hallazgo en la ecografía transabdominal que requiere atención médica inmediata.
+      </p>
+    </div>
+  </div>
+</div>
+</div>
                         </div>
                       </div>
 
@@ -3593,27 +3583,19 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
-                      <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0 mt-1" />
-                        <div>
-                          <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
-                          <p className="text-slate-700 leading-relaxed">{mensajeAlertaPruebaEmbarazo}</p>
-                        </div>
-                      </div>
-
-                      <div className="mt-6 pt-6 border-t border-orange-100">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-orange-600 text-sm font-bold">!</span>
-                          </div>
-                          <div>
-                            <h4 className="text-xl font-bold text-slate-800 mb-2">Recomendación Médica</h4>
-                            <p className="text-lg font-medium text-slate-700 leading-relaxed">
-                              Es necesario contar con una prueba de embarazo válida para continuar con la evaluación de
-                              embarazo ectópico.
-                            </p>
-                          </div>
+                    
+<div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
+  <div className="flex items-start space-x-4">
+    <AlertTriangle className="h-8 w-8 text-red-600 flex-shrink-0 mt-1" />
+    <div>
+      <h3 className="text-2xl font-extrabold text-red-700 mb-3">Advertencia importante</h3>
+      <p className="text-lg font-semibold text-slate-800 leading-relaxed">
+        Se detectó un hallazgo en la ecografía transabdominal que requiere atención médica inmediata.
+      </p>
+    </div>
+  </div>
+</div>
+</div>
                         </div>
                       </div>
                     </div>
@@ -3890,27 +3872,19 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
-                      <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0 mt-1" />
-                        <div>
-                          <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
-                          <p className="text-slate-700 leading-relaxed">{mensajeAlertaEcografia}</p>
-                        </div>
-                      </div>
-
-                      <div className="mt-6 pt-6 border-t border-orange-100">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-orange-600 text-sm font-bold">!</span>
-                          </div>
-                          <div>
-                            <h4 className="text-xl font-bold text-slate-800 mb-2">Recomendación Médica</h4>
-                            <p className="text-lg font-medium text-slate-700 leading-relaxed">
-                              Se recomienda seguir monitoreando continuamente el estado de la paciente y realizar los
-                              estudios complementarios necesarios para una evaluación completa.
-                            </p>
-                          </div>
+                    
+<div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
+  <div className="flex items-start space-x-4">
+    <AlertTriangle className="h-8 w-8 text-red-600 flex-shrink-0 mt-1" />
+    <div>
+      <h3 className="text-2xl font-extrabold text-red-700 mb-3">Advertencia importante</h3>
+      <p className="text-lg font-semibold text-slate-800 leading-relaxed">
+        Se detectó un hallazgo en la ecografía transabdominal que requiere atención médica inmediata.
+      </p>
+    </div>
+  </div>
+</div>
+</div>
                         </div>
                       </div>
                     </div>
@@ -4149,27 +4123,19 @@ export default function CalculadoraEctopico() {
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
-                      <div className="flex items-start space-x-3 mb-4">
-                        <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0 mt-1" />
-                        <div>
-                          <h3 className="font-semibold text-slate-800 text-lg mb-3">Advertencia</h3>
-                          <p className="text-slate-700 leading-relaxed">{mensajeAlertaEcografia}</p>
-                        </div>
-                      </div>
-
-                      <div className="mt-6 pt-6 border-t border-orange-100">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <span className="text-orange-600 text-sm font-bold">!</span>
-                          </div>
-                          <div>
-                            <h4 className="text-xl font-bold text-slate-800 mb-2">Recomendación Médica</h4>
-                            <p className="text-lg font-medium text-slate-700 leading-relaxed">
-                              Se recomienda seguir monitoreando continuamente el estado de la paciente y realizar los
-                              estudios complementarios necesarios para una evaluación completa.
-                            </p>
-                          </div>
+                    
+<div className="bg-white rounded-xl p-6 shadow-md border border-orange-100 mb-6">
+  <div className="flex items-start space-x-4">
+    <AlertTriangle className="h-8 w-8 text-red-600 flex-shrink-0 mt-1" />
+    <div>
+      <h3 className="text-2xl font-extrabold text-red-700 mb-3">Advertencia importante</h3>
+      <p className="text-lg font-semibold text-slate-800 leading-relaxed">
+        Se detectó un hallazgo en la ecografía transabdominal que requiere atención médica inmediata.
+      </p>
+    </div>
+  </div>
+</div>
+</div>
                         </div>
                       </div>
                     </div>

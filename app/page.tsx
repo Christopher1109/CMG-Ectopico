@@ -4288,92 +4288,85 @@ export default function CalculadoraEctopico() {
       </div>
 
       {/* Agregar footer en pantalla de TVUS */}
-      <CMGFooter />
-    </>
-  )
-}
-</div>
+                      <CMGFooter />
+                    </>
+                  )}
+
+                  {/* SECCION 8: β-hCG */}
+                  {seccionActual === 8 && (
+                    <div className="space-y-6">
+                      <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-8 rounded-2xl border border-teal-100 shadow-xl space-y-6">
+                        <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
+                              <Droplet className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <h2 className="text-2xl font-bold text-slate-800">{"β-hCG en Sangre"}</h2>
+                              <p className="text-sm text-slate-600">{"Nivel cuantitativo de β-hCG"}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-5">
+                          <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-teal-200 transition-all duration-200 shadow-sm hover:shadow-md">
+                            <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
+                              <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                              <span>{"Valor de β-hCG"}</span>
+                            </Label>
+                            <input
+                              type="number"
+                              placeholder="Ingrese el valor"
+                              value={nivelBetaHCG}
+                              onChange={(e) => setNivelBetaHCG(e.target.value)}
+                              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all duration-200"
+                            />
+                            <span className="text-xs text-slate-500 mt-1 block">mUI/mL</span>
+                            {numeroConsultaActual > 1 && hcgAnterior && (
+                              <p className="text-sm text-gray-500 mt-2">{"Valor de la consulta previa: "}{hcgAnterior}{" mUI/mL"}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {errorSeccion && (
+                        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                          <p className="text-sm text-red-700">{errorSeccion}</p>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between pt-4">
+                        <Button
+                          onClick={() => setSeccion(7)}
+                          variant="outline"
+                          className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                        >
+                          <ChevronLeft className="mr-2 h-4 w-4" />
+                          Anterior
+                        </Button>
+                        <Button
+                          onClick={async () => {
+                            if (!nivelBetaHCG) {
+                              setErrorSeccion("Por favor, ingrese el valor de β-hCG.")
+                              return
+                            }
+                            await calcular()
+                          }}
+                          className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                        >
+                          Calcular Riesgo
+                          <ChevronRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <CMGFooter />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           )}
-
-{
-  /* SECCION 8: β-hCG */
-}
-{
-  seccionActual === 8 && (
-    <div className="space-y-6">
-      {/* Contenedor de color que envuelve encabezado y campos de beta-hCG */}
-      <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-8 rounded-2xl border border-teal-100 shadow-xl space-y-6">
-        <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl border border-teal-100">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
-              <Droplet className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-slate-800">β-hCG en Sangre</h2>
-              <p className="text-sm text-slate-600">Nivel cuantitativo de β-hCG</p>
-            </div>
-          </div>
         </div>
-
-        <div className="space-y-5">
-          <div className="bg-white p-5 rounded-xl border-2 border-gray-100 hover:border-teal-200 transition-all duration-200 shadow-sm hover:shadow-md">
-            <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center space-x-2">
-              <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-              <span>Valor de β-hCG</span>
-            </Label>
-            <input
-              type="number"
-              placeholder="Ingrese el valor"
-              value={nivelBetaHCG}
-              onChange={(e) => setNivelBetaHCG(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all duration-200"
-            />
-            <span className="text-xs text-slate-500 mt-1 block">mUI/mL</span>
-            {/* Mostrar valor de β-hCG de la consulta previa como referencia */}
-            {numeroConsultaActual > 1 && hcgAnterior && (
-              <p className="text-sm text-gray-500 mt-2">Valor de la consulta previa: {hcgAnterior} mUI/mL</p>
-            )}
-          </div>
-        </div>
-        {/* Fin del contenedor de color para beta-hCG */}
-      </div>
-
-      {errorSeccion && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
-          <p className="text-sm text-red-700">{errorSeccion}</p>
-        </div>
-      )}
-
-      <div className="flex justify-between pt-4">
-        <Button
-          onClick={() => setSeccion(7)}
-          variant="outline"
-          className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Anterior
-        </Button>
-        <Button
-          onClick={async () => {
-            if (!nivelBetaHCG) {
-              setErrorSeccion("Por favor, ingrese el valor de β-hCG.")
-              return
-            }
-            await calcular()
-          }}
-          className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          Calcular Riesgo
-          <ChevronRight className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Agregar footer en pantalla de beta-hCG */}
-      <CMGFooter />
-    </div>
-  )
-}
-</div>
       )}
     </div>
   )

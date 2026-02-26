@@ -26,6 +26,7 @@ import {
   Home,
 } from "lucide-react"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import type React from "react"
 import { crearConsulta, actualizarConsulta } from "@/lib/api/consultas"
 
@@ -259,6 +260,8 @@ function existeConsulta(consulta: any, numero: 1 | 2 | 3): boolean {
 
 // ==================== COMPONENTE PRINCIPAL ====================
 export default function CalculadoraEctopico() {
+  const router = useRouter()
+
   // Estados de autenticación
   const [estaAutenticado, setEstaAutenticado] = useState(false)
   const [usuarioActual, setUsuarioActual] = useState("")
@@ -1830,6 +1833,11 @@ export default function CalculadoraEctopico() {
     try {
       const resultado = await clienteSeguro.login(usuario, contraseña)
       if (resultado.success) {
+        // Si es gerente, redirigir al dashboard gerencial
+        if (resultado.usuario.rol === "gerente") {
+          router.push("/manager")
+          return
+        }
         setEstaAutenticado(true)
         setUsuarioActual(resultado.usuario.usuario)
         setNombreUsuario(resultado.usuario.nombre)

@@ -45,6 +45,13 @@ const USUARIOS_TEMP = [
     nombre: "Christopher",
     rol: "admin",
   },
+  {
+    usuario: "Gerente",
+    contraseña: "Gerente2024",
+    nombre: "Gerente CMG",
+    rol: "gerente",
+    hospital_id: "CMG",
+  },
 ]
 
 const JWT_SECRET = process.env.JWT_SECRET || "cmg-ectopico-secret-key-2024"
@@ -81,6 +88,7 @@ export async function POST(req: Request) {
         usuario: usuarioEncontrado.usuario,
         nombre: usuarioEncontrado.nombre,
         rol: usuarioEncontrado.rol,
+        hospital_id: (usuarioEncontrado as any).hospital_id ?? "CMG",
       },
       JWT_SECRET,
       { expiresIn: "8h" },
@@ -95,6 +103,7 @@ export async function POST(req: Request) {
         usuario: usuarioEncontrado.usuario,
         nombre: usuarioEncontrado.nombre,
         rol: usuarioEncontrado.rol,
+        hospital_id: (usuarioEncontrado as any).hospital_id ?? "CMG",
       },
     })
   } catch (error) {

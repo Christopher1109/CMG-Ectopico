@@ -1914,9 +1914,9 @@ export default function CalculadoraEctopico() {
   }
 
   // ==================== UI ====================
-  if (!estaAutenticado) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-100 flex items-center justify-center">
+  return !estaAutenticado ? (
+    // ==================== VISTA DE LOGIN ====================
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-100 flex items-center justify-center">
         <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
           <CardContent className="p-8">
             <div className="text-center space-y-6">
@@ -2027,10 +2027,8 @@ export default function CalculadoraEctopico() {
         </Card>
       </div>
     )
-  }
-
-  // ==================== APLICACIÓN (AUTENTICADA) ====================
-  return (
+  ) : (
+    // ==================== APLICACIÓN (AUTENTICADA) ====================
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header con ID */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">

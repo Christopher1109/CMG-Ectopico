@@ -158,7 +158,7 @@ async function leerDatosDesdeBackend(folioOrId: string): Promise<any | null> {
       console.error("[v0] ❌ Error al cargar:", payload?.error)
       return null
     }
-    console.log("[v0] 📥 Datos cargados desde backend:", {
+      // Datos cargados desde backend: {
       folio: payload?.folio,
       tvus: payload?.tvus,
       hcg_valor: payload?.hcg_valor,
@@ -308,11 +308,7 @@ export default function CalculadoraEctopico() {
   const [seccionActual, setSeccion] = useState(1) // Renamed from seccionActual for clarity in the new flow
   const [seccionesCompletadas, setSeccionesCompletadas] = useState<number[]>([])
 
-  // <CHANGE START> Add debug effect to track seccionActual changes
-  useEffect(() => {
-    console.log("[v0] seccionActual changed to:", seccionActual, "numeroConsultaActual:", numeroConsultaActual)
-  }, [seccionActual, numeroConsultaActual])
-  // </CHANGE END>
+
 
   const [errorSeccion, setErrorSeccion] = useState("")
 
@@ -386,6 +382,11 @@ export default function CalculadoraEctopico() {
         const esValido = await clienteSeguro.verificarToken()
         if (esValido) {
           const usuario = clienteSeguro.getUsuario()
+          // Si ya tiene sesión activa como gerente, redirigir al dashboard
+          if (usuario.rol === "gerente") {
+            router.replace("/manager")
+            return
+          }
           setEstaAutenticado(true)
           setUsuarioActual(usuario.usuario)
           setNombreUsuario(usuario.nombre)
@@ -395,7 +396,7 @@ export default function CalculadoraEctopico() {
       }
     }
     verificarAuth()
-  }, [])
+  }, [router])
 
   useEffect(() => {
     calcularPAM(presionSistolica, presionDiastolica)
@@ -404,7 +405,6 @@ export default function CalculadoraEctopico() {
   // ==================== GUARDAR DATOS INCOMPLETOS ====================
   async function guardarDatosIncompletos(motivoFinalizacion: string, seccionCompletada: number): Promise<boolean> {
     if (guardandoConsulta) {
-      console.log("[v0] ⚠️ Ya se está guardando una consulta, evitando duplicado")
       return false
     }
 
@@ -685,17 +685,6 @@ export default function CalculadoraEctopico() {
 
       const pretestAjustado = numeroConsultaActual === 3 && resultadoV2c != null ? resultadoV2c : resultadoV1b
 
-      console.log("[v0] Calculando riesgo con:", {
-        numeroConsultaActual,
-        esConsultaSeguimiento,
-        resultadoV1b,
-        resultadoV2c,
-        pretestAjustado,
-        hcgAnterior,
-        hcgValor: currentBetaHcg,
-        tvus: currentTvus,
-      })
-
       const respuesta = await clienteSeguro.calcularRiesgo({
         sintomasSeleccionados: sintomasSeleccionados,
         factoresSeleccionados: factoresSeleccionados,
@@ -728,12 +717,6 @@ export default function CalculadoraEctopico() {
       if (respuesta.variacionHcg) {
         setVariacionHcg(respuesta.variacionHcg)
       }
-
-      console.log("[v0] Resultado calculado:", {
-        resultado: probPost,
-        variacionHcg: respuesta.variacionHcg,
-        tipoResultado: respuesta.tipoResultado,
-      })
 
       const fechaActual = new Date().toISOString()
       const datosCompletos = {
@@ -794,7 +777,6 @@ export default function CalculadoraEctopico() {
           localStorage.setItem(`ectopico_folio_${consultaCargada.folio}`, JSON.stringify(consultaActualizada))
         }
 
-        console.log("[v0] ✅ consultaCargada actualizada localmente con datos calculados")
       }
 
       try {
@@ -818,17 +800,10 @@ export default function CalculadoraEctopico() {
             setConsultaCargada(consultaGuardada)
           }
         } else if (numeroConsultaActual > 1) {
-          console.log("[v0] 🔍 Evaluando qué consulta actualizar...")
-          console.log("[v0] Consulta cargada:", consultaCargada)
-
           const tieneC2 = existeConsulta(consultaCargada, 2)
           const tieneC3 = existeConsulta(consultaCargada, 3)
 
-          console.log("[v0] ¿Tiene consulta 2?:", tieneC2)
-          console.log("[v0] ¿Tiene consulta 3?:", tieneC3)
-
           const visitaNo: 2 | 3 = tieneC3 ? 3 : tieneC2 ? 3 : 2
-          console.log(`[v0] 📝 Guardando como consulta ${visitaNo}`)
 
           const payloadParaBackend = {
             sintomas: sintomasSeleccionados,
@@ -839,12 +814,9 @@ export default function CalculadoraEctopico() {
             resultado: probPost,
           }
 
-          console.log("[v0] 📦 Payload para backend:", payloadParaBackend)
-
           const updateResult = await actualizarDatosEnBackend(idSeguimiento, visitaNo, payloadParaBackend)
 
           if (updateResult.success) {
-            console.log("[v0] ✅ Datos guardados en backend exitosamente")
 
             if (updateResult.data) {
               setConsultaCargada(updateResult.data)
@@ -879,16 +851,13 @@ export default function CalculadoraEctopico() {
         setMostrarResultados(true)
         setMostrarIdSeguimiento(true)
         setPantalla("resultados")
-        console.log("[v0] ✅ Mostrando pantalla de resultados para Consulta", numeroConsultaActual)
       } else {
         setMostrarResultados(true)
         setMostrarIdSeguimiento(true)
         setPantalla("resultados")
-        console.log("[v0] ✅ Mostrando pantalla de resultados para Consulta 1")
       }
-      // CHANGE END
     } catch (error) {
-      console.error("[v0] ❌ Error en cálculo:", error)
+      console.error("Error en cálculo:", error)
       alert("Error al calcular el riesgo. Por favor, intente nuevamente.")
     }
   }
@@ -1017,14 +986,13 @@ export default function CalculadoraEctopico() {
 
       if (res) {
         consultaEncontrada = res
-        console.log("[v0] ✅ Consulta loaded from backend:", consultaEncontrada)
         // Update localStorage cache
         if (res.folio) {
           localStorage.setItem(`ectopico_folio_${res.folio}`, JSON.stringify(res))
         }
       }
     } catch (error) {
-      console.error("[v0] ❌ Error al buscar en backend:", error)
+      console.error("Error al buscar en backend:", error)
     }
 
     if (!consultaEncontrada && esFormatoId) {
@@ -1033,20 +1001,13 @@ export default function CalculadoraEctopico() {
       if (datosLocal) {
         try {
           consultaEncontrada = normalizarDesdeLocal(JSON.parse(datosLocal))
-          console.log("[v0] ⚠️ Consulta loaded from localStorage (fallback):", consultaEncontrada)
         } catch (error) {
-          console.warn("[v0] Error al parsear datos de localStorage:", error)
+          console.warn("Error al parsear datos de localStorage:", error)
         }
       }
     }
 
     if (consultaEncontrada) {
-      console.log("✅ Consulta encontrada y cargada:", consultaEncontrada)
-      console.log("[v0] Checking consultations after load:")
-      console.log("[v0] C1 exists:", existeConsulta(consultaEncontrada, 1))
-      console.log("[v0] C2 exists:", existeConsulta(consultaEncontrada, 2))
-      console.log("[v0] C3 exists:", existeConsulta(consultaEncontrada, 3))
-
       setConsultaCargada(consultaEncontrada)
       setPantalla("resumen")
       setModoCargarConsulta(false)
@@ -1056,14 +1017,11 @@ export default function CalculadoraEctopico() {
   }
 
   const continuarConsultaCargada = async () => {
-    console.log("🔄 Continuing consulta cargada:", consultaCargada)
-
     // Determinar cuál consulta de seguimiento corresponde (2ª o 3ª) consultando la visita previa.
     try {
       // Convertir el identificador público (ID-00001) o folio en un número para la consulta al backend.
       const folioString = (consultaCargada.id_publico || consultaCargada.folio || consultaCargada.id || "").toString()
       const folioNumeric = Number(folioString.replace(/^ID-0*/, ""))
-      console.log("[v0] 🔍 Fetching previous visit from backend...")
       const prevResponse = await fetch(`/api/consultas/${folioNumeric}?scope=previous`)
       const prev = await prevResponse.json()
 
@@ -3335,14 +3293,10 @@ export default function CalculadoraEctopico() {
           return
         }
         setErrorSeccion("")
-        console.log("[v0] Navigating from section 3, numeroConsultaActual:", numeroConsultaActual)
-        // CHANGE: For Consulta 2, skip section 4 (PIE) and go to section 5 (Eco Transabdominal)
+        // Para Consulta 2, saltar sección 4 (PIE) e ir a sección 5 (Eco Transabdominal)
         if (numeroConsultaActual > 1) {
-          console.log("[v0] Setting section to 5 for Consulta 2")
           setSeccion(5)
-          console.log("[v0] setSeccion(5) called")
         } else {
-          console.log("[v0] Setting section to 4 for Consulta 1")
           setSeccion(4)
         }
         completarSeccion(3)
@@ -3815,13 +3769,10 @@ export default function CalculadoraEctopico() {
         }
 
         setErrorSeccion("")
-        console.log("[v0] Navigating from section 5, numeroConsultaActual:", numeroConsultaActual)
-        // CHANGE: For Consulta 2, skip section 6 (Estudios Complementarios) and go to section 7 (TVUS)
+        // Para Consulta 2, saltar sección 6 (Estudios Complementarios) e ir a sección 7 (TVUS)
         if (numeroConsultaActual > 1) {
-          console.log("[v0] Setting section to 7 for Consulta 2")
           setSeccion(7)
         } else {
-          console.log("[v0] Setting section to 6 for Consulta 1")
           setSeccion(6)
         }
         completarSeccion(5)

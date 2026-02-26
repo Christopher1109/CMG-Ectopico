@@ -2027,10 +2027,9 @@ export default function CalculadoraEctopico() {
         </Card>
       </div>
     )
-  }
-
-  // ==================== APLICACIÓN (AUTENTICADA) ====================
-  return (
+  } else {
+    // ==================== APLICACIÓN (AUTENTICADA) ====================
+    return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header con ID */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
@@ -4370,4 +4369,5 @@ export default function CalculadoraEctopico() {
       )}
     </div>
   )
+  }
 }

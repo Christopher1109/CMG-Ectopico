@@ -2026,8 +2026,7 @@ export default function CalculadoraEctopico() {
           </CardContent>
         </Card>
       </div>
-    )
-  ) : (
+    ) : (
     // ==================== APLICACIÓN (AUTENTICADA) ====================
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header con ID */}

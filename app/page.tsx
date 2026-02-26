@@ -2030,7 +2030,7 @@ export default function CalculadoraEctopico() {
   } else {
     // ==================== APLICACIÓN (AUTENTICADA) ====================
     return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header con ID */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
         <div className="max-w-6xl mx-auto px-6 py-4">
